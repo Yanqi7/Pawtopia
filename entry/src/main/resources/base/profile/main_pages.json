@@ -1,0 +1,19 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/Login",
+    "pages/Register",
+    "pages/MainTabs",
+    "pages/NewPost",
+    "pages/NewPet",
+    "pages/NewHealthRecord",
+    "pages/PostDetail",
+    "pages/ProductDetail",
+    "pages/Cart",
+    "pages/Orders",
+    "pages/PetDetail",
+    "pages/HealthRecords",
+    "pages/AdoptionRequests",
+    "pages/MyAdoptions"
+  ]
+}
