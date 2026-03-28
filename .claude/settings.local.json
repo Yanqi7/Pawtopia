@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \":*)",
+      "Bash(cd:*)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(cp \"素材/picture/1/$f\" \"entry/src/main/resources/base/media/$f\")",
+      "Bash(done)",
+      "Bash(cp \"素材/picture/2/$f\" \"entry/src/main/resources/base/media/$f\")"
+    ]
+  }
+}

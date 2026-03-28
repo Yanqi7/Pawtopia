@@ -6,7 +6,7 @@ import { AppStatus } from '../app/AppStatus';
 import { OfflineBanner } from '../components/Ui';
 
 @Component
-export struct MedicalTab {
+export struct PetProfileTab {
   @State private loading: boolean = false;
   @State private errorText: string = '';
   @State private pets: Pet[] = [];
