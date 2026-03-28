@@ -46,112 +46,141 @@ export struct CommunityTab {
     }
   }
 
-  private likesCount(): number {
-    return this.posts.reduce((sum, p) => sum + (p.likeCount ?? 0), 0);
-  }
-
   build() {
-    Column() {
-      Column({ space: 10 }) {
-        Row() {
-          Column({ space: 2 }) {
-            Text('社区')
-              .fontSize(20)
-              .fontWeight(FontWeight.Bold)
-            Text('看看大家都在分享什么')
-              .fontSize(12)
-              .fontColor('#888')
-          }
-          Blank()
-          Button(this.loading ? '刷新中…' : '刷新')
-            .height(32)
-            .borderRadius(16)
+    Stack() {
+      Column() {
+        // Top header with avatar, search, more
+        Row({ space: 10 }) {
+          Image($r('app.media.people'))
+            .width(40)
+            .height(40)
+            .borderRadius(20)
+          TextInput({ placeholder: '搜索帖子/话题/用户' })
+            .layoutWeight(1)
+            .height(36)
             .backgroundColor('#F0F2F5')
-            .onClick(() => this.refresh())
-          Button('发布')
-            .height(32)
-            .borderRadius(16)
-            .backgroundColor('#2B7FFF')
-            .fontColor(Color.White)
-            .onClick(() => router.pushUrl({ url: 'pages/NewPost' }))
+            .borderRadius(18)
+            .padding({ left: 12, right: 12 })
+          Image($r('app.media.more'))
+            .width(24)
+            .height(24)
         }
-        .padding({ left: 16, right: 16, top: 14 })
+        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
 
-        Row({ space: 12 }) {
+        // Action icons
+        Row({ space: 30 }) {
           Column({ space: 4 }) {
-            Text('动态数量').fontSize(11).fontColor('#888')
-            Text(`${this.posts.length} 条`).fontSize(16).fontWeight(FontWeight.Medium)
-          }.layoutWeight(1)
+            Image($r('app.media.tiezi')).width(40).height(40).borderRadius(20).backgroundColor('#E8F4FF')
+            Text('我的帖子').fontSize(11).fontColor('#666')
+          }.alignItems(HorizontalAlign.Center)
           Column({ space: 4 }) {
-            Text('本页互动').fontSize(11).fontColor('#888')
-            Text(`${this.likesCount()} 次`).fontSize(16).fontWeight(FontWeight.Medium)
-          }.layoutWeight(1)
+            Image($r('app.media.weiyang')).width(40).height(40).borderRadius(20).backgroundColor('#E8F4FF')
+            Text('喂养').fontSize(11).fontColor('#666')
+          }.alignItems(HorizontalAlign.Center)
           Column({ space: 4 }) {
-            Text('最新更新').fontSize(11).fontColor('#888')
-            Text('刚刚').fontSize(16).fontWeight(FontWeight.Medium)
-          }.layoutWeight(1)
+            Image($r('app.media.guanzhu')).width(40).height(40).borderRadius(20).backgroundColor('#E8F4FF')
+            Text('我的关注').fontSize(11).fontColor('#666')
+          }.alignItems(HorizontalAlign.Center)
+          Blank()
         }
-        .padding(12)
-        .backgroundColor('#F6F7F9')
-        .borderRadius(12)
-        .margin({ left: 16, right: 16, bottom: 6 })
-      }
+        .padding({ left: 16, right: 16, bottom: 12 })
 
-      if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
-          .padding({ left: 16, right: 16, bottom: 10 })
-      }
+        if (!AppStatus.isBackendOnline()) {
+          OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
+            .padding({ left: 16, right: 16, bottom: 10 })
+        }
 
-      if (this.errorText) {
-        Text(this.errorText).fontSize(13).fontColor(Color.Red).padding({ left: 16, right: 16, bottom: 8 })
-      }
+        if (this.errorText) {
+          Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
+        }
 
-      List() {
-        ForEach(this.posts, (post: Post) => {
-          ListItem() {
-            Column({ space: 6 }) {
-              Text(post.title).fontSize(16).fontWeight(FontWeight.Medium).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-              Text(post.content)
-                .fontSize(13)
-                .fontColor('#666')
-                .maxLines(2)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-              Row({ space: 10 }) {
-                Text(`👍 ${post.likeCount ?? 0}`).fontSize(12).fontColor('#999')
-                Text(`💬 ${post.commentCount ?? 0}`).fontSize(12).fontColor('#999')
-                Text(`👁 ${post.viewCount ?? 0}`).fontSize(12).fontColor('#999')
-                Blank()
-                Text('查看详情')
-                  .fontSize(12)
-                  .fontColor('#2B7FFF')
+        // Posts list
+        List() {
+          ForEach(this.posts, (post: Post) => {
+            ListItem() {
+              Column({ space: 8 }) {
+                // Post header
+                Row({ space: 8 }) {
+                  Image($r('app.media.people')).width(32).height(32).borderRadius(16)
+                  Column({ space: 2 }) {
+                    Text(post.title).fontSize(14).fontWeight(FontWeight.Medium).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+                    Text('2小时前').fontSize(11).fontColor('#999')
+                  }.layoutWeight(1)
+                  Text('...').fontSize(16).fontColor('#999')
+                }
+
+                // Post content with image
+                if (post.imageUrls) {
+                  Image(post.imageUrls)
+                    .width('100%')
+                    .height(180)
+                    .borderRadius(8)
+                    .objectFit(ImageFit.Cover)
+                }
+
+                // Engagement stats
+                Row({ space: 12 }) {
+                  Text(`👍 ${post.likeCount ?? 0}`).fontSize(12).fontColor('#999')
+                  Text(`💬 ${post.commentCount ?? 0}`).fontSize(12).fontColor('#999')
+                  Text(`👁 ${post.viewCount ?? 0}`).fontSize(12).fontColor('#999')
+                  Blank()
+                  Text('查看详情').fontSize(12).fontColor('#2B7FFF')
+                }
               }
-            }
-            .padding(12)
-            .backgroundColor('#F6F7F9')
-            .borderRadius(12)
-          }
-          .padding({ left: 16, right: 16, bottom: 10 })
-          .onClick(() => {
-            if (post.id) {
-              router.pushUrl({ url: 'pages/PostDetail', params: { id: post.id } });
-            }
-          })
-        }, (post: Post) => String(post.id))
-
-        ListItem() {
-          if (this.last) {
-            Text('没有更多了').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
-          } else {
-            Text(this.loading ? '加载中…' : '上拉加载更多')
-              .fontSize(12)
-              .fontColor('#999')
-              .width('100%')
-              .textAlign(TextAlign.Center)
               .padding(12)
+              .backgroundColor('#F6F7F9')
+              .borderRadius(12)
+            }
+            .padding({ left: 16, right: 16, bottom: 10 })
+            .onClick(() => {
+              if (post.id) {
+                router.pushUrl({ url: 'pages/PostDetail', params: { id: post.id } });
+              }
+            })
+          }, (post: Post) => String(post.id))
+
+          ListItem() {
+            if (this.last) {
+              Text('没有更多了').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
+            } else {
+              Text(this.loading ? '加载中…' : '上拉加载更多')
+                .fontSize(12)
+                .fontColor('#999')
+                .width('100%')
+                .textAlign(TextAlign.Center)
+                .padding(12)
+            }
           }
         }
+        .onReachEnd(() => this.loadMore())
       }
-      .onReachEnd(() => this.loadMore())
+      .height('100%')
+      .width('100%')
+
+      // Floating action button
+      Column() {
+        Blank()
+        Row() {
+          Blank()
+          Button()
+            .width(56)
+            .height(56)
+            .borderRadius(28)
+            .backgroundColor('#2B7FFF')
+            .onClick(() => router.pushUrl({ url: 'pages/NewPost' }))
+            .overlay(
+              Text('+')
+                .fontSize(28)
+                .fontColor(Color.White)
+                .fontWeight(FontWeight.Bold),
+              Alignment.Center
+            )
+        }
+        .padding({ right: 16, bottom: 80 })
+        .width('100%')
+      }
+      .height('100%')
+      .width('100%')
     }
     .height('100%')
     .width('100%')
