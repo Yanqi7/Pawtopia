@@ -14,6 +14,10 @@ export struct MallTab {
   @State private last: boolean = false;
   @State private keyword: string = '';
   @State private cartCount: number = 0;
+  @State private selectedPet: string = '狗狗';
+  @State private selectedCategory: string = '';
+
+  private petTypes = ['狗狗', '猫咪', '小宠', '水族', '鸟类', '爬宠', '通用用品'];
 
   aboutToAppear(): void {
     this.cartCount = CartStore.getTotalCount();
@@ -40,8 +44,9 @@ export struct MallTab {
     this.loading = true;
     this.errorText = '';
     try {
-      const res = this.keyword.trim()
-        ? await Api.searchProducts(this.keyword.trim(), this.page, 10)
+      const searchKeyword = this.keyword.trim() || this.selectedPet;
+      const res = searchKeyword
+        ? await Api.searchProducts(searchKeyword, this.page, 10)
         : await Api.getProducts(this.page, 10);
       this.last = res.last;
       this.products = reset ? res.content : [...this.products, ...res.content];
@@ -55,102 +60,159 @@ export struct MallTab {
 
   build() {
     Column() {
-      Row() {
-        Column({ space: 2 }) {
-          Text('商城')
-            .fontSize(18)
-            .fontWeight(FontWeight.Bold)
-          Text('精选好物，放心下单')
-            .fontSize(11)
-            .fontColor('#888')
-        }
-        Blank()
-        Button(`购物车(${this.cartCount})`)
-          .height(32)
+      // Top search bar
+      Row({ space: 8 }) {
+        TextInput({ placeholder: '搜索宠物用品、食品...' })
+          .layoutWeight(1)
+          .height(40)
+          .backgroundColor('#F0F2F5')
+          .borderRadius(10)
+          .padding({ left: 12 })
+          .onChange((v: string) => this.keyword = v)
+        Button()
+          .width(40)
+          .height(40)
+          .borderRadius(10)
+          .backgroundColor('transparent')
+          .overlay(Image($r('app.media.zhaoxiangji')).width(20).height(20), Alignment.Center)
+        Stack() {
+          Button()
+            .width(40)
+            .height(40)
+            .borderRadius(10)
+            .backgroundColor('#2B7FFF')
+            .overlay(Image($r('app.media.gouwuche')).width(20).height(20).fillColor(Color.White), Alignment.Center)
+            .onClick(() => router.pushUrl({ url: 'pages/Cart' }))
+          if (this.cartCount > 0) {
+            Text(String(this.cartCount))
+              .fontSize(10)
+              .fontColor(Color.White)
+              .backgroundColor(Color.Red)
+              .borderRadius(10)
+              .padding({ left: 4, right: 4, top: 2, bottom: 2 })
+              .position({ right: -8, top: -8 })
+          }
+        }.width(40).height(40)
+      }
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+
+      // Promo tags
+      Scroll(ScrollDirection.Horizontal) {
+        Row({ space: 8 }) {
+          Row() {
+            Text('今日特惠').fontSize(12).fontColor('#2B7FFF')
+          }
+          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+          .borderRadius(16)
+          .border({ width: 1, color: '#2B7FFF' })
+
+          Row() {
+            Text('新品上架').fontSize(12).fontColor(Color.White)
+          }
+          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
           .borderRadius(16)
           .backgroundColor('#2B7FFF')
-          .fontColor(Color.White)
-          .onClick(() => router.pushUrl({ url: 'pages/Cart' }))
+
+          Row() {
+            Text('宠物医院合作').fontSize(12).fontColor('#FF9D4E')
+          }
+          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+          .borderRadius(16)
+          .border({ width: 1, color: '#FF9D4E' })
+        }
+        .padding({ left: 16, right: 16, bottom: 12 })
       }
-      .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 
       if (!AppStatus.isBackendOnline()) {
         OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
           .padding({ left: 16, right: 16, bottom: 10 })
       }
 
-      Row({ space: 10 }) {
-        TextInput({ placeholder: '搜索商品', text: this.keyword })
-          .height(40)
-          .backgroundColor('#F6F7F9')
-          .borderRadius(10)
-          .padding({ left: 12, right: 12 })
-          .layoutWeight(1)
-          .onChange((v: string) => this.keyword = v)
-        Button('搜索')
-          .height(40)
-          .borderRadius(10)
-          .backgroundColor('#2B7FFF')
-          .fontColor(Color.White)
-          .onClick(() => this.refresh())
-      }
-      .padding({ left: 16, right: 16, bottom: 10 })
-
       if (this.errorText) {
-        Text(this.errorText).fontSize(13).fontColor(Color.Red).padding({ left: 16, right: 16, bottom: 8 })
+        Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
       }
 
-      List() {
-        ForEach(this.products, (p: Product) => {
-          ListItem() {
-            Row({ space: 12 }) {
-              Column({ space: 6 }) {
-                Text(p.name).fontSize(16).fontWeight(FontWeight.Medium).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-                Text(p.description ?? '暂无描述').fontSize(13).fontColor('#666').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
-                Text(`￥${p.price}  库存 ${p.stockQuantity}  ${p.category}`)
-                  .fontSize(12)
-                  .fontColor('#999')
-              }.layoutWeight(1)
-              Column({ space: 8 }) {
-                Text(p.category)
-                  .fontSize(11)
-                  .fontColor('#2B7FFF')
-                  .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-                  .backgroundColor('#EAF2FF')
-                  .borderRadius(10)
-                  .textAlign(TextAlign.Center)
-                Button('详情')
-                  .height(32)
-                  .borderRadius(16)
-                  .backgroundColor('#F0F2F5')
-                  .onClick(() => {
-                    if (p.id) {
-                      router.pushUrl({ url: 'pages/ProductDetail', params: { id: p.id } });
+      // Two-panel layout
+      Row() {
+        // Left sidebar
+        Scroll() {
+          Column() {
+            ForEach(this.petTypes, (type: string) => {
+              Button(type)
+                .width('100%')
+                .height(36)
+                .fontSize(12)
+                .backgroundColor(this.selectedPet === type ? '#2B7FFF' : '#F0F2F5')
+                .fontColor(this.selectedPet === type ? Color.White : '#333')
+                .onClick(() => { this.selectedPet = type; this.refresh(); })
+                .margin({ bottom: 8 })
+            })
+          }
+          .padding(8)
+        }
+        .width(80)
+        .backgroundColor('#F9F9F9')
+
+        // Right content
+        Column() {
+          // Category tabs
+          Row({ space: 8 }) {
+            ForEach(['食品', '玩具', '服饰', '健康护理'], (cat: string) => {
+              Button(cat)
+                .height(32)
+                .fontSize(11)
+                .backgroundColor(this.selectedCategory === cat ? '#2B7FFF' : '#F0F2F5')
+                .fontColor(this.selectedCategory === cat ? Color.White : '#666')
+                .onClick(() => { this.selectedCategory = cat; this.refresh(); })
+            })
+          }
+          .padding({ left: 12, right: 12, bottom: 12 })
+          .layoutWeight(0)
+
+          // Product list
+          List() {
+            ForEach(this.products, (p: Product) => {
+              ListItem() {
+                Row({ space: 10 }) {
+                  Image($r('app.media.dog')).width(60).height(60).borderRadius(8).objectFit(ImageFit.Cover)
+                  Column({ space: 4 }) {
+                    Row() {
+                      Text(p.name).fontSize(12).fontWeight(FontWeight.Medium).layoutWeight(1)
+                      Text('新').fontSize(10).fontColor(Color.White).backgroundColor(Color.Red).padding({ left: 4, right: 4 }).borderRadius(2)
                     }
-                  })
+                    Text(p.description ?? '').fontSize(11).fontColor('#666').maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+                    Text(`￥${p.price}`).fontSize(13).fontWeight(FontWeight.Medium).fontColor(Color.Red)
+                    Row() {
+                      Text(`好评率${Math.floor(Math.random() * 30 + 70)}%`).fontSize(10).fontColor('#999')
+                      Blank()
+                      Button('+')
+                        .width(24)
+                        .height(24)
+                        .fontSize(12)
+                        .backgroundColor('#F0F2F5')
+                        .fontColor('#666')
+                        .borderRadius(4)
+                    }
+                  }
+                  .layoutWeight(1)
+                }
+              }
+            }, (p: Product) => String(p.id))
+
+            ListItem() {
+              if (this.last) {
+                Text('没有更多了').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
+              } else {
+                Text(this.loading ? '加载中…' : '上拉加载更多').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
               }
             }
-            .padding(12)
-            .backgroundColor('#F6F7F9')
-            .borderRadius(12)
           }
-          .padding({ left: 16, right: 16, bottom: 10 })
-        }, (p: Product) => String(p.id))
-
-        ListItem() {
-          if (this.last) {
-            Text('没有更多了').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
-          } else {
-            Text(this.loading ? '加载中…' : '上拉加载更多')
-              .fontSize(12)
-              .fontColor('#999')
-              .width('100%')
-              .textAlign(TextAlign.Center)
-              .padding(12)
-          }
+          .onReachEnd(() => this.loadMore())
+          .layoutWeight(1)
         }
+        .layoutWeight(1)
       }
-      .onReachEnd(() => this.loadMore())
+      .layoutWeight(1)
     }
     .height('100%')
     .width('100%')
