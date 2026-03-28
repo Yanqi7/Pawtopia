@@ -35,82 +35,87 @@ export struct PetProfileTab {
   }
 
   build() {
-    Column() {
-      Row() {
-        Text('医疗')
-          .fontSize(18)
-          .fontWeight(FontWeight.Bold)
-        Blank()
-        Button('添加宠物')
-          .height(32)
-          .borderRadius(16)
-          .backgroundColor('#2B7FFF')
-          .fontColor(Color.White)
-          .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'MEDICAL' } }))
-      }
-      .padding({ left: 16, right: 16, top: 14, bottom: 10 })
-
-      if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
-          .padding({ left: 16, right: 16, bottom: 10 })
-      }
-
-      Row({ space: 10 }) {
-        Button(this.loading ? '刷新中…' : '刷新')
-          .height(32)
-          .borderRadius(16)
-          .backgroundColor('#F0F2F5')
-          .onClick(() => this.reload())
-        Blank()
-      }.padding({ left: 16, right: 16, bottom: 10 })
-
-      if (this.errorText) {
-        Text(this.errorText).fontSize(13).fontColor(Color.Red).padding({ left: 16, right: 16, bottom: 8 })
-      }
-
-      List() {
-        ForEach(this.pets, (pet: Pet) => {
-          ListItem() {
-            Column({ space: 6 }) {
-              Text(`${pet.name}（${pet.species}）`).fontSize(16).fontWeight(FontWeight.Medium)
-              Text(`年龄：${pet.age ?? '-'}  性别：${pet.gender ?? '-'}  品种：${pet.breed ?? '-'}`)
-                .fontSize(12)
-                .fontColor('#999')
-              Row({ space: 10 }) {
-                Button('健康档案')
-                  .height(32)
-                  .borderRadius(16)
-                  .backgroundColor('#2B7FFF')
-                  .fontColor(Color.White)
-                  .onClick(() => {
-                    if (pet.id) {
-                      router.pushUrl({ url: 'pages/HealthRecords', params: { petId: pet.id } });
-                    }
-                  })
-                Button('详情')
-                  .height(32)
-                  .borderRadius(16)
-                  .backgroundColor('#F0F2F5')
-                  .onClick(() => {
-                    if (pet.id) {
-                      router.pushUrl({ url: 'pages/PetDetail', params: { id: pet.id } });
-                    }
-                  })
-              }
-            }
-            .padding(12)
-            .backgroundColor('#F6F7F9')
-            .borderRadius(12)
+    Stack() {
+      Column() {
+        // Pink header with search
+        Column({ space: 10 }) {
+          Row({ space: 10 }) {
+            Image($r('app.media.people')).width(40).height(40).borderRadius(20)
+            TextInput({ placeholder: '搜索宠物档案' })
+              .layoutWeight(1)
+              .height(36)
+              .backgroundColor('rgba(255,255,255,0.3)')
+              .borderRadius(18)
+              .padding({ left: 12, right: 12 })
+            Image($r('app.media.more')).width(24).height(24)
           }
-          .padding({ left: 16, right: 16, bottom: 10 })
-        }, (pet: Pet) => String(pet.id))
-
-        if (!this.loading && this.pets.length === 0) {
-          ListItem() {
-            Text('请先添加宠物').fontSize(13).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(24)
-          }
+          .padding({ left: 16, right: 16, bottom: 8 })
         }
+        .width('100%')
+        .linearGradient({
+          angle: 135,
+          colors: [['#FFD9E8', 0.0], ['#FFC9DA', 1.0]]
+        })
+        .padding({ top: 12 })
+
+        if (!AppStatus.isBackendOnline()) {
+          OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
+            .padding({ left: 16, right: 16, bottom: 10 })
+        }
+
+        if (this.errorText) {
+          Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
+        }
+
+        // Grid layout
+        Grid() {
+          ForEach(this.pets, (pet: Pet) => {
+            GridItem() {
+              Column({ space: 6 }) {
+                Stack() {
+                  Image($r('app.media.dog')).width('100%').height(120).borderRadius(8).objectFit(ImageFit.Cover)
+                  Row() {
+                    Blank()
+                    Image($r('app.media.work')).width(24).height(24).padding(6)
+                  }
+                  .width('100%')
+                }
+
+                Text(pet.name ?? '宠物名称').fontSize(12).fontWeight(FontWeight.Medium).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+                Text(`年龄: ${pet.age ?? '-'}`).fontSize(11).fontColor('#666')
+                Text(`病史: 无`).fontSize(11).fontColor('#666')
+              }
+              .padding(8)
+              .backgroundColor('#F9E8F0')
+              .borderRadius(8)
+            }
+          }, (pet: Pet) => String(pet.id))
+        }
+        .columnsTemplate('1fr 1fr 1fr')
+        .padding({ left: 12, right: 12 })
+        .layoutWeight(1)
       }
+      .height('100%')
+      .width('100%')
+
+      // FAB button
+      Column() {
+        Blank()
+        Row() {
+          Blank()
+          Button()
+            .width(56)
+            .height(56)
+            .borderRadius(28)
+            .backgroundColor('#2B7FFF')
+            .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'MEDICAL' } }))
+            .overlay(Text('+').fontSize(28).fontColor(Color.White).fontWeight(FontWeight.Bold), Alignment.Center)
+        }
+        .padding({ right: 16, bottom: 80 })
+        .width('100%')
+      }
+      .height('100%')
+      .width('100%')
     }
     .height('100%')
     .width('100%')
