@@ -5,7 +5,6 @@ import { AppConfig } from '../app/AppConfig';
 import { PreferencesStore } from '../store/PreferencesStore';
 import { SessionStore } from '../store/SessionStore';
 import { UserRole } from '../model/Models';
-import dialogBindingHelper from '@ohos.dialogBindingHelper';
 
 @Entry
 @Component
@@ -16,12 +15,6 @@ struct Login {
   @State private showPassword: boolean = false;
   @State private loading: boolean = false;
   @State private errorText: string = '';
-  @State private appLogoClickCount: number = 0;
-  dialogController: CustomDialogController = new CustomDialogController({
-    builder: BaseUrlDialog({ baseUrl: AppConfig.DEFAULT_BASE_URL }),
-    autoCancel: true,
-    alignment: DialogAlignment.Center,
-  });
 
   aboutToAppear(): void {
     const context = getContext(this);
@@ -75,16 +68,6 @@ struct Login {
                 .margin({ left: 8 })
               Blank()
             }
-            .onClick(() => {
-              this.appLogoClickCount += 1;
-              if (this.appLogoClickCount >= 3) {
-                this.appLogoClickCount = 0;
-                this.dialogController.open();
-              }
-            })
-            .onLongPress(() => {
-              this.dialogController.open();
-            })
           }.width('100%')
 
           // Account input
@@ -203,39 +186,5 @@ struct Login {
       .fontColor(this.selectedRole === role ? Color.White : '#666')
       .border({ width: 1, color: this.selectedRole === role ? '#FF9D4E' : '#E0E0E0' })
       .onClick(() => this.selectedRole = role)
-  }
-}
-
-@CustomDialog
-struct BaseUrlDialog {
-  @State baseUrl: string = '';
-  controller?: CustomDialogController;
-
-  build() {
-    Column({ space: 12 }) {
-      Text('设置后端地址').fontSize(16).fontWeight(FontWeight.Medium)
-      TextInput({ placeholder: 'http://10.0.2.2:8080', text: this.baseUrl })
-        .width('100%')
-        .height(44)
-        .padding({ left: 12, right: 12 })
-        .border({ width: 1, color: '#E0E0E0' })
-        .borderRadius(8)
-        .onChange((v: string) => this.baseUrl = v)
-      Text('提示：模拟器用 10.0.2.2，真机用局域网 IP')
-        .fontSize(12)
-        .fontColor('#999')
-      Row({ space: 10 }) {
-        Button('取消').layoutWeight(1).height(40).onClick(() => this.controller?.close())
-        Button('保存').layoutWeight(1).height(40).backgroundColor('#FF9D4E').fontColor(Color.White).onClick(async () => {
-          if (this.baseUrl.trim()) {
-            await SessionStore.setBaseUrl(this.baseUrl.trim());
-            promptAction.showToast({ message: '设置成功' });
-          }
-          this.controller?.close();
-        })
-      }
-    }
-    .padding(20)
-    .width('100%')
   }
 }
