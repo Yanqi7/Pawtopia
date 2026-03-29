@@ -25,9 +25,9 @@
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
-        "permissions": [
-          "ohos.permission.INTERNET"
-        ],
+//        "permissions": [
+//          "ohos.permission.INTERNET"
+//        ],
         "skills": [
           {
             "entities": [

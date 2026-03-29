@@ -25,7 +25,7 @@ struct MainTabs {
         Column() {
           Text('加载中…')
             .fontSize(14)
-            .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+            .fontColor('#666666')
         }
         .height('100%')
         .width('100%')
@@ -62,7 +62,7 @@ struct MainTabs {
         }
         .width('100%')
         .height('100%')
-        .backgroundColor($r('sys.color.ohos_id_color_background'))
+        .backgroundColor('#FFFFFF')
         .onChange((index: number) => {
           this.currentTabIndex = index;
         })
@@ -77,10 +77,10 @@ struct MainTabs {
       Image($r(`app.media.${icon}`))
         .width(24)
         .height(24)
-        .fillColor(this.currentTabIndex === index ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_text_secondary'))
+        .fillColor(this.currentTabIndex === index ? '#2B7FFF' : '#999999')
       Text(label)
         .fontSize(10)
-        .fontColor(this.currentTabIndex === index ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_text_secondary'))
+        .fontColor(this.currentTabIndex === index ? '#2B7FFF' : '#999999')
     }
     .width('100%')
     .alignItems(HorizontalAlign.Center)

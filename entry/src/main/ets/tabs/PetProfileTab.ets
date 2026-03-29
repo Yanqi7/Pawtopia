@@ -44,12 +44,12 @@ export struct PetProfileTab {
             .height(36)
             .padding({ left: 12, right: 12 })
             .borderRadius(18)
-            .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
-            .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+            .backgroundColor('#F0F2F5')
+            .border({ width: 1, color: '#E8E8E8' })
           Image($r('app.media.more'))
             .width(24)
             .height(24)
-            .fillColor($r('sys.color.ohos_id_color_text_secondary'))
+            .fillColor('#666666')
         }
         .padding({ left: 16, right: 16, top: 12, bottom: 12 })
 
@@ -61,7 +61,7 @@ export struct PetProfileTab {
         if (this.errorText) {
           Text(this.errorText)
             .fontSize(13)
-            .fontColor($r('sys.color.ohos_id_color_text_warning'))
+            .fontColor('#ff4d4f')
             .padding(16)
         }
 
@@ -81,7 +81,7 @@ export struct PetProfileTab {
                     Image($r('app.media.work'))
                       .width(24)
                       .height(24)
-                      .fillColor($r('sys.color.ohos_id_color_brand'))
+                      .fillColor('#2B7FFF')
                       .padding(6)
                   }
                   .width('100%')
@@ -94,13 +94,13 @@ export struct PetProfileTab {
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                 Text(`年龄: ${pet.age ?? '-'}岁`)
                   .fontSize(11)
-                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                  .fontColor('#666666')
                 Text('病史: 无')
                   .fontSize(11)
-                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                  .fontColor('#666666')
               }
               .padding(8)
-              .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+              .backgroundColor('#F6F7F9')
               .borderRadius(8)
             }
           }, (pet: Pet) => String(pet.id))
@@ -124,7 +124,7 @@ export struct PetProfileTab {
               .width(56)
               .height(56)
               .borderRadius(28)
-              .backgroundColor($r('sys.color.ohos_id_color_brand'))
+              .backgroundColor('#2B7FFF')
               .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'MEDICAL' } }))
             Text('+')
               .fontSize(28)

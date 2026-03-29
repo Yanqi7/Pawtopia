@@ -56,12 +56,12 @@ export struct CommunityTab {
             .height(36)
             .padding({ left: 12, right: 12 })
             .borderRadius(18)
-            .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
-            .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+            .backgroundColor('#F0F2F5')
+            .border({ width: 1, color: '#E8E8E8' })
           Image($r('app.media.more'))
             .width(24)
             .height(24)
-            .fillColor($r('sys.color.ohos_id_color_text_secondary'))
+            .fillColor('#666666')
         }
         .padding({ left: 16, right: 16, top: 12, bottom: 12 })
 
@@ -72,13 +72,13 @@ export struct CommunityTab {
               Circle()
                 .width(44)
                 .height(44)
-                .fill($r('sys.color.ohos_id_color_button_normal'))
+                .fill('#F0F2F5')
               Image($r('app.media.tiezi'))
                 .width(20)
                 .height(20)
-                .fillColor($r('sys.color.ohos_id_color_brand'))
+                .fillColor('#2B7FFF')
             }
-            Text('我的帖子').fontSize(10).fontColor($r('sys.color.ohos_id_color_text_secondary'))
+            Text('我的帖子').fontSize(10).fontColor('#666666')
           }
           .alignItems(HorizontalAlign.Center)
 
@@ -87,13 +87,13 @@ export struct CommunityTab {
               Circle()
                 .width(44)
                 .height(44)
-                .fill($r('sys.color.ohos_id_color_button_normal'))
+                .fill('#F0F2F5')
               Image($r('app.media.weiyang'))
                 .width(20)
                 .height(20)
-                .fillColor($r('sys.color.ohos_id_color_brand'))
+                .fillColor('#2B7FFF')
             }
-            Text('喂养').fontSize(10).fontColor($r('sys.color.ohos_id_color_text_secondary'))
+            Text('喂养').fontSize(10).fontColor('#666666')
           }
           .alignItems(HorizontalAlign.Center)
 
@@ -102,13 +102,13 @@ export struct CommunityTab {
               Circle()
                 .width(44)
                 .height(44)
-                .fill($r('sys.color.ohos_id_color_button_normal'))
+                .fill('#F0F2F5')
               Image($r('app.media.guanzhu'))
                 .width(20)
                 .height(20)
-                .fillColor($r('sys.color.ohos_id_color_brand'))
+                .fillColor('#2B7FFF')
             }
-            Text('我的关注').fontSize(10).fontColor($r('sys.color.ohos_id_color_text_secondary'))
+            Text('我的关注').fontSize(10).fontColor('#666666')
           }
           .alignItems(HorizontalAlign.Center)
 
@@ -124,7 +124,7 @@ export struct CommunityTab {
         if (this.errorText) {
           Text(this.errorText)
             .fontSize(13)
-            .fontColor($r('sys.color.ohos_id_color_text_warning'))
+            .fontColor('#ff4d4f')
             .padding(16)
         }
 
@@ -143,12 +143,12 @@ export struct CommunityTab {
                       .textOverflow({ overflow: TextOverflow.Ellipsis })
                     Text('2小时前')
                       .fontSize(11)
-                      .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                      .fontColor('#999999')
                   }
                   .layoutWeight(1)
                   Text('…')
                     .fontSize(16)
-                    .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                    .fontColor('#999999')
                 }
 
                 if (post.imageUrls) {
@@ -160,17 +160,17 @@ export struct CommunityTab {
                 }
 
                 Row({ space: 12 }) {
-                  Text(`👍 ${post.likeCount ?? 0}`).fontSize(12).fontColor($r('sys.color.ohos_id_color_text_tertiary'))
-                  Text(`💬 ${post.commentCount ?? 0}`).fontSize(12).fontColor($r('sys.color.ohos_id_color_text_tertiary'))
-                  Text(`👁 ${post.viewCount ?? 0}`).fontSize(12).fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                  Text(`👍 ${post.likeCount ?? 0}`).fontSize(12).fontColor('#999999')
+                  Text(`💬 ${post.commentCount ?? 0}`).fontSize(12).fontColor('#999999')
+                  Text(`👁 ${post.viewCount ?? 0}`).fontSize(12).fontColor('#999999')
                   Blank()
                   Text('查看详情')
                     .fontSize(12)
-                    .fontColor($r('sys.color.ohos_id_color_brand'))
+                    .fontColor('#2B7FFF')
                 }
               }
               .padding(12)
-              .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+              .backgroundColor('#F6F7F9')
               .borderRadius(12)
             }
             .padding({ left: 16, right: 16, bottom: 10 })
@@ -185,14 +185,14 @@ export struct CommunityTab {
             if (this.last) {
               Text('没有更多了')
                 .fontSize(12)
-                .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                .fontColor('#999999')
                 .width('100%')
                 .textAlign(TextAlign.Center)
                 .padding(12)
             } else {
               Text(this.loading ? '加载中…' : '上拉加载更多')
                 .fontSize(12)
-                .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                .fontColor('#999999')
                 .width('100%')
                 .textAlign(TextAlign.Center)
                 .padding(12)
@@ -214,7 +214,7 @@ export struct CommunityTab {
               .width(56)
               .height(56)
               .borderRadius(28)
-              .backgroundColor($r('sys.color.ohos_id_color_brand'))
+              .backgroundColor('#2B7FFF')
               .onClick(() => router.pushUrl({ url: 'pages/NewPost' }))
             Text('+')
               .fontSize(28)

@@ -53,12 +53,12 @@ export struct AdoptTab {
             .height(36)
             .padding({ left: 12, right: 12 })
             .borderRadius(18)
-            .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
-            .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+            .backgroundColor('#F0F2F5')
+            .border({ width: 1, color: '#E8E8E8' })
           Image($r('app.media.more'))
             .width(24)
             .height(24)
-            .fillColor($r('sys.color.ohos_id_color_text_secondary'))
+            .fillColor('#666666')
         }
         .padding({ left: 16, right: 16, top: 12, bottom: 12 })
 
@@ -68,8 +68,8 @@ export struct AdoptTab {
             .height(32)
             .fontSize(13)
             .type(ButtonType.Normal)
-            .backgroundColor(this.filter === 'ALL' ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_button_normal'))
-            .fontColor(this.filter === 'ALL' ? Color.White : $r('sys.color.ohos_id_color_text_primary'))
+            .backgroundColor(this.filter === 'ALL' ? '#2B7FFF' : '#F0F2F5')
+            .fontColor(this.filter === 'ALL' ? Color.White : '#333333')
             .borderRadius(16)
             .onClick(() => { this.filter = 'ALL'; this.reload(); })
 
@@ -77,8 +77,8 @@ export struct AdoptTab {
             .height(32)
             .fontSize(13)
             .type(ButtonType.Normal)
-            .backgroundColor(this.filter === 'MINE' ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_button_normal'))
-            .fontColor(this.filter === 'MINE' ? Color.White : $r('sys.color.ohos_id_color_text_primary'))
+            .backgroundColor(this.filter === 'MINE' ? '#2B7FFF' : '#F0F2F5')
+            .fontColor(this.filter === 'MINE' ? Color.White : '#333333')
             .borderRadius(16)
             .onClick(() => { this.filter = 'MINE'; this.reload(); })
 
@@ -94,7 +94,7 @@ export struct AdoptTab {
         if (this.errorText) {
           Text(this.errorText)
             .fontSize(13)
-            .fontColor($r('sys.color.ohos_id_color_text_warning'))
+            .fontColor('#ff4d4f')
             .padding(16)
         }
 
@@ -124,25 +124,25 @@ export struct AdoptTab {
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                 Text(`暂住地: ${pet.adoptionCity ?? '暂无'}`)
                   .fontSize(11)
-                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                  .fontColor('#666666')
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                 Row() {
                   Text('状态: 良好')
                     .fontSize(11)
-                    .fontColor($r('sys.color.ohos_id_color_brand'))
-                    .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
+                    .fontColor('#2B7FFF')
+                    .backgroundColor('#EAF2FF')
                     .padding({ left: 4, right: 4, top: 2, bottom: 2 })
                     .borderRadius(4)
                   if (pet.age) {
                     Text(`${pet.age}月`)
                       .fontSize(11)
-                      .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                      .fontColor('#999999')
                   }
                 }
               }
               .padding(8)
-              .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+              .backgroundColor('#F6F7F9')
               .borderRadius(8)
             }
           }, (pet: Pet) => String(pet.id))
@@ -166,7 +166,7 @@ export struct AdoptTab {
               .width(56)
               .height(56)
               .borderRadius(28)
-              .backgroundColor($r('sys.color.ohos_id_color_brand'))
+              .backgroundColor('#2B7FFF')
               .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'ADOPT' } }))
             Text('+')
               .fontSize(28)

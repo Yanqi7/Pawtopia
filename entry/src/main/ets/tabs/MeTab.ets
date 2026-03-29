@@ -36,7 +36,7 @@ export struct MeTab {
               Text(this.user.nickname || '用户')
                 .fontSize(14)
                 .fontWeight(FontWeight.Medium)
-                .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                .fontColor('#333333')
             }
             .alignItems(HorizontalAlign.Center)
 
@@ -46,11 +46,11 @@ export struct MeTab {
               Image($r('app.media.lingdang'))
                 .width(28)
                 .height(28)
-                .fillColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fillColor('#666666')
               Circle()
                 .width(8)
                 .height(8)
-                .fill($r('sys.color.ohos_id_color_warning'))
+                .fill('#ff4d4f')
                 .position({ right: 0, top: 0 })
             }
           }
@@ -58,7 +58,7 @@ export struct MeTab {
           .padding({ left: 16, right: 16, bottom: 16 })
         }
         .width('100%')
-        .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+        .backgroundColor('#F6F7F9')
         .padding({ top: 16 })
 
         // Menu items
@@ -68,14 +68,14 @@ export struct MeTab {
               Image($r('app.media.ic_switch'))
                 .width(24)
                 .height(24)
-                .fillColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fillColor('#666666')
               Text('切换账号')
                 .fontSize(14)
-                .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                .fontColor('#333333')
                 .layoutWeight(1)
               Text('>')
                 .fontSize(14)
-                .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fontColor('#666666')
             }
             .padding(16)
             .width('100%')
@@ -87,14 +87,14 @@ export struct MeTab {
               Image($r('app.media.ic_logout'))
                 .width(24)
                 .height(24)
-                .fillColor($r('sys.color.ohos_id_color_warning'))
+                .fillColor('#ff4d4f')
               Text('退出登录')
                 .fontSize(14)
-                .fontColor($r('sys.color.ohos_id_color_warning'))
+                .fontColor('#ff4d4f')
                 .layoutWeight(1)
               Text('>')
                 .fontSize(14)
-                .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fontColor('#666666')
             }
             .padding(16)
             .width('100%')
@@ -106,14 +106,14 @@ export struct MeTab {
               Image($r('app.media.ic_trash'))
                 .width(24)
                 .height(24)
-                .fillColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fillColor('#666666')
               Text('内存清理')
                 .fontSize(14)
-                .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                .fontColor('#333333')
                 .layoutWeight(1)
               Text('23.5MB')
                 .fontSize(13)
-                .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fontColor('#666666')
             }
             .padding(16)
             .width('100%')
@@ -124,14 +124,14 @@ export struct MeTab {
               Image($r('app.media.more'))
                 .width(24)
                 .height(24)
-                .fillColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fillColor('#666666')
               Text('版本信息')
                 .fontSize(14)
-                .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                .fontColor('#333333')
                 .layoutWeight(1)
               Text('v2.3.1')
                 .fontSize(13)
-                .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                .fontColor('#666666')
             }
             .padding(16)
             .width('100%')
@@ -143,7 +143,7 @@ export struct MeTab {
         // Footer
         Text('© 2023 宠物之家 版权所有')
           .fontSize(12)
-          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+          .fontColor('#666666')
           .width('100%')
           .textAlign(TextAlign.Center)
           .padding({ bottom: 20 })
@@ -151,13 +151,13 @@ export struct MeTab {
         Column() {
           Text('未登录')
             .fontSize(16)
-            .fontColor($r('sys.color.ohos_id_color_text_primary'))
+            .fontColor('#333333')
             .margin({ bottom: 20 })
           Button('去登录')
             .width('60%')
             .height(44)
             .type(ButtonType.Capsule)
-            .backgroundColor($r('sys.color.ohos_id_color_brand'))
+            .backgroundColor('#2B7FFF')
             .fontColor(Color.White)
             .onClick(() => router.pushUrl({ url: 'pages/Login' }))
         }
@@ -169,6 +169,6 @@ export struct MeTab {
     }
     .height('100%')
     .width('100%')
-    .backgroundColor($r('sys.color.ohos_id_color_background'))
+    .backgroundColor('#FFFFFF')
   }
 }

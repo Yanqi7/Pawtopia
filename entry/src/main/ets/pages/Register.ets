@@ -47,10 +47,10 @@ struct Register {
             Text('注册账户')
               .fontSize(28)
               .fontWeight(FontWeight.Bold)
-              .fontColor($r('sys.color.ohos_id_color_text_primary'))
+              .fontColor('#333333')
             Text('选择你的身份，进入不同的功能视图')
               .fontSize(12)
-              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .fontColor('#666666')
           }
           .width('100%')
 
@@ -58,14 +58,14 @@ struct Register {
           Column({ space: 6 }) {
             Text('用户名')
               .fontSize(12)
-              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .fontColor('#666666')
             TextInput({ placeholder: '唯一用户名', text: this.username })
               .width('100%')
               .height(40)
               .padding({ left: 12, right: 12 })
               .borderRadius(8)
-              .backgroundColor($r('sys.color.ohos_id_color_background'))
-              .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+              .backgroundColor('#FFFFFF')
+              .border({ width: 1, color: '#E8E8E8' })
               .fontSize(14)
               .onChange((v: string) => this.username = v)
           }
@@ -75,14 +75,14 @@ struct Register {
           Column({ space: 6 }) {
             Text('密码')
               .fontSize(12)
-              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .fontColor('#666666')
             TextInput({ placeholder: '至少6位', text: this.password })
               .width('100%')
               .height(40)
               .padding({ left: 12, right: 12 })
               .borderRadius(8)
-              .backgroundColor($r('sys.color.ohos_id_color_background'))
-              .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+              .backgroundColor('#FFFFFF')
+              .border({ width: 1, color: '#E8E8E8' })
               .type(InputType.Password)
               .fontSize(14)
               .onChange((v: string) => this.password = v)
@@ -93,14 +93,14 @@ struct Register {
           Column({ space: 6 }) {
             Text('邮箱')
               .fontSize(12)
-              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .fontColor('#666666')
             TextInput({ placeholder: '用于找回密码', text: this.email })
               .width('100%')
               .height(40)
               .padding({ left: 12, right: 12 })
               .borderRadius(8)
-              .backgroundColor($r('sys.color.ohos_id_color_background'))
-              .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+              .backgroundColor('#FFFFFF')
+              .border({ width: 1, color: '#E8E8E8' })
               .fontSize(14)
               .onChange((v: string) => this.email = v)
           }
@@ -110,14 +110,14 @@ struct Register {
           Column({ space: 6 }) {
             Text('昵称（可选）')
               .fontSize(12)
-              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .fontColor('#666666')
             TextInput({ placeholder: '你的昵称', text: this.nickname })
               .width('100%')
               .height(40)
               .padding({ left: 12, right: 12 })
               .borderRadius(8)
-              .backgroundColor($r('sys.color.ohos_id_color_background'))
-              .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+              .backgroundColor('#FFFFFF')
+              .border({ width: 1, color: '#E8E8E8' })
               .fontSize(14)
               .onChange((v: string) => this.nickname = v)
           }
@@ -127,30 +127,16 @@ struct Register {
           Column({ space: 8 }) {
             Text('选择身份')
               .fontSize(12)
-              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+              .fontColor('#666666')
               .fontWeight(FontWeight.Medium)
-            Row({ space: 12 }) {
-              ForEach(['用户', '商家', '医生'], (label: string, index: number) => {
-                const roles: UserRole[] = ['USER', 'SELLER', 'PET_HOSPITAL'];
-                Button(label)
-                  .layoutWeight(1)
-                  .height(36)
-                  .fontSize(13)
-                  .type(ButtonType.Normal)
-                  .backgroundColor(this.selectedRole === roles[index] ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_button_normal'))
-                  .fontColor(this.selectedRole === roles[index] ? Color.White : $r('sys.color.ohos_id_color_text_primary'))
-                  .borderRadius(6)
-                  .onClick(() => this.selectedRole = roles[index])
-              })
-            }
-            .width('100%')
+            this.RoleSelectionRow()
           }
 
           // Error
           if (this.errorText) {
             Text(this.errorText)
               .fontSize(12)
-              .fontColor($r('sys.color.ohos_id_color_text_warning'))
+              .fontColor('#ff4d4f')
               .width('100%')
               .textAlign(TextAlign.Center)
           }
@@ -162,7 +148,7 @@ struct Register {
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
             .type(ButtonType.Capsule)
-            .backgroundColor($r('sys.color.ohos_id_color_brand'))
+            .backgroundColor('#2B7FFF')
             .fontColor(Color.White)
             .enabled(!this.loading)
             .onClick(() => this.doRegister())
@@ -170,7 +156,7 @@ struct Register {
           // Back to login
           Text('返回登录')
             .fontSize(13)
-            .fontColor($r('sys.color.ohos_id_color_brand'))
+            .fontColor('#2B7FFF')
             .onClick(() => router.back())
 
           Blank()
@@ -183,6 +169,39 @@ struct Register {
     }
     .height('100%')
     .width('100%')
-    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+    .backgroundColor('#F5F5F5')
+  }
+
+  @Builder RoleSelectionRow() {
+    Row({ space: 12 }) {
+      Button('用户')
+        .layoutWeight(1)
+        .height(36)
+        .fontSize(13)
+        .type(ButtonType.Normal)
+        .backgroundColor(this.selectedRole === 'USER' ? '#2B7FFF' : '#F0F2F5')
+        .fontColor(this.selectedRole === 'USER' ? Color.White : '#333333')
+        .borderRadius(6)
+        .onClick(() => this.selectedRole = 'USER')
+      Button('商家')
+        .layoutWeight(1)
+        .height(36)
+        .fontSize(13)
+        .type(ButtonType.Normal)
+        .backgroundColor(this.selectedRole === 'SELLER' ? '#2B7FFF' : '#F0F2F5')
+        .fontColor(this.selectedRole === 'SELLER' ? Color.White : '#333333')
+        .borderRadius(6)
+        .onClick(() => this.selectedRole = 'SELLER')
+      Button('医生')
+        .layoutWeight(1)
+        .height(36)
+        .fontSize(13)
+        .type(ButtonType.Normal)
+        .backgroundColor(this.selectedRole === 'PET_HOSPITAL' ? '#2B7FFF' : '#F0F2F5')
+        .fontColor(this.selectedRole === 'PET_HOSPITAL' ? Color.White : '#333333')
+        .borderRadius(6)
+        .onClick(() => this.selectedRole = 'PET_HOSPITAL')
+    }
+    .width('100%')
   }
 }
