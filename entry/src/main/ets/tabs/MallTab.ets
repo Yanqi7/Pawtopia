@@ -69,20 +69,13 @@ export struct MallTab {
           .borderRadius(10)
           .padding({ left: 12 })
           .onChange((v: string) => this.keyword = v)
-        Button()
-          .width(40)
-          .height(40)
-          .borderRadius(10)
-          .backgroundColor('transparent')
-          .overlay(Image($r('app.media.zhaoxiangji')).width(20).height(20), Alignment.Center)
         Stack() {
-          Button()
-            .width(40)
-            .height(40)
-            .borderRadius(10)
-            .backgroundColor('#2B7FFF')
-            .overlay(Image($r('app.media.gouwuche')).width(20).height(20).fillColor(Color.White), Alignment.Center)
-            .onClick(() => router.pushUrl({ url: 'pages/Cart' }))
+          Button().width(40).height(40).borderRadius(10).backgroundColor('transparent')
+          Image($r('app.media.zhaoxiangji')).width(20).height(20)
+        }
+        Stack() {
+          Button().width(40).height(40).borderRadius(10).backgroundColor('#2B7FFF').onClick(() => router.pushUrl({ url: 'pages/Cart' }))
+          Image($r('app.media.gouwuche')).width(20).height(20).fillColor(Color.White)
           if (this.cartCount > 0) {
             Text(String(this.cartCount))
               .fontSize(10)
@@ -92,12 +85,12 @@ export struct MallTab {
               .padding({ left: 4, right: 4, top: 2, bottom: 2 })
               .position({ right: -8, top: -8 })
           }
-        }.width(40).height(40)
+        }
       }
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
 
       // Promo tags
-      Scroll(ScrollDirection.Horizontal) {
+      Scroll() {
         Row({ space: 8 }) {
           Row() {
             Text('今日特惠').fontSize(12).fontColor('#2B7FFF')
@@ -122,6 +115,8 @@ export struct MallTab {
         }
         .padding({ left: 16, right: 16, bottom: 12 })
       }
+      .scrollable(ScrollDirection.Horizontal)
+      .scrollBar(BarState.Off)
 
       if (!AppStatus.isBackendOnline()) {
         OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
