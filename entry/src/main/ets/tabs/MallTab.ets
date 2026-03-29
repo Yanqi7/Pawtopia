@@ -60,27 +60,43 @@ export struct MallTab {
 
   build() {
     Column() {
-      // Top search bar
+      // Search bar
       Row({ space: 8 }) {
-        TextInput({ placeholder: '搜索宠物用品、食品...' })
+        TextInput({ placeholder: '搜索宠物用品、食品…' })
           .layoutWeight(1)
-          .height(40)
-          .backgroundColor('#F0F2F5')
-          .borderRadius(10)
-          .padding({ left: 12 })
+          .height(36)
+          .padding({ left: 12, right: 12 })
+          .borderRadius(18)
+          .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
+          .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
           .onChange((v: string) => this.keyword = v)
         Stack() {
-          Button().width(40).height(40).borderRadius(10).backgroundColor('transparent')
-          Image($r('app.media.zhaoxiangji')).width(20).height(20)
+          Button()
+            .width(36)
+            .height(36)
+            .borderRadius(6)
+            .backgroundColor('transparent')
+          Image($r('app.media.zhaoxiangji'))
+            .width(20)
+            .height(20)
+            .fillColor($r('sys.color.ohos_id_color_text_secondary'))
         }
         Stack() {
-          Button().width(40).height(40).borderRadius(10).backgroundColor('#2B7FFF').onClick(() => router.pushUrl({ url: 'pages/Cart' }))
-          Image($r('app.media.gouwuche')).width(20).height(20).fillColor(Color.White)
+          Button()
+            .width(36)
+            .height(36)
+            .borderRadius(6)
+            .backgroundColor($r('sys.color.ohos_id_color_brand'))
+            .onClick(() => router.pushUrl({ url: 'pages/Cart' }))
+          Image($r('app.media.gouwuche'))
+            .width(20)
+            .height(20)
+            .fillColor(Color.White)
           if (this.cartCount > 0) {
             Text(String(this.cartCount))
               .fontSize(10)
               .fontColor(Color.White)
-              .backgroundColor(Color.Red)
+              .backgroundColor($r('sys.color.ohos_id_color_warning'))
               .borderRadius(10)
               .padding({ left: 4, right: 4, top: 2, bottom: 2 })
               .position({ right: -8, top: -8 })
@@ -92,26 +108,29 @@ export struct MallTab {
       // Promo tags
       Scroll() {
         Row({ space: 8 }) {
-          Row() {
-            Text('今日特惠').fontSize(12).fontColor('#2B7FFF')
-          }
-          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .borderRadius(16)
-          .border({ width: 1, color: '#2B7FFF' })
-
-          Row() {
-            Text('新品上架').fontSize(12).fontColor(Color.White)
-          }
-          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .borderRadius(16)
-          .backgroundColor('#2B7FFF')
-
-          Row() {
-            Text('宠物医院合作').fontSize(12).fontColor('#FF9D4E')
-          }
-          .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .borderRadius(16)
-          .border({ width: 1, color: '#FF9D4E' })
+          Button('今日特惠')
+            .height(32)
+            .fontSize(12)
+            .type(ButtonType.Normal)
+            .backgroundColor(Color.White)
+            .fontColor($r('sys.color.ohos_id_color_brand'))
+            .borderRadius(16)
+            .border({ width: 1, color: $r('sys.color.ohos_id_color_brand') })
+          Button('新品上架')
+            .height(32)
+            .fontSize(12)
+            .type(ButtonType.Normal)
+            .backgroundColor($r('sys.color.ohos_id_color_brand'))
+            .fontColor(Color.White)
+            .borderRadius(16)
+          Button('宠物医院合作')
+            .height(32)
+            .fontSize(12)
+            .type(ButtonType.Normal)
+            .backgroundColor(Color.White)
+            .fontColor($r('sys.color.ohos_id_color_warning'))
+            .borderRadius(16)
+            .border({ width: 1, color: $r('sys.color.ohos_id_color_warning') })
         }
         .padding({ left: 16, right: 16, bottom: 12 })
       }
@@ -124,7 +143,10 @@ export struct MallTab {
       }
 
       if (this.errorText) {
-        Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
+        Text(this.errorText)
+          .fontSize(13)
+          .fontColor($r('sys.color.ohos_id_color_text_warning'))
+          .padding(16)
       }
 
       // Two-panel layout
@@ -137,8 +159,10 @@ export struct MallTab {
                 .width('100%')
                 .height(36)
                 .fontSize(12)
-                .backgroundColor(this.selectedPet === type ? '#2B7FFF' : '#F0F2F5')
-                .fontColor(this.selectedPet === type ? Color.White : '#333')
+                .type(ButtonType.Normal)
+                .backgroundColor(this.selectedPet === type ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_button_normal'))
+                .fontColor(this.selectedPet === type ? Color.White : $r('sys.color.ohos_id_color_text_primary'))
+                .borderRadius(6)
                 .onClick(() => { this.selectedPet = type; this.refresh(); })
                 .margin({ bottom: 8 })
             })
@@ -146,7 +170,7 @@ export struct MallTab {
           .padding(8)
         }
         .width(80)
-        .backgroundColor('#F9F9F9')
+        .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
 
         // Right content
         Column() {
@@ -156,8 +180,10 @@ export struct MallTab {
               Button(cat)
                 .height(32)
                 .fontSize(11)
-                .backgroundColor(this.selectedCategory === cat ? '#2B7FFF' : '#F0F2F5')
-                .fontColor(this.selectedCategory === cat ? Color.White : '#666')
+                .type(ButtonType.Normal)
+                .backgroundColor(this.selectedCategory === cat ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_button_normal'))
+                .fontColor(this.selectedCategory === cat ? Color.White : $r('sys.color.ohos_id_color_text_primary'))
+                .borderRadius(6)
                 .onClick(() => { this.selectedCategory = cat; this.refresh(); })
             })
           }
@@ -169,24 +195,49 @@ export struct MallTab {
             ForEach(this.products, (p: Product) => {
               ListItem() {
                 Row({ space: 10 }) {
-                  Image($r('app.media.dog')).width(60).height(60).borderRadius(8).objectFit(ImageFit.Cover)
+                  Image($r('app.media.dog'))
+                    .width(60)
+                    .height(60)
+                    .borderRadius(8)
+                    .objectFit(ImageFit.Cover)
                   Column({ space: 4 }) {
                     Row() {
-                      Text(p.name).fontSize(12).fontWeight(FontWeight.Medium).layoutWeight(1)
-                      Text('新').fontSize(10).fontColor(Color.White).backgroundColor(Color.Red).padding({ left: 4, right: 4 }).borderRadius(2)
-                    }
-                    Text(p.description ?? '').fontSize(11).fontColor('#666').maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-                    Text(`￥${p.price}`).fontSize(13).fontWeight(FontWeight.Medium).fontColor(Color.Red)
-                    Row() {
-                      Text(`好评率${Math.floor(Math.random() * 30 + 70)}%`).fontSize(10).fontColor('#999')
-                      Blank()
-                      Button('+')
-                        .width(24)
-                        .height(24)
+                      Text(p.name)
                         .fontSize(12)
-                        .backgroundColor('#F0F2F5')
-                        .fontColor('#666')
-                        .borderRadius(4)
+                        .fontWeight(FontWeight.Medium)
+                        .layoutWeight(1)
+                      Text('新')
+                        .fontSize(10)
+                        .fontColor(Color.White)
+                        .backgroundColor($r('sys.color.ohos_id_color_warning'))
+                        .padding({ left: 4, right: 4 })
+                        .borderRadius(2)
+                    }
+                    Text(p.description ?? '')
+                      .fontSize(11)
+                      .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                      .maxLines(1)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    Text(`￥${p.price}`)
+                      .fontSize(13)
+                      .fontWeight(FontWeight.Medium)
+                      .fontColor($r('sys.color.ohos_id_color_warning'))
+                    Row() {
+                      Text(`好评率${Math.floor(Math.random() * 30 + 70)}%`)
+                        .fontSize(10)
+                        .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                      Blank()
+                      Stack() {
+                        Button()
+                          .width(24)
+                          .height(24)
+                          .borderRadius(4)
+                          .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
+                        Text('+')
+                          .fontSize(12)
+                          .fontColor($r('sys.color.ohos_id_color_text_primary'))
+                          .align(Alignment.Center)
+                      }
                     }
                   }
                   .layoutWeight(1)
@@ -196,9 +247,19 @@ export struct MallTab {
 
             ListItem() {
               if (this.last) {
-                Text('没有更多了').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
+                Text('没有更多了')
+                  .fontSize(12)
+                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                  .padding(12)
               } else {
-                Text(this.loading ? '加载中…' : '上拉加载更多').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
+                Text(this.loading ? '加载中…' : '上拉加载更多')
+                  .fontSize(12)
+                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                  .padding(12)
               }
             }
           }
@@ -211,5 +272,6 @@ export struct MallTab {
     }
     .height('100%')
     .width('100%')
+    .backgroundColor($r('sys.color.ohos_id_color_background'))
   }
 }

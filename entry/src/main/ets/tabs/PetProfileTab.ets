@@ -37,26 +37,21 @@ export struct PetProfileTab {
   build() {
     Stack() {
       Column() {
-        // Pink header with search
-        Column({ space: 10 }) {
-          Row({ space: 10 }) {
-            Image($r('app.media.people')).width(40).height(40).borderRadius(20)
-            TextInput({ placeholder: '搜索宠物档案' })
-              .layoutWeight(1)
-              .height(36)
-              .backgroundColor('rgba(255,255,255,0.3)')
-              .borderRadius(18)
-              .padding({ left: 12, right: 12 })
-            Image($r('app.media.more')).width(24).height(24)
-          }
-          .padding({ left: 16, right: 16, bottom: 8 })
+        // Header with search
+        Row({ space: 8 }) {
+          TextInput({ placeholder: '搜索宠物档案' })
+            .layoutWeight(1)
+            .height(36)
+            .padding({ left: 12, right: 12 })
+            .borderRadius(18)
+            .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
+            .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+          Image($r('app.media.more'))
+            .width(24)
+            .height(24)
+            .fillColor($r('sys.color.ohos_id_color_text_secondary'))
         }
-        .width('100%')
-        .linearGradient({
-          angle: 135,
-          colors: [['#FFD9E8', 0.0], ['#FFC9DA', 1.0]]
-        })
-        .padding({ top: 12 })
+        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
 
         if (!AppStatus.isBackendOnline()) {
           OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
@@ -64,7 +59,10 @@ export struct PetProfileTab {
         }
 
         if (this.errorText) {
-          Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
+          Text(this.errorText)
+            .fontSize(13)
+            .fontColor($r('sys.color.ohos_id_color_text_warning'))
+            .padding(16)
         }
 
         // Grid layout
@@ -73,25 +71,43 @@ export struct PetProfileTab {
             GridItem() {
               Column({ space: 6 }) {
                 Stack() {
-                  Image($r('app.media.dog')).width('100%').height(120).borderRadius(8).objectFit(ImageFit.Cover)
+                  Image($r('app.media.dog'))
+                    .width('100%')
+                    .height(100)
+                    .borderRadius(8)
+                    .objectFit(ImageFit.Cover)
                   Row() {
                     Blank()
-                    Image($r('app.media.work')).width(24).height(24).padding(6)
+                    Image($r('app.media.work'))
+                      .width(24)
+                      .height(24)
+                      .fillColor($r('sys.color.ohos_id_color_brand'))
+                      .padding(6)
                   }
                   .width('100%')
                 }
 
-                Text(pet.name ?? '宠物名称').fontSize(12).fontWeight(FontWeight.Medium).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-                Text(`年龄: ${pet.age ?? '-'}`).fontSize(11).fontColor('#666')
-                Text(`病史: 无`).fontSize(11).fontColor('#666')
+                Text(pet.name ?? '宠物名称')
+                  .fontSize(12)
+                  .fontWeight(FontWeight.Medium)
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                Text(`年龄: ${pet.age ?? '-'}岁`)
+                  .fontSize(11)
+                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+                Text('病史: 无')
+                  .fontSize(11)
+                  .fontColor($r('sys.color.ohos_id_color_text_secondary'))
               }
               .padding(8)
-              .backgroundColor('#F9E8F0')
+              .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
               .borderRadius(8)
             }
           }, (pet: Pet) => String(pet.id))
         }
-        .columnsTemplate('1fr 1fr 1fr')
+        .columnsTemplate('1fr 1fr')
+        .rowsGap(12)
+        .columnsGap(12)
         .padding({ left: 12, right: 12 })
         .layoutWeight(1)
       }
@@ -103,13 +119,21 @@ export struct PetProfileTab {
         Blank()
         Row() {
           Blank()
-          Button()
-            .width(56)
-            .height(56)
-            .borderRadius(28)
-            .backgroundColor('#2B7FFF')
-            .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'MEDICAL' } }))
-            .overlay(Text('+').fontSize(28).fontColor(Color.White).fontWeight(FontWeight.Bold), Alignment.Center)
+          Stack() {
+            Button()
+              .width(56)
+              .height(56)
+              .borderRadius(28)
+              .backgroundColor($r('sys.color.ohos_id_color_brand'))
+              .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'MEDICAL' } }))
+            Text('+')
+              .fontSize(28)
+              .fontColor(Color.White)
+              .fontWeight(FontWeight.Bold)
+              .align(Alignment.Center)
+          }
+          .width(56)
+          .height(56)
         }
         .padding({ right: 16, bottom: 80 })
         .width('100%')

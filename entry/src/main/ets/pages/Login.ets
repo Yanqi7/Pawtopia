@@ -37,255 +37,149 @@ struct Login {
   }
 
   build() {
-    Stack() {
-      // 渐变背景
-      Column()
-        .width('100%')
-        .height('100%')
-        .linearGradient({
-          angle: 135,
-          colors: [['#E8EEF2', 0.0], ['#F0E8FF', 0.5], ['#F0FFF8', 1.0]]
-        })
-
-      // 装饰元素：爪子和骨头（四个角落）
-      Stack() {
-        // 左上爪子
-        Image($r('app.media.paw'))
-          .width(80)
-          .height(80)
-          .opacity(0.15)
-          .position({ left: -20, top: -20 })
-
-        // 右上骨头
-        Image($r('app.media.paw_1'))
-          .width(60)
-          .height(60)
-          .opacity(0.12)
-          .position({ right: -10, top: 20 })
-
-        // 左下骨头
-        Image($r('app.media.paw_1'))
-          .width(70)
-          .height(70)
-          .opacity(0.12)
-          .position({ left: 0, bottom: 150 })
-
-        // 右下爪子
-        Image($r('app.media.paw'))
-          .width(85)
-          .height(85)
-          .opacity(0.1)
-          .position({ right: -30, bottom: -30 })
-      }
-      .width('100%')
-      .height('100%')
-
-      // 主内容
+    Column() {
       Scroll() {
         Column({ space: 20 }) {
           Blank().height(30)
 
-          // APP Logo和狗狗头像
+          // Logo and title
           Row() {
             Blank()
-            Column({ space: 4 }) {
-              Text('APP')
-                .fontSize(36)
+            Column({ space: 8 }) {
+              Text('城宠社区')
+                .fontSize(32)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#5B7FFF')
+                .fontColor('#2B7FFF')
+                .textAlign(TextAlign.Center)
               Stack() {
                 Circle()
-                  .width(70)
-                  .height(70)
-                  .fill('#B3D9FF')
+                  .width(80)
+                  .height(80)
+                  .fill($r('sys.color.ohos_id_color_brand'))
                 Image($r('app.media.dog'))
-                  .width(65)
-                  .height(65)
-                  .borderRadius(32)
+                  .width(76)
+                  .height(76)
+                  .borderRadius(38)
                   .objectFit(ImageFit.Cover)
               }
             }
             .alignItems(HorizontalAlign.Center)
-            .margin({ left: 16 })
             Blank()
           }
           .width('100%')
 
-          // 账号输入框
-          Row({ space: 12 }) {
-            Image($r('app.media.ic_people'))
-              .width(20)
-              .height(20)
-              .fillColor('#999')
-            Column() {
-              TextInput({ placeholder: '请输入账号/手机号', text: this.username })
-                .width('100%')
-                .height(44)
-                .backgroundColor('transparent')
-                .fontSize(14)
-                .onChange((v: string) => this.username = v)
-            }
-            .layoutWeight(1)
-            .height(44)
-            .justifyContent(FlexAlign.Center)
-
-            Divider()
-              .vertical(true)
-              .strokeWidth(1)
-              .color('#DDD')
-              .height(20)
-
-            if (this.username) {
-              Text('清除')
-                .fontSize(12)
-                .fontColor('#2B7FFF')
-                .onClick(() => this.username = '')
-                .padding({ right: 4 })
-            }
-          }
-          .padding({ left: 16, right: 12 })
-          .height(44)
-          .backgroundColor('#FFFFFF')
-          .border({ width: 1, color: '#E0E0E0' })
-          .borderRadius(22)
-
-          // 密码输入框
-          Row({ space: 12 }) {
-            Image($r('app.media.lock'))
-              .width(20)
-              .height(20)
-              .fillColor('#999')
-            Column() {
-              TextInput({ placeholder: '请输入密码', text: this.password })
-                .width('100%')
-                .height(44)
-                .backgroundColor('transparent')
-                .fontSize(14)
-                .type(InputType.Password)
-                .onChange((v: string) => this.password = v)
-            }
-            .layoutWeight(1)
-            .height(44)
-            .justifyContent(FlexAlign.Center)
-
-            Divider()
-              .vertical(true)
-              .strokeWidth(1)
-              .color('#DDD')
-              .height(20)
-
-            Text('显示')
+          // Username input
+          Column({ space: 6 }) {
+            Text('账号/手机号')
               .fontSize(12)
-              .fontColor('#2B7FFF')
-              .padding({ right: 4 })
+              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+            TextInput({ placeholder: '请输入账号或手机号', text: this.username })
+              .width('100%')
+              .height(40)
+              .padding({ left: 12, right: 12 })
+              .borderRadius(8)
+              .backgroundColor($r('sys.color.ohos_id_color_background'))
+              .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+              .fontSize(14)
+              .onChange((v: string) => this.username = v)
           }
-          .padding({ left: 16, right: 12 })
-          .height(44)
-          .backgroundColor('#FFFFFF')
-          .border({ width: 1, color: '#E0E0E0' })
-          .borderRadius(22)
+          .width('100%')
 
-          // 注册和忘记密码按钮
+          // Password input
+          Column({ space: 6 }) {
+            Text('密码')
+              .fontSize(12)
+              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+            TextInput({ placeholder: '请输入密码', text: this.password })
+              .width('100%')
+              .height(40)
+              .padding({ left: 12, right: 12 })
+              .borderRadius(8)
+              .backgroundColor($r('sys.color.ohos_id_color_background'))
+              .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
+              .type(InputType.Password)
+              .fontSize(14)
+              .onChange((v: string) => this.password = v)
+          }
+          .width('100%')
+
+          // Register and forgot password
           Row({ space: 12 }) {
             Button('注册')
               .layoutWeight(1)
-              .height(40)
+              .height(36)
               .fontSize(14)
+              .type(ButtonType.Normal)
+              .backgroundColor($r('sys.color.ohos_id_color_brand'))
               .fontColor(Color.White)
-              .backgroundColor('#2B7FFF')
-              .borderRadius(20)
+              .borderRadius(6)
               .onClick(() => router.pushUrl({ url: 'pages/Register' }))
 
             Button('忘记密码?')
               .layoutWeight(1)
-              .height(40)
+              .height(36)
               .fontSize(14)
+              .type(ButtonType.Normal)
+              .backgroundColor($r('sys.color.ohos_id_color_brand'))
               .fontColor(Color.White)
-              .backgroundColor('#2B7FFF')
-              .borderRadius(20)
+              .borderRadius(6)
           }
 
-          // 身份选择
-          Column({ space: 10 }) {
-            Text('身份选择')
-              .fontSize(14)
-              .fontColor('#333')
+          // Identity selection
+          Column({ space: 8 }) {
+            Text('选择身份')
+              .fontSize(12)
+              .fontColor($r('sys.color.ohos_id_color_text_secondary'))
               .fontWeight(FontWeight.Medium)
 
             Row({ space: 12 }) {
-              this.RoleButton('用户', 'USER')
-              this.RoleButton('商家', 'SELLER')
-              this.RoleButton('医生', 'PET_HOSPITAL')
+              ForEach(['用户', '商家', '医生'], (label: string, index: number) => {
+                const roles: UserRole[] = ['USER', 'SELLER', 'PET_HOSPITAL'];
+                Button(label)
+                  .layoutWeight(1)
+                  .height(36)
+                  .fontSize(13)
+                  .type(ButtonType.Normal)
+                  .backgroundColor(this.selectedRole === roles[index] ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_button_normal'))
+                  .fontColor(this.selectedRole === roles[index] ? Color.White : $r('sys.color.ohos_id_color_text_primary'))
+                  .borderRadius(6)
+                  .onClick(() => this.selectedRole = roles[index])
+              })
             }
             .width('100%')
           }
 
-          // 错误信息
+          // Error message
           if (this.errorText) {
             Text(this.errorText)
               .fontSize(12)
-              .fontColor(Color.Red)
+              .fontColor($r('sys.color.ohos_id_color_text_warning'))
               .width('100%')
               .textAlign(TextAlign.Center)
           }
 
-          // 登录按钮
-          Stack() {
-            Button()
-              .width('100%')
-              .height(50)
-              .borderRadius(25)
-              .linearGradient({
-                angle: 90,
-                colors: [['#FF9D4E', 0.0], ['#FFB347', 1.0]]
-              })
-              .enabled(!this.loading)
-              .onClick(() => this.doLogin())
-
-            Row() {
-              Blank()
-              Text(this.loading ? '登录中…' : '登 录')
-                .fontSize(16)
-                .fontColor(Color.White)
-                .fontWeight(FontWeight.Medium)
-              Blank()
-              if (this.loading) {
-                Image($r('app.media.more'))
-                  .width(20)
-                  .height(20)
-                  .fillColor(Color.White)
-                  .animation({
-                    duration: 1000,
-                    curve: Curve.Linear,
-                    playMode: PlayMode.Loop
-                  })
-              }
-            }
+          // Login button
+          Button(this.loading ? '登录中…' : '登  录')
             .width('100%')
-            .height(50)
-            .padding({ right: 20 })
-          }
+            .height(44)
+            .fontSize(16)
+            .fontWeight(FontWeight.Medium)
+            .type(ButtonType.Capsule)
+            .backgroundColor($r('sys.color.ohos_id_color_brand'))
+            .fontColor(Color.White)
+            .enabled(!this.loading)
+            .onClick(() => this.doLogin())
 
           Blank()
         }
-        .padding({ left: 20, right: 20 })
+        .padding({ left: 20, right: 20, top: 12, bottom: 30 })
         .width('100%')
       }
       .height('100%')
+      .width('100%')
     }
-    .width('100%')
     .height('100%')
-  }
-
-  @Builder RoleButton(label: string, role: UserRole) {
-    Button(label)
-      .layoutWeight(1)
-      .height(36)
-      .fontSize(13)
-      .backgroundColor(this.selectedRole === role ? '#FFB88C' : '#FFFFFF')
-      .fontColor(this.selectedRole === role ? Color.White : '#666')
-      .border({ width: 1, color: this.selectedRole === role ? '#FF9D4E' : '#DDD' })
-      .borderRadius(18)
-      .onClick(() => this.selectedRole = role)
+    .width('100%')
+    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
   }
 }

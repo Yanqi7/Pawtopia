@@ -23,7 +23,9 @@ struct MainTabs {
     Stack() {
       if (!this.ready) {
         Column() {
-          Text('加载中').fontSize(14).fontColor('#666')
+          Text('加载中…')
+            .fontSize(14)
+            .fontColor($r('sys.color.ohos_id_color_text_secondary'))
         }
         .height('100%')
         .width('100%')
@@ -35,27 +37,32 @@ struct MainTabs {
         Tabs({ barPosition: BarPosition.End, index: this.currentTabIndex }) {
           TabContent() {
             CommunityTab()
-          }.tabBar(this.TabBarBuilder(0, 'home.png', '社区'))
+          }
+          .tabBar(this.TabBarBuilder(0, 'home.png', '社区'))
 
           TabContent() {
             AdoptTab()
-          }.tabBar(this.TabBarBuilder(1, 'like.png', '领养'))
+          }
+          .tabBar(this.TabBarBuilder(1, 'like.png', '领养'))
 
           TabContent() {
             PetProfileTab()
-          }.tabBar(this.TabBarBuilder(2, 'dangan.png', '宠物档案'))
+          }
+          .tabBar(this.TabBarBuilder(2, 'dangan.png', '档案'))
 
           TabContent() {
             MallTab()
-          }.tabBar(this.TabBarBuilder(3, 'shopping.png', '购物商城'))
+          }
+          .tabBar(this.TabBarBuilder(3, 'shopping.png', '商城'))
 
           TabContent() {
             MeTab()
-          }.tabBar(this.TabBarBuilder(4, 'wode.png', '我的'))
+          }
+          .tabBar(this.TabBarBuilder(4, 'wode.png', '我的'))
         }
         .width('100%')
         .height('100%')
-        .backgroundColor('#FFFFFF')
+        .backgroundColor($r('sys.color.ohos_id_color_background'))
         .onChange((index: number) => {
           this.currentTabIndex = index;
         })
@@ -70,12 +77,13 @@ struct MainTabs {
       Image($r(`app.media.${icon}`))
         .width(24)
         .height(24)
-        .fillColor(this.currentTabIndex === index ? '#2B7FFF' : '#999')
+        .fillColor(this.currentTabIndex === index ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_text_secondary'))
       Text(label)
-        .fontSize(11)
-        .fontColor(this.currentTabIndex === index ? '#2B7FFF' : '#999')
+        .fontSize(10)
+        .fontColor(this.currentTabIndex === index ? $r('sys.color.ohos_id_color_brand') : $r('sys.color.ohos_id_color_text_secondary'))
     }
     .width('100%')
     .alignItems(HorizontalAlign.Center)
+    .padding({ top: 8, bottom: 8 })
   }
 }

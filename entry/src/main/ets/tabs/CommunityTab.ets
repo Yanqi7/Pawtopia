@@ -49,38 +49,69 @@ export struct CommunityTab {
   build() {
     Stack() {
       Column() {
-        // Top header with avatar, search, more
-        Row({ space: 10 }) {
-          Image($r('app.media.people'))
-            .width(40)
-            .height(40)
-            .borderRadius(20)
+        // Top header with search
+        Row({ space: 8 }) {
           TextInput({ placeholder: '搜索帖子/话题/用户' })
             .layoutWeight(1)
             .height(36)
-            .backgroundColor('#F0F2F5')
-            .borderRadius(18)
             .padding({ left: 12, right: 12 })
+            .borderRadius(18)
+            .backgroundColor($r('sys.color.ohos_id_color_button_normal'))
+            .border({ width: 1, color: $r('sys.color.ohos_id_color_border') })
           Image($r('app.media.more'))
             .width(24)
             .height(24)
+            .fillColor($r('sys.color.ohos_id_color_text_secondary'))
         }
         .padding({ left: 16, right: 16, top: 12, bottom: 12 })
 
-        // Action icons
-        Row({ space: 30 }) {
-          Column({ space: 4 }) {
-            Image($r('app.media.tiezi')).width(40).height(40).borderRadius(20).backgroundColor('#E8F4FF')
-            Text('我的帖子').fontSize(11).fontColor('#666')
-          }.alignItems(HorizontalAlign.Center)
-          Column({ space: 4 }) {
-            Image($r('app.media.weiyang')).width(40).height(40).borderRadius(20).backgroundColor('#E8F4FF')
-            Text('喂养').fontSize(11).fontColor('#666')
-          }.alignItems(HorizontalAlign.Center)
-          Column({ space: 4 }) {
-            Image($r('app.media.guanzhu')).width(40).height(40).borderRadius(20).backgroundColor('#E8F4FF')
-            Text('我的关注').fontSize(11).fontColor('#666')
-          }.alignItems(HorizontalAlign.Center)
+        // Action row
+        Row({ space: 20 }) {
+          Column({ space: 6 }) {
+            Stack() {
+              Circle()
+                .width(44)
+                .height(44)
+                .fill($r('sys.color.ohos_id_color_button_normal'))
+              Image($r('app.media.tiezi'))
+                .width(20)
+                .height(20)
+                .fillColor($r('sys.color.ohos_id_color_brand'))
+            }
+            Text('我的帖子').fontSize(10).fontColor($r('sys.color.ohos_id_color_text_secondary'))
+          }
+          .alignItems(HorizontalAlign.Center)
+
+          Column({ space: 6 }) {
+            Stack() {
+              Circle()
+                .width(44)
+                .height(44)
+                .fill($r('sys.color.ohos_id_color_button_normal'))
+              Image($r('app.media.weiyang'))
+                .width(20)
+                .height(20)
+                .fillColor($r('sys.color.ohos_id_color_brand'))
+            }
+            Text('喂养').fontSize(10).fontColor($r('sys.color.ohos_id_color_text_secondary'))
+          }
+          .alignItems(HorizontalAlign.Center)
+
+          Column({ space: 6 }) {
+            Stack() {
+              Circle()
+                .width(44)
+                .height(44)
+                .fill($r('sys.color.ohos_id_color_button_normal'))
+              Image($r('app.media.guanzhu'))
+                .width(20)
+                .height(20)
+                .fillColor($r('sys.color.ohos_id_color_brand'))
+            }
+            Text('我的关注').fontSize(10).fontColor($r('sys.color.ohos_id_color_text_secondary'))
+          }
+          .alignItems(HorizontalAlign.Center)
+
           Blank()
         }
         .padding({ left: 16, right: 16, bottom: 12 })
@@ -91,7 +122,10 @@ export struct CommunityTab {
         }
 
         if (this.errorText) {
-          Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
+          Text(this.errorText)
+            .fontSize(13)
+            .fontColor($r('sys.color.ohos_id_color_text_warning'))
+            .padding(16)
         }
 
         // Posts list
@@ -99,36 +133,44 @@ export struct CommunityTab {
           ForEach(this.posts, (post: Post) => {
             ListItem() {
               Column({ space: 8 }) {
-                // Post header
                 Row({ space: 8 }) {
                   Image($r('app.media.people')).width(32).height(32).borderRadius(16)
                   Column({ space: 2 }) {
-                    Text(post.title).fontSize(14).fontWeight(FontWeight.Medium).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-                    Text('2小时前').fontSize(11).fontColor('#999')
-                  }.layoutWeight(1)
-                  Text('...').fontSize(16).fontColor('#999')
+                    Text(post.title)
+                      .fontSize(14)
+                      .fontWeight(FontWeight.Medium)
+                      .maxLines(1)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    Text('2小时前')
+                      .fontSize(11)
+                      .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                  }
+                  .layoutWeight(1)
+                  Text('…')
+                    .fontSize(16)
+                    .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
                 }
 
-                // Post content with image
                 if (post.imageUrls) {
                   Image(post.imageUrls)
                     .width('100%')
-                    .height(180)
+                    .height(160)
                     .borderRadius(8)
                     .objectFit(ImageFit.Cover)
                 }
 
-                // Engagement stats
                 Row({ space: 12 }) {
-                  Text(`👍 ${post.likeCount ?? 0}`).fontSize(12).fontColor('#999')
-                  Text(`💬 ${post.commentCount ?? 0}`).fontSize(12).fontColor('#999')
-                  Text(`👁 ${post.viewCount ?? 0}`).fontSize(12).fontColor('#999')
+                  Text(`👍 ${post.likeCount ?? 0}`).fontSize(12).fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                  Text(`💬 ${post.commentCount ?? 0}`).fontSize(12).fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                  Text(`👁 ${post.viewCount ?? 0}`).fontSize(12).fontColor($r('sys.color.ohos_id_color_text_tertiary'))
                   Blank()
-                  Text('查看详情').fontSize(12).fontColor('#2B7FFF')
+                  Text('查看详情')
+                    .fontSize(12)
+                    .fontColor($r('sys.color.ohos_id_color_brand'))
                 }
               }
               .padding(12)
-              .backgroundColor('#F6F7F9')
+              .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
               .borderRadius(12)
             }
             .padding({ left: 16, right: 16, bottom: 10 })
@@ -141,11 +183,16 @@ export struct CommunityTab {
 
           ListItem() {
             if (this.last) {
-              Text('没有更多了').fontSize(12).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(12)
+              Text('没有更多了')
+                .fontSize(12)
+                .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
+                .width('100%')
+                .textAlign(TextAlign.Center)
+                .padding(12)
             } else {
               Text(this.loading ? '加载中…' : '上拉加载更多')
                 .fontSize(12)
-                .fontColor('#999')
+                .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
                 .width('100%')
                 .textAlign(TextAlign.Center)
                 .padding(12)
@@ -162,19 +209,21 @@ export struct CommunityTab {
         Blank()
         Row() {
           Blank()
-          Button()
-            .width(56)
-            .height(56)
-            .borderRadius(28)
-            .backgroundColor('#2B7FFF')
-            .onClick(() => router.pushUrl({ url: 'pages/NewPost' }))
-            .overlay(
-              Text('+')
-                .fontSize(28)
-                .fontColor(Color.White)
-                .fontWeight(FontWeight.Bold),
-              Alignment.Center
-            )
+          Stack() {
+            Button()
+              .width(56)
+              .height(56)
+              .borderRadius(28)
+              .backgroundColor($r('sys.color.ohos_id_color_brand'))
+              .onClick(() => router.pushUrl({ url: 'pages/NewPost' }))
+            Text('+')
+              .fontSize(28)
+              .fontColor(Color.White)
+              .fontWeight(FontWeight.Bold)
+              .align(Alignment.Center)
+          }
+          .width(56)
+          .height(56)
         }
         .padding({ right: 16, bottom: 80 })
         .width('100%')
