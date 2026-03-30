@@ -3,7 +3,6 @@ import promptAction from '@ohos.promptAction';
 import { Api } from '../api/Api';
 import { Pet } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
-import { ErrorText, Field, PrimaryButton, SectionTitle } from '../components/Ui';
 
 interface IdParams {
   id?: number;
@@ -305,35 +304,5 @@ struct PetDetail {
     .height('100%')
     .width('100%')
     .backgroundColor('#F5F5F5')
-  }
-              onChange: (v: string) => this.adoptContactName = v
-            })
-            Field({
-              label: '联系电话',
-              placeholder: '用于联系（必填）',
-              value: this.adoptContactPhone,
-              onChange: (v: string) => this.adoptContactPhone = v,
-              type: InputType.PhoneNumber
-            })
-            Column({ space: 6 }) {
-              Text('申请说明（可选）').fontSize(13).fontColor('#444')
-              TextArea({ placeholder: '简单介绍一下你的情况与领养计划', text: this.adoptMessage })
-                .height(120)
-                .backgroundColor('#F6F7F9')
-                .borderRadius(10)
-                .padding(12)
-                .onChange((v: string) => this.adoptMessage = v)
-            }.width('100%')
-            PrimaryButton({ text: this.adoptSubmitting ? '提交中…' : '提交领养申请', disabled: this.adoptSubmitting, action: () => this.submitAdoptionRequest() })
-          }
-        } else if (this.loading) {
-          Text('加载中…').fontSize(13).fontColor('#666')
-        }
-      }
-      .padding(16)
-      .width('100%');
-    }
-    .height('100%')
-    .width('100%')
   }
 }
