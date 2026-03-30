@@ -37,21 +37,47 @@ export struct PetProfileTab {
   build() {
     Stack() {
       Column() {
-        // Header with search
-        Row({ space: 8 }) {
-          TextInput({ placeholder: '搜索宠物档案' })
+        // 浅粉红顶部区域
+        Column({ space: 8 }) {
+          // 顶部操作栏
+          Row({ space: 12 }) {
+            // 用户头像
+            Image($r('app.media.people'))
+              .width(40)
+              .height(40)
+              .borderRadius(20)
+
+            // 搜索栏
+            Row() {
+              Image($r('app.media.fangdajing'))
+                .width(16)
+                .height(16)
+                .fillColor('#666')
+                .margin({ left: 12 })
+              TextInput({ placeholder: '搜索宠物档案' })
+                .layoutWeight(1)
+                .height(36)
+                .backgroundColor('transparent')
+                .fontSize(14)
+                .border({ width: 0 })
+            }
             .layoutWeight(1)
             .height(36)
-            .padding({ left: 12, right: 12 })
+            .padding({ right: 12 })
+            .backgroundColor(Color.White)
             .borderRadius(18)
-            .backgroundColor('#F0F2F5')
-            .border({ width: 1, color: '#E8E8E8' })
-          Image($r('app.media.more'))
-            .width(24)
-            .height(24)
-            .fillColor('#666666')
+
+            // 更多按钮
+            Image($r('app.media.more'))
+              .width(24)
+              .height(24)
+              .fillColor('#666')
+          }
+          .padding({ left: 16, right: 16 })
         }
-        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+        .width('100%')
+        .backgroundColor('#F5E6F0')
+        .padding({ top: 12, bottom: 8 })
 
         if (!AppStatus.isBackendOnline()) {
           OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
@@ -81,7 +107,7 @@ export struct PetProfileTab {
                     Image($r('app.media.work'))
                       .width(24)
                       .height(24)
-                      .fillColor('#2B7FFF')
+                      .fillColor('#FF69B4')
                       .padding(6)
                   }
                   .width('100%')
@@ -100,12 +126,13 @@ export struct PetProfileTab {
                   .fontColor('#666666')
               }
               .padding(8)
-              .backgroundColor('#F6F7F9')
+              .backgroundColor('#FFF0F6')
               .borderRadius(8)
+              .border({ width: 1, color: '#FFD4E5' })
             }
           }, (pet: Pet) => String(pet.id))
         }
-        .columnsTemplate('1fr 1fr')
+        .columnsTemplate('1fr 1fr 1fr')
         .rowsGap(12)
         .columnsGap(12)
         .padding({ left: 12, right: 12 })
@@ -113,6 +140,7 @@ export struct PetProfileTab {
       }
       .height('100%')
       .width('100%')
+      .backgroundColor('#F9F0F6')
 
       // FAB button
       Column() {
