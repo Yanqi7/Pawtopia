@@ -47,191 +47,212 @@ export struct CommunityTab {
   }
 
   build() {
-    Stack() {
-      Column() {
-        // Top header with search
-        Row({ space: 8 }) {
-          TextInput({ placeholder: '搜索帖子/话题/用户' })
-            .layoutWeight(1)
-            .height(36)
-            .padding({ left: 12, right: 12 })
-            .borderRadius(18)
-            .backgroundColor('#F0F2F5')
-            .border({ width: 1, color: '#E8E8E8' })
+    Column() {
+      // 蓝色顶部区域
+      Column({ space: 12 }) {
+        // 顶部操作栏
+        Row({ space: 12 }) {
+          // 用户头像
+          Image($r('app.media.people'))
+            .width(40)
+            .height(40)
+            .borderRadius(20)
+
+          // 搜索栏
+          Row() {
+            Image($r('app.media.fangdajing'))
+              .width(16)
+              .height(16)
+              .fillColor('#666')
+              .margin({ left: 12 })
+            TextInput({ placeholder: '搜索帖子/话题/用户' })
+              .layoutWeight(1)
+              .height(36)
+              .backgroundColor('transparent')
+              .fontSize(14)
+              .border({ width: 0 })
+          }
+          .layoutWeight(1)
+          .height(36)
+          .padding({ right: 12 })
+          .backgroundColor(Color.White)
+          .borderRadius(18)
+
+          // 更多按钮
           Image($r('app.media.more'))
             .width(24)
             .height(24)
-            .fillColor('#666666')
+            .fillColor('#333')
         }
-        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+        .padding({ left: 16, right: 16 })
 
-        // Action row
-        Row({ space: 20 }) {
-          Column({ space: 6 }) {
+        // 三个圆形按钮
+        Row({ space: 30 }) {
+          Column({ space: 4 }) {
             Stack() {
               Circle()
-                .width(44)
-                .height(44)
-                .fill('#F0F2F5')
+                .width(50)
+                .height(50)
+                .fill('#E0EAFF')
               Image($r('app.media.tiezi'))
-                .width(20)
-                .height(20)
+                .width(24)
+                .height(24)
                 .fillColor('#2B7FFF')
             }
-            Text('我的帖子').fontSize(10).fontColor('#666666')
+            Text('我的帖子')
+              .fontSize(12)
+              .fontColor(Color.White)
           }
           .alignItems(HorizontalAlign.Center)
 
-          Column({ space: 6 }) {
+          Column({ space: 4 }) {
             Stack() {
               Circle()
-                .width(44)
-                .height(44)
-                .fill('#F0F2F5')
+                .width(50)
+                .height(50)
+                .fill('#E0EAFF')
               Image($r('app.media.weiyang'))
-                .width(20)
-                .height(20)
+                .width(24)
+                .height(24)
                 .fillColor('#2B7FFF')
             }
-            Text('喂养').fontSize(10).fontColor('#666666')
+            Text('喂养')
+              .fontSize(12)
+              .fontColor(Color.White)
           }
           .alignItems(HorizontalAlign.Center)
 
-          Column({ space: 6 }) {
+          Column({ space: 4 }) {
             Stack() {
               Circle()
-                .width(44)
-                .height(44)
-                .fill('#F0F2F5')
+                .width(50)
+                .height(50)
+                .fill('#E0EAFF')
               Image($r('app.media.guanzhu'))
-                .width(20)
-                .height(20)
+                .width(24)
+                .height(24)
                 .fillColor('#2B7FFF')
             }
-            Text('我的关注').fontSize(10).fontColor('#666666')
+            Text('我的关注')
+              .fontSize(12)
+              .fontColor(Color.White)
           }
           .alignItems(HorizontalAlign.Center)
 
           Blank()
         }
         .padding({ left: 16, right: 16, bottom: 12 })
+      }
+      .width('100%')
+      .backgroundColor('#E8F4FF')
+      .padding({ top: 12 })
 
-        if (!AppStatus.isBackendOnline()) {
-          OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
-            .padding({ left: 16, right: 16, bottom: 10 })
-        }
+      // 内容区域
+      if (!AppStatus.isBackendOnline()) {
+        OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
+          .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+      }
 
-        if (this.errorText) {
-          Text(this.errorText)
-            .fontSize(13)
-            .fontColor('#ff4d4f')
-            .padding(16)
-        }
+      if (this.errorText) {
+        Text(this.errorText)
+          .fontSize(13)
+          .fontColor(Color.Red)
+          .padding(16)
+      }
 
-        // Posts list
-        List() {
-          ForEach(this.posts, (post: Post) => {
-            ListItem() {
-              Column({ space: 8 }) {
-                Row({ space: 8 }) {
-                  Image($r('app.media.people')).width(32).height(32).borderRadius(16)
-                  Column({ space: 2 }) {
-                    Text(post.title)
-                      .fontSize(14)
-                      .fontWeight(FontWeight.Medium)
-                      .maxLines(1)
-                      .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    Text('2小时前')
-                      .fontSize(11)
-                      .fontColor('#999999')
-                  }
-                  .layoutWeight(1)
-                  Text('…')
-                    .fontSize(16)
-                    .fontColor('#999999')
-                }
-
-                if (post.imageUrls) {
-                  Image(post.imageUrls)
-                    .width('100%')
-                    .height(160)
-                    .borderRadius(8)
-                    .objectFit(ImageFit.Cover)
-                }
-
-                Row({ space: 12 }) {
-                  Text(`👍 ${post.likeCount ?? 0}`).fontSize(12).fontColor('#999999')
-                  Text(`💬 ${post.commentCount ?? 0}`).fontSize(12).fontColor('#999999')
-                  Text(`👁 ${post.viewCount ?? 0}`).fontSize(12).fontColor('#999999')
-                  Blank()
-                  Text('查看详情')
-                    .fontSize(12)
-                    .fontColor('#2B7FFF')
-                }
-              }
-              .padding(12)
-              .backgroundColor('#F6F7F9')
-              .borderRadius(12)
-            }
-            .padding({ left: 16, right: 16, bottom: 10 })
-            .onClick(() => {
-              if (post.id) {
-                router.pushUrl({ url: 'pages/PostDetail', params: { id: post.id } });
-              }
-            })
-          }, (post: Post) => String(post.id))
-
+      // 帖子列表
+      List() {
+        ForEach(this.posts, (post: Post) => {
           ListItem() {
-            if (this.last) {
-              Text('没有更多了')
-                .fontSize(12)
-                .fontColor('#999999')
-                .width('100%')
-                .textAlign(TextAlign.Center)
-                .padding(12)
-            } else {
-              Text(this.loading ? '加载中…' : '上拉加载更多')
-                .fontSize(12)
-                .fontColor('#999999')
-                .width('100%')
-                .textAlign(TextAlign.Center)
-                .padding(12)
-            }
-          }
-        }
-        .onReachEnd(() => this.loadMore())
-      }
-      .height('100%')
-      .width('100%')
+            Column({ space: 8 }) {
+              // 头部：头像 + 标题 + 菜单
+              Row({ space: 8 }) {
+                Stack() {
+                  Circle()
+                    .width(40)
+                    .height(40)
+                    .fill('#B3D9FF')
+                }
 
-      // Floating action button
-      Column() {
-        Blank()
-        Row() {
-          Blank()
-          Stack() {
-            Button()
-              .width(56)
-              .height(56)
-              .borderRadius(28)
-              .backgroundColor('#2B7FFF')
-              .onClick(() => router.pushUrl({ url: 'pages/NewPost' }))
-            Text('+')
-              .fontSize(28)
-              .fontColor(Color.White)
-              .fontWeight(FontWeight.Bold)
-              .align(Alignment.Center)
+                Column({ space: 2 }) {
+                  Text(post.title ?? '')
+                    .fontSize(14)
+                    .fontWeight(FontWeight.Bold)
+                    .maxLines(1)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  Text('发布于2小时前')
+                    .fontSize(11)
+                    .fontColor('#999')
+                }
+                .layoutWeight(1)
+
+                Text('...')
+                  .fontSize(16)
+                  .fontColor('#999')
+              }
+
+              // 内容图片
+              if (post.imageUrls) {
+                Image(post.imageUrls)
+                  .width('100%')
+                  .height(180)
+                  .borderRadius(8)
+                  .objectFit(ImageFit.Cover)
+              }
+
+              // 互动数据
+              Row({ space: 12 }) {
+                Text(`❤️ ${post.likeCount ?? 0}`)
+                  .fontSize(12)
+                  .fontColor('#999')
+                Text(`💬 ${post.commentCount ?? 0}`)
+                  .fontSize(12)
+                  .fontColor('#999')
+                Text(`👁️ ${post.viewCount ?? 0}`)
+                  .fontSize(12)
+                  .fontColor('#999')
+                Blank()
+                Text('查看详情')
+                  .fontSize(12)
+                  .fontColor('#2B7FFF')
+                  .fontWeight(FontWeight.Bold)
+              }
+            }
+            .padding(12)
+            .backgroundColor('#F5F5F5')
+            .borderRadius(12)
           }
-          .width(56)
-          .height(56)
+          .padding({ left: 16, right: 16, bottom: 12 })
+          .onClick(() => {
+            if (post.id) {
+              router.pushUrl({ url: 'pages/PostDetail', params: { id: post.id } });
+            }
+          })
+        }, (post: Post) => String(post.id))
+
+        ListItem() {
+          if (this.last) {
+            Text('没有更多了')
+              .fontSize(12)
+              .fontColor('#999')
+              .width('100%')
+              .textAlign(TextAlign.Center)
+              .padding(12)
+          } else {
+            Text(this.loading ? '加载中…' : '上拉加载更多')
+              .fontSize(12)
+              .fontColor('#999')
+              .width('100%')
+              .textAlign(TextAlign.Center)
+              .padding(12)
+          }
         }
-        .padding({ right: 16, bottom: 80 })
-        .width('100%')
       }
-      .height('100%')
-      .width('100%')
+      .onReachEnd(() => this.loadMore())
+      .layoutWeight(1)
     }
     .height('100%')
     .width('100%')
+    .backgroundColor('#FFFFFF')
   }
 }
