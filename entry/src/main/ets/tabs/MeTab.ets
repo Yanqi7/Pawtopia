@@ -85,7 +85,6 @@ export struct MeTab {
           .padding(16)
           .width('100%')
           .backgroundColor(Color.White)
-          .borderBottom(1, Color.Transparent)
           .onClick(() => router.pushUrl({ url: 'pages/Login' }))
 
           Divider()

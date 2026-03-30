@@ -239,4 +239,31 @@ export struct MallTab {
 
             ListItem() {
               if (this.last) {
-                Text('
+                Text('没有更多了')
+                  .fontSize(12)
+                  .fontColor('#999')
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                  .padding(12)
+              } else {
+                Text(this.loading ? '加载中…' : '上拉加载更多')
+                  .fontSize(12)
+                  .fontColor('#999')
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                  .padding(12)
+              }
+            }
+          }
+          .onReachEnd(() => this.loadMore())
+          .layoutWeight(1)
+        }
+        .layoutWeight(1)
+      }
+      .layoutWeight(1)
+    }
+    .height('100%')
+    .width('100%')
+    .backgroundColor('#FFFFFF')
+  }
+}
