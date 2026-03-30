@@ -96,19 +96,25 @@ export struct OfflineBanner {
   action: () => void = () => {};
 
   build() {
-    Row() {
+    Row({ space: 8 }) {
+      Image($r('app.media.more'))
+        .width(20)
+        .height(20)
+        .fillColor('#FF9D4E')
       Text(this.text)
         .fontSize(12)
         .fontColor('#8A4B00')
         .layoutWeight(1)
-      Text('去设置')
+      Text('重试')
         .fontSize(12)
         .fontColor('#2B7FFF')
+        .fontWeight(FontWeight.Bold)
         .onClick(() => this.action())
     }
-    .padding(10)
+    .padding({ left: 12, right: 12, top: 10, bottom: 10 })
     .backgroundColor('#FFF3D6')
     .borderRadius(10)
     .width('100%')
+    .alignItems(VerticalAlign.Center)
   }
 }

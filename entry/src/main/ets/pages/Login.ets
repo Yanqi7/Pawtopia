@@ -257,41 +257,19 @@ struct Login {
           }
 
           // 登录按钮
-          Stack() {
-            Button()
-              .width('100%')
-              .height(50)
-              .borderRadius(25)
-              .linearGradient({
-                angle: 90,
-                colors: [['#FF9D4E', 0.0], ['#FFB347', 1.0]]
-              })
-              .enabled(!this.loading)
-              .onClick(() => this.doLogin())
-
-            Row() {
-              Blank()
-              Text(this.loading ? '登录中…' : '登 录')
-                .fontSize(16)
-                .fontColor(Color.White)
-                .fontWeight(FontWeight.Medium)
-              Blank()
-              if (this.loading) {
-                Image($r('app.media.more'))
-                  .width(20)
-                  .height(20)
-                  .fillColor(Color.White)
-                  .animation({
-                    duration: 1000,
-                    curve: Curve.Linear,
-                    playMode: PlayMode.Normal
-                  })
-              }
-            }
+          Button(this.loading ? '登录中…' : '登 录')
             .width('100%')
             .height(50)
-            .padding({ right: 20 })
-          }
+            .borderRadius(25)
+            .fontSize(16)
+            .fontColor(Color.White)
+            .fontWeight(FontWeight.Medium)
+            .linearGradient({
+              angle: 90,
+              colors: [['#FF9D4E', 0.0], ['#FFB347', 1.0]]
+            })
+            .enabled(!this.loading)
+            .onClick(() => this.doLogin())
 
           Blank()
         }

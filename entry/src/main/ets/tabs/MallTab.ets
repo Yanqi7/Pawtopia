@@ -228,6 +228,10 @@ export struct MallTab {
                         .backgroundColor('#F0F2F5')
                         .fontColor('#666')
                         .borderRadius(4)
+                        .onClick(async () => {
+                          await CartStore.add(p.id ?? 0, 1);
+                          this.cartCount = CartStore.getTotalCount();
+                        })
                     }
                   }
                   .layoutWeight(1)

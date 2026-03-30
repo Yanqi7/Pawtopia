@@ -96,7 +96,7 @@ export struct AdoptTab {
           ForEach(this.pets, (pet: Pet) => {
             GridItem() {
               Column({ space: 6 }) {
-                Image($r('app.media.dog'))
+                Image(pet.image ? $r(`app.media.${pet.image}`) : $r('app.media.dog'))
                   .width('100%')
                   .height(100)
                   .borderRadius(8)

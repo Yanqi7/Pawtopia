@@ -30,6 +30,7 @@ export interface Pet {
   gender?: PetGender;
   size?: string;
   description?: string;
+  image?: string;
   adoptionStatus?: 'AVAILABLE' | 'PAUSED' | 'ADOPTED';
   adoptionCity?: string;
   adoptionNote?: string;

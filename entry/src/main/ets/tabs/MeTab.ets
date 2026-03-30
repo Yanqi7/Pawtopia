@@ -67,97 +67,223 @@ export struct MeTab {
         .padding({ top: 16 })
 
         // 菜单列表
-        Column() {
-          // 切换账号
-          Row({ space: 12 }) {
-            Image($r('app.media.ic_switch'))
-              .width(24)
-              .height(24)
-              .fillColor('#666')
-            Text('切换账号')
-              .fontSize(14)
-              .fontColor('#333')
-              .layoutWeight(1)
-            Text('>')
-              .fontSize(16)
-              .fontColor('#999')
+        Scroll() {
+          Column({ space: 0 }) {
+            // 我的发布
+            Row({ space: 12 }) {
+              Image($r('app.media.tiezi'))
+                .width(24)
+                .height(24)
+                .fillColor('#2B7FFF')
+              Text('我的发布')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('5')
+                .fontSize(12)
+                .fontColor('#999')
+              Text('>')
+                .fontSize(16)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 我的宠物
+            Row({ space: 12 }) {
+              Image($r('app.media.dangan'))
+                .width(24)
+                .height(24)
+                .fillColor('#FF69B4')
+              Text('我的宠物')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('3')
+                .fontSize(12)
+                .fontColor('#999')
+              Text('>')
+                .fontSize(16)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 我的订单
+            Row({ space: 12 }) {
+              Image($r('app.media.shopping'))
+                .width(24)
+                .height(24)
+                .fillColor('#FF9D4E')
+              Text('我的订单')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('2')
+                .fontSize(12)
+                .fontColor('#999')
+              Text('>')
+                .fontSize(16)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+            .onClick(() => router.pushUrl({ url: 'pages/Orders' }))
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 我的收藏
+            Row({ space: 12 }) {
+              Image($r('app.media.like'))
+                .width(24)
+                .height(24)
+                .fillColor('#FF6B6B')
+              Text('我的收藏')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('12')
+                .fontSize(12)
+                .fontColor('#999')
+              Text('>')
+                .fontSize(16)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 切换账号
+            Row({ space: 12 }) {
+              Image($r('app.media.ic_switch'))
+                .width(24)
+                .height(24)
+                .fillColor('#666')
+              Text('切换账号')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('>')
+                .fontSize(16)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+            .onClick(() => router.pushUrl({ url: 'pages/Login' }))
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 关于我们
+            Row({ space: 12 }) {
+              Image($r('app.media.more'))
+                .width(24)
+                .height(24)
+                .fillColor('#666')
+              Text('关于我们')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('>')
+                .fontSize(16)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 内存清理
+            Row({ space: 12 }) {
+              Image($r('app.media.ic_trash'))
+                .width(24)
+                .height(24)
+                .fillColor('#666')
+              Text('内存清理')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('23.5MB')
+                .fontSize(13)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 版本信息
+            Row({ space: 12 }) {
+              Image($r('app.media.more'))
+                .width(24)
+                .height(24)
+                .fillColor('#666')
+              Text('版本信息')
+                .fontSize(14)
+                .fontColor('#333')
+                .layoutWeight(1)
+              Text('v3.1.2')
+                .fontSize(13)
+                .fontColor('#999')
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+
+            Divider()
+              .strokeWidth(1)
+              .color('#EFEFEF')
+
+            // 退出登录
+            Row({ space: 12 }) {
+              Image($r('app.media.ic_logout'))
+                .width(24)
+                .height(24)
+                .fillColor(Color.Red)
+              Text('退出登录')
+                .fontSize(14)
+                .fontColor(Color.Red)
+                .layoutWeight(1)
+              Text('›')
+                .fontSize(24)
+                .fontColor(Color.Red)
+            }
+            .padding(16)
+            .width('100%')
+            .backgroundColor(Color.White)
+            .onClick(() => this.logout())
           }
-          .padding(16)
           .width('100%')
-          .backgroundColor(Color.White)
-          .onClick(() => router.pushUrl({ url: 'pages/Login' }))
-
-          Divider()
-            .strokeWidth(1)
-            .color('#EFEFEF')
-
-          // 退出登录
-          Row({ space: 12 }) {
-            Image($r('app.media.ic_logout'))
-              .width(24)
-              .height(24)
-              .fillColor(Color.Red)
-            Text('退出登录')
-              .fontSize(14)
-              .fontColor(Color.Red)
-              .layoutWeight(1)
-            Text('›')
-              .fontSize(24)
-              .fontColor(Color.Red)
-          }
-          .padding(16)
-          .width('100%')
-          .backgroundColor(Color.White)
-          .onClick(() => this.logout())
-
-          Divider()
-            .strokeWidth(1)
-            .color('#EFEFEF')
-
-          // 内存清理
-          Row({ space: 12 }) {
-            Image($r('app.media.ic_trash'))
-              .width(24)
-              .height(24)
-              .fillColor('#666')
-            Text('内存清理')
-              .fontSize(14)
-              .fontColor('#333')
-              .layoutWeight(1)
-            Text('23.5MB')
-              .fontSize(13)
-              .fontColor('#999')
-          }
-          .padding(16)
-          .width('100%')
-          .backgroundColor(Color.White)
-
-          Divider()
-            .strokeWidth(1)
-            .color('#EFEFEF')
-
-          // 版本信息
-          Row({ space: 12 }) {
-            Image($r('app.media.more'))
-              .width(24)
-              .height(24)
-              .fillColor('#666')
-            Text('版本信息')
-              .fontSize(14)
-              .fontColor('#333')
-              .layoutWeight(1)
-            Text('v2.3.1')
-              .fontSize(13)
-              .fontColor('#999')
-          }
-          .padding(16)
-          .width('100%')
-          .backgroundColor(Color.White)
         }
         .layoutWeight(1)
 
         // 底部版权信息
-        Text('© 2023 宠物之家 版权所有')
+        Text('© 2026 城宠社区 版权所有')
           .fontSize(12)
           .fontColor('#999')
           .width('100%')

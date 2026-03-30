@@ -99,67 +99,219 @@ struct PostDetail {
   }
 
   build() {
-    Scroll() {
-      Column({ space: 12 }) {
-        Row() {
-          Text('帖子详情').fontSize(18).fontWeight(FontWeight.Bold)
-          Blank()
-          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
-        }
+    Column() {
+      // 顶部导航
+      Row({ space: 12 }) {
+        Image($r('app.media.more'))
+          .width(24)
+          .height(24)
+          .fillColor('#2B7FFF')
+          .onClick(() => router.back())
+        Blank()
+        Text('帖子详情')
+          .fontSize(16)
+          .fontWeight(FontWeight.Bold)
+        Blank()
+        Image($r('app.media.more'))
+          .width(24)
+          .height(24)
+          .fillColor('#999')
+      }
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+      .width('100%')
+      .backgroundColor('#FFFFFF')
+      .border({ width: 1, color: '#F0F0F0' })
 
-        if (this.errorText) {
-          ErrorText({ text: this.errorText })
-        }
+      Scroll() {
+        Column({ space: 16 }) {
+          if (this.errorText) {
+            Text(this.errorText)
+              .fontSize(13)
+              .fontColor(Color.Red)
+              .padding(16)
+          }
 
-        if (this.post) {
-          Column({ space: 8 }) {
-            Text(this.post!.title).fontSize(18).fontWeight(FontWeight.Bold)
-            Text(this.post!.content).fontSize(14).fontColor('#333')
-            Row({ space: 10 }) {
-              Button('点赞')
-                .height(32)
-                .borderRadius(16)
+          if (this.post) {
+            // 帖子头部信息
+            Column({ space: 12 }) {
+              // 用户信息
+              Row({ space: 12 }) {
+                Image($r('app.media.people'))
+                  .width(40)
+                  .height(40)
+                  .borderRadius(20)
+
+                Column({ space: 4 }) {
+                  Text('发布者')
+                    .fontSize(14)
+                    .fontWeight(FontWeight.Medium)
+                  Text('3小时前')
+                    .fontSize(12)
+                    .fontColor('#999')
+                }
+                .layoutWeight(1)
+
+                Text('…')
+                  .fontSize(16)
+                  .fontColor('#999')
+              }
+              .width('100%')
+
+              // 帖子标题
+              Text(this.post!.title)
+                .fontSize(18)
+                .fontWeight(FontWeight.Bold)
+                .width('100%')
+
+              // 帖子内容
+              Text(this.post!.content)
+                .fontSize(14)
+                .fontColor('#333')
+                .width('100%')
+                .lineHeight(1.6)
+
+              // 帖子图片（如有）
+              if (this.post!.imageUrls) {
+                Image($r('app.media.dog'))
+                  .width('100%')
+                  .height(200)
+                  .borderRadius(8)
+                  .objectFit(ImageFit.Cover)
+              }
+
+              // 互动数据
+              Row({ space: 20 }) {
+                Column({ space: 4 }) {
+                  Text(`${this.post!.likeCount ?? 0}`)
+                    .fontSize(14)
+                    .fontWeight(FontWeight.Bold)
+                  Text('赞')
+                    .fontSize(12)
+                    .fontColor('#999')
+                }
+                .alignItems(HorizontalAlign.Center)
+
+                Column({ space: 4 }) {
+                  Text(`${this.post!.commentCount ?? 0}`)
+                    .fontSize(14)
+                    .fontWeight(FontWeight.Bold)
+                  Text('评论')
+                    .fontSize(12)
+                    .fontColor('#999')
+                }
+                .alignItems(HorizontalAlign.Center)
+
+                Column({ space: 4 }) {
+                  Text(`${this.post!.viewCount ?? 0}`)
+                    .fontSize(14)
+                    .fontWeight(FontWeight.Bold)
+                  Text('浏览')
+                    .fontSize(12)
+                    .fontColor('#999')
+                }
+                .alignItems(HorizontalAlign.Center)
+
+                Blank()
+
+                Button('👍 点赞')
+                  .height(36)
+                  .fontSize(12)
+                  .backgroundColor('#FFE8E8')
+                  .fontColor('#FF6B6B')
+                  .borderRadius(18)
+                  .onClick(() => this.like())
+              }
+              .width('100%')
+              .padding({ top: 12, bottom: 12 })
+              .backgroundColor('#F9F9F9')
+              .borderRadius(8)
+            }
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(12)
+          } else if (this.loading) {
+            Text('加载中…')
+              .fontSize(14)
+              .fontColor('#999')
+              .width('100%')
+              .textAlign(TextAlign.Center)
+              .padding(40)
+          }
+
+          // 评论区域
+          Column({ space: 12 }) {
+            Text(`评论（${this.comments.length}）`)
+              .fontSize(14)
+              .fontWeight(FontWeight.Bold)
+
+            // 评论输入框
+            Column({ space: 8 }) {
+              TextArea({ placeholder: '发表你的看法…', text: this.commentText })
+                .height(80)
+                .backgroundColor('#F9F9F9')
+                .border({ width: 1, color: '#E8E8E8' })
+                .borderRadius(8)
+                .padding(12)
+                .onChange((v: string) => this.commentText = v)
+
+              Button(this.submitting ? '发表中…' : '发表评论')
+                .width('100%')
+                .height(40)
                 .backgroundColor('#2B7FFF')
                 .fontColor(Color.White)
-                .onClick(() => this.like())
-              Text(`👍 ${this.post!.likeCount ?? 0}`).fontSize(12).fontColor('#666')
-              Text(`💬 ${this.post!.commentCount ?? 0}`).fontSize(12).fontColor('#666')
-              Text(`👁 ${this.post!.viewCount ?? 0}`).fontSize(12).fontColor('#666')
+                .borderRadius(8)
+                .enabled(!this.submitting)
+                .onClick(() => this.submitComment())
             }
-          }
-          .padding(12)
-          .backgroundColor('#F6F7F9')
-          .borderRadius(12)
-        } else if (this.loading) {
-          Text('加载中…').fontSize(13).fontColor('#666')
-        }
-
-        SectionTitle({ title: `评论（${this.comments.length}）` })
-        Column({ space: 6 }) {
-          TextArea({ placeholder: '写下你的看法…', text: this.commentText })
-            .height(96)
-            .backgroundColor('#F6F7F9')
-            .borderRadius(10)
             .padding(12)
-            .onChange((v: string) => this.commentText = v)
-          PrimaryButton({ text: this.submitting ? '提交中…' : '发表评论', disabled: this.submitting, action: () => this.submitComment() })
-        }
+            .backgroundColor(Color.White)
+            .borderRadius(12)
 
-        ForEach(this.comments, (c: Comment) => {
-          Column({ space: 6 }) {
-            Text(c.content).fontSize(14).fontColor('#333')
-            Text(`点赞 ${c.likeCount ?? 0}`).fontSize(12).fontColor('#999')
+            // 评论列表
+            ForEach(this.comments, (c: Comment) => {
+              Column({ space: 8 }) {
+                Row({ space: 8 }) {
+                  Image($r('app.media.people'))
+                    .width(32)
+                    .height(32)
+                    .borderRadius(16)
+
+                  Column({ space: 4 }) {
+                    Text('评论者')
+                      .fontSize(12)
+                      .fontWeight(FontWeight.Medium)
+                    Text('1小时前')
+                      .fontSize(10)
+                      .fontColor('#999')
+                  }
+                  .layoutWeight(1)
+
+                  Text('赞 ' + (c.likeCount ?? 0))
+                    .fontSize(11)
+                    .fontColor('#2B7FFF')
+                }
+                .width('100%')
+
+                Text(c.content)
+                  .fontSize(13)
+                  .fontColor('#333')
+                  .width('100%')
+                  .lineHeight(1.5)
+              }
+              .padding(12)
+              .backgroundColor(Color.White)
+              .borderRadius(8)
+              .width('100%')
+            }, (c: Comment) => String(c.id))
           }
-          .padding(12)
-          .backgroundColor('#FFFFFF')
-          .borderRadius(10)
-          .border({ width: 1, color: '#EEE' })
-        }, (c: Comment) => String(c.id))
+          .padding(16)
+        }
+        .width('100%')
       }
-      .padding(16)
-      .width('100%')
+      .layoutWeight(1)
     }
     .height('100%')
     .width('100%')
+    .backgroundColor('#F5F5F5')
   }
 }

@@ -97,7 +97,7 @@ export struct PetProfileTab {
             GridItem() {
               Column({ space: 6 }) {
                 Stack() {
-                  Image($r('app.media.dog'))
+                  Image(pet.image ? $r(`app.media.${pet.image}`) : $r('app.media.dog'))
                     .width('100%')
                     .height(100)
                     .borderRadius(8)
