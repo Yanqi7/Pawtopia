@@ -15,7 +15,6 @@ export struct MallTab {
   @State private keyword: string = '';
   @State private cartCount: number = 0;
   @State private selectedPet: string = '狗狗';
-  @State private selectedCategory: string = '';
 
   private petTypes = ['狗狗', '猫咪', '小宠', '水族', '鸟类', '爬宠', '通用用品'];
 
@@ -44,10 +43,7 @@ export struct MallTab {
     this.loading = true;
     this.errorText = '';
     try {
-      const searchKeyword = this.keyword.trim() || this.selectedPet;
-      const res = searchKeyword
-        ? await Api.searchProducts(searchKeyword, this.page, 10)
-        : await Api.getProducts(this.page, 10);
+      const res = await Api.getProducts(this.page, 10);
       this.last = res.last;
       this.products = reset ? res.content : [...this.products, ...res.content];
     } catch (e) {
@@ -60,137 +56,131 @@ export struct MallTab {
 
   build() {
     Column() {
-      // Search bar
-      Row({ space: 8 }) {
-        TextInput({ placeholder: '搜索宠物用品、食品…' })
+      // 蓝色顶部搜索栏区域
+      Column({ space: 8 }) {
+        // 搜索栏 + 购物车 + 相机
+        Row({ space: 8 }) {
+          // 搜索栏
+          Row() {
+            Image($r('app.media.fangdajing'))
+              .width(16)
+              .height(16)
+              .fillColor('#666')
+              .margin({ left: 12 })
+            TextInput({ placeholder: '搜索宠物用品、食品...' })
+              .layoutWeight(1)
+              .height(40)
+              .backgroundColor('transparent')
+              .fontSize(14)
+              .border({ width: 0 })
+          }
           .layoutWeight(1)
-          .height(36)
-          .padding({ left: 12, right: 12 })
-          .borderRadius(18)
-          .backgroundColor('#F0F2F5')
-          .border({ width: 1, color: '#E8E8E8' })
-          .onChange((v: string) => this.keyword = v)
-        Stack() {
+          .height(40)
+          .padding({ right: 12 })
+          .backgroundColor(Color.White)
+          .borderRadius(8)
+
+          // 购物车按钮
+          Stack() {
+            Button()
+              .width(40)
+              .height(40)
+              .borderRadius(8)
+              .backgroundColor('#2B7FFF')
+              .onClick(() => router.pushUrl({ url: 'pages/Cart' }))
+            Image($r('app.media.gouwuche'))
+              .width(20)
+              .height(20)
+              .fillColor(Color.White)
+            if (this.cartCount > 0) {
+              Text(String(this.cartCount))
+                .fontSize(10)
+                .fontColor(Color.White)
+                .backgroundColor(Color.Red)
+                .borderRadius(10)
+                .padding({ left: 4, right: 4, top: 2, bottom: 2 })
+                .position({ right: -8, top: -8 })
+            }
+          }
+
+          // 相机按钮
           Button()
-            .width(36)
-            .height(36)
-            .borderRadius(6)
+            .width(40)
+            .height(40)
+            .borderRadius(8)
             .backgroundColor('transparent')
           Image($r('app.media.zhaoxiangji'))
             .width(20)
             .height(20)
-            .fillColor('#666666')
+            .fillColor('#2B7FFF')
         }
-        Stack() {
-          Button()
-            .width(36)
-            .height(36)
-            .borderRadius(6)
-            .backgroundColor('#2B7FFF')
-            .onClick(() => router.pushUrl({ url: 'pages/Cart' }))
-          Image($r('app.media.gouwuche'))
-            .width(20)
-            .height(20)
-            .fillColor(Color.White)
-          if (this.cartCount > 0) {
-            Text(String(this.cartCount))
-              .fontSize(10)
-              .fontColor(Color.White)
-              .backgroundColor('#ff4d4f')
-              .borderRadius(10)
-              .padding({ left: 4, right: 4, top: 2, bottom: 2 })
-              .position({ right: -8, top: -8 })
-          }
-        }
-      }
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+        .padding({ left: 16, right: 16, top: 12, bottom: 8 })
 
-      // Promo tags
-      Scroll() {
-        Row({ space: 8 }) {
-          Button('今日特惠')
-            .height(32)
-            .fontSize(12)
-            .type(ButtonType.Normal)
-            .backgroundColor(Color.White)
-            .fontColor('#2B7FFF')
-            .borderRadius(16)
-            .border({ width: 1, color: '#2B7FFF' })
-          Button('新品上架')
-            .height(32)
-            .fontSize(12)
-            .type(ButtonType.Normal)
-            .backgroundColor('#2B7FFF')
-            .fontColor(Color.White)
-            .borderRadius(16)
-          Button('宠物医院合作')
-            .height(32)
-            .fontSize(12)
-            .type(ButtonType.Normal)
-            .backgroundColor(Color.White)
-            .fontColor('#ff4d4f')
-            .borderRadius(16)
-            .border({ width: 1, color: '#ff4d4f' })
+        // 标签
+        Scroll() {
+          Row({ space: 8 }) {
+            Button('今日特惠')
+              .height(32)
+              .fontSize(12)
+              .backgroundColor(Color.White)
+              .fontColor('#2B7FFF')
+              .borderRadius(16)
+              .border({ width: 1, color: '#2B7FFF' })
+            Button('新品上架')
+              .height(32)
+              .fontSize(12)
+              .backgroundColor('#2B7FFF')
+              .fontColor(Color.White)
+              .borderRadius(16)
+            Button('宠物医院合作')
+              .height(32)
+              .fontSize(12)
+              .backgroundColor(Color.White)
+              .fontColor('#FF9D4E')
+              .borderRadius(16)
+              .border({ width: 1, color: '#FF9D4E' })
+          }
+          .padding({ left: 16, right: 16, bottom: 8 })
         }
-        .padding({ left: 16, right: 16, bottom: 12 })
+        .scrollable(ScrollDirection.Horizontal)
+        .scrollBar(BarState.Off)
       }
-      .scrollable(ScrollDirection.Horizontal)
-      .scrollBar(BarState.Off)
+      .width('100%')
+      .backgroundColor('#3B9AFF')
 
       if (!AppStatus.isBackendOnline()) {
         OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
-          .padding({ left: 16, right: 16, bottom: 10 })
+          .padding({ left: 16, right: 16, top: 10, bottom: 10 })
       }
 
       if (this.errorText) {
-        Text(this.errorText)
-          .fontSize(13)
-          .fontColor('#ff4d4f')
-          .padding(16)
+        Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
       }
 
-      // Two-panel layout
+      // 两面板布局
       Row() {
-        // Left sidebar
+        // 左侧分类菜单
         Scroll() {
           Column() {
             ForEach(this.petTypes, (type: string) => {
               Button(type)
                 .width('100%')
-                .height(36)
+                .height(44)
                 .fontSize(12)
-                .type(ButtonType.Normal)
-                .backgroundColor(this.selectedPet === type ? '#2B7FFF' : '#F0F2F5')
-                .fontColor(this.selectedPet === type ? Color.White : '#333333')
-                .borderRadius(6)
-                .onClick(() => { this.selectedPet = type; this.refresh(); })
-                .margin({ bottom: 8 })
+                .backgroundColor(this.selectedPet === type ? '#2B7FFF' : Color.White)
+                .fontColor(this.selectedPet === type ? Color.White : '#666')
+                .borderRadius(0)
+                .onClick(() => {this.selectedPet = type; this.refresh();})
             })
           }
           .padding(8)
         }
         .width(80)
-        .backgroundColor('#F6F7F9')
+        .backgroundColor('#F5F5F5')
 
-        // Right content
+        // 右侧产品列表
         Column() {
-          // Category tabs
-          Row({ space: 8 }) {
-            ForEach(['食品', '玩具', '服饰', '健康护理'], (cat: string) => {
-              Button(cat)
-                .height(32)
-                .fontSize(11)
-                .type(ButtonType.Normal)
-                .backgroundColor(this.selectedCategory === cat ? '#2B7FFF' : '#F0F2F5')
-                .fontColor(this.selectedCategory === cat ? Color.White : '#333333')
-                .borderRadius(6)
-                .onClick(() => { this.selectedCategory = cat; this.refresh(); })
-            })
-          }
-          .padding({ left: 12, right: 12, bottom: 12 })
-          .layoutWeight(0)
-
-          // Product list
+          // 产品列表
           List() {
             ForEach(this.products, (p: Product) => {
               ListItem() {
@@ -200,6 +190,7 @@ export struct MallTab {
                     .height(60)
                     .borderRadius(8)
                     .objectFit(ImageFit.Cover)
+
                   Column({ space: 4 }) {
                     Row() {
                       Text(p.name)
@@ -209,69 +200,43 @@ export struct MallTab {
                       Text('新')
                         .fontSize(10)
                         .fontColor(Color.White)
-                        .backgroundColor('#ff4d4f')
+                        .backgroundColor(Color.Red)
                         .padding({ left: 4, right: 4 })
                         .borderRadius(2)
                     }
+
                     Text(p.description ?? '')
                       .fontSize(11)
-                      .fontColor('#666666')
+                      .fontColor('#666')
                       .maxLines(1)
                       .textOverflow({ overflow: TextOverflow.Ellipsis })
+
                     Text(`￥${p.price}`)
                       .fontSize(13)
                       .fontWeight(FontWeight.Medium)
-                      .fontColor('#ff4d4f')
+                      .fontColor(Color.Red)
+
                     Row() {
                       Text(`好评率${Math.floor(Math.random() * 30 + 70)}%`)
                         .fontSize(10)
-                        .fontColor('#666666')
+                        .fontColor('#999')
                       Blank()
-                      Stack() {
-                        Button()
-                          .width(24)
-                          .height(24)
-                          .borderRadius(4)
-                          .backgroundColor('#F0F2F5')
-                        Text('+')
-                          .fontSize(12)
-                          .fontColor('#333333')
-                          .align(Alignment.Center)
-                      }
+                      Button('+')
+                        .width(24)
+                        .height(24)
+                        .fontSize(12)
+                        .backgroundColor('#F0F2F5')
+                        .fontColor('#666')
+                        .borderRadius(4)
                     }
                   }
                   .layoutWeight(1)
                 }
               }
+              .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+              .onClick(() => router.pushUrl({ url: 'pages/ProductDetail', params: { id: p.id } }))
             }, (p: Product) => String(p.id))
 
             ListItem() {
               if (this.last) {
-                Text('没有更多了')
-                  .fontSize(12)
-                  .fontColor('#666666')
-                  .width('100%')
-                  .textAlign(TextAlign.Center)
-                  .padding(12)
-              } else {
-                Text(this.loading ? '加载中…' : '上拉加载更多')
-                  .fontSize(12)
-                  .fontColor('#666666')
-                  .width('100%')
-                  .textAlign(TextAlign.Center)
-                  .padding(12)
-              }
-            }
-          }
-          .onReachEnd(() => this.loadMore())
-          .layoutWeight(1)
-        }
-        .layoutWeight(1)
-      }
-      .layoutWeight(1)
-    }
-    .height('100%')
-    .width('100%')
-    .backgroundColor('#FFFFFF')
-  }
-}
+                Text('

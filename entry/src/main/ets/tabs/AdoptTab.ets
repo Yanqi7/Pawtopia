@@ -46,45 +46,41 @@ export struct AdoptTab {
   build() {
     Stack() {
       Column() {
-        // Header with search
-        Row({ space: 8 }) {
-          TextInput({ placeholder: '搜索领养宠物/地点' })
-            .layoutWeight(1)
-            .height(36)
-            .padding({ left: 12, right: 12 })
-            .borderRadius(18)
-            .backgroundColor('#F0F2F5')
-            .border({ width: 1, color: '#E8E8E8' })
-          Image($r('app.media.more'))
-            .width(24)
-            .height(24)
-            .fillColor('#666666')
+        // 蓝色顶部
+        Column({ space: 8 }) {
+          Row({ space: 8 }) {
+            Image($r('app.media.people')).width(40).height(40).borderRadius(20)
+            TextInput({ placeholder: '搜索领养宠物/地点' })
+              .layoutWeight(1)
+              .height(36)
+              .padding({ left: 12, right: 12 })
+              .borderRadius(18)
+              .backgroundColor(Color.White)
+            Image($r('app.media.more')).width(24).height(24).fillColor(Color.White)
+          }
+          .padding({ left: 16, right: 16 })
+
+          Row({ space: 8 }) {
+            Button('全部')
+              .height(32)
+              .backgroundColor(this.filter === 'ALL' ? Color.White : 'transparent')
+              .fontColor(this.filter === 'ALL' ? '#2B7FFF' : Color.White)
+              .onClick(() => { this.filter = 'ALL'; this.reload(); })
+            Button('我发布的')
+              .height(32)
+              .backgroundColor(this.filter === 'MINE' ? Color.White : 'transparent')
+              .fontColor(this.filter === 'MINE' ? '#2B7FFF' : Color.White)
+              .onClick(() => { this.filter = 'MINE'; this.reload(); })
+            Blank()
+          }
+          .padding({ left: 16, right: 16, bottom: 8 })
         }
-        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-
-        // Filter buttons
-        Row({ space: 8 }) {
-          Button(this.filter === 'ALL' ? '全部' : '全部')
-            .height(32)
-            .fontSize(13)
-            .type(ButtonType.Normal)
-            .backgroundColor(this.filter === 'ALL' ? '#2B7FFF' : '#F0F2F5')
-            .fontColor(this.filter === 'ALL' ? Color.White : '#333333')
-            .borderRadius(16)
-            .onClick(() => { this.filter = 'ALL'; this.reload(); })
-
-          Button(this.filter === 'MINE' ? '我发布的' : '我发布的')
-            .height(32)
-            .fontSize(13)
-            .type(ButtonType.Normal)
-            .backgroundColor(this.filter === 'MINE' ? '#2B7FFF' : '#F0F2F5')
-            .fontColor(this.filter === 'MINE' ? Color.White : '#333333')
-            .borderRadius(16)
-            .onClick(() => { this.filter = 'MINE'; this.reload(); })
-
-          Blank()
-        }
-        .padding({ left: 16, right: 16, bottom: 12 })
+        .width('100%')
+        .linearGradient({
+          angle: 135,
+          colors: [['#3B9AFF', 0.0], ['#2B7FFF', 1.0]]
+        })
+        .padding({ top: 12 })
 
         if (!AppStatus.isBackendOnline()) {
           OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
@@ -92,31 +88,19 @@ export struct AdoptTab {
         }
 
         if (this.errorText) {
-          Text(this.errorText)
-            .fontSize(13)
-            .fontColor('#ff4d4f')
-            .padding(16)
+          Text(this.errorText).fontSize(13).fontColor(Color.Red).padding(16)
         }
 
-        // Grid layout for pets
+        // 3列网格
         Grid() {
           ForEach(this.pets, (pet: Pet) => {
             GridItem() {
               Column({ space: 6 }) {
-                if (pet.adoptionStatus !== 'ADOPTED') {
-                  Image($r('app.media.dog'))
-                    .width('100%')
-                    .height(100)
-                    .borderRadius(8)
-                    .objectFit(ImageFit.Cover)
-                } else {
-                  Image($r('app.media.dog'))
-                    .width('100%')
-                    .height(100)
-                    .borderRadius(8)
-                    .objectFit(ImageFit.Cover)
-                    .opacity(0.5)
-                }
+                Image($r('app.media.dog'))
+                  .width('100%')
+                  .height(100)
+                  .borderRadius(8)
+                  .objectFit(ImageFit.Cover)
                 Text(pet.name ?? '宠物名称')
                   .fontSize(13)
                   .fontWeight(FontWeight.Medium)
@@ -124,20 +108,11 @@ export struct AdoptTab {
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                 Text(`暂住地: ${pet.adoptionCity ?? '暂无'}`)
                   .fontSize(11)
-                  .fontColor('#666666')
-                  .maxLines(1)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .fontColor('#666')
                 Row() {
-                  Text('状态: 良好')
-                    .fontSize(11)
-                    .fontColor('#2B7FFF')
-                    .backgroundColor('#EAF2FF')
-                    .padding({ left: 4, right: 4, top: 2, bottom: 2 })
-                    .borderRadius(4)
+                  Text('状态: 良好').fontSize(11).fontColor('#2B7FFF').backgroundColor('#EAF2FF').padding({ left: 4, right: 4, top: 2, bottom: 2 }).borderRadius(4)
                   if (pet.age) {
-                    Text(`${pet.age}月`)
-                      .fontSize(11)
-                      .fontColor('#999999')
+                    Text(`${pet.age}月`).fontSize(11).fontColor('#999')
                   }
                 }
               }
@@ -147,16 +122,14 @@ export struct AdoptTab {
             }
           }, (pet: Pet) => String(pet.id))
         }
-        .columnsTemplate('1fr 1fr')
-        .rowsGap(12)
-        .columnsGap(12)
+        .columnsTemplate('1fr 1fr 1fr')
         .padding({ left: 12, right: 12 })
         .layoutWeight(1)
       }
       .height('100%')
       .width('100%')
 
-      // Floating action button
+      // FAB
       Column() {
         Blank()
         Row() {
