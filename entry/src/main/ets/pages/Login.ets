@@ -89,27 +89,35 @@ struct Login {
           // APP标题和狗狗头像
           Row() {
             Blank()
-            Column({ space: 4 }) {
-              Text('APP')
-                .fontSize(36)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#6B8EFF')
+            Column({ space: 8 }) {
               Stack() {
                 Circle()
-                  .width(70)
-                  .height(70)
-                  .fill('#B3D9FF')
+                  .width(80)
+                  .height(80)
+                  .fill('#FFE8F0')
                 Image($r('app.media.dog'))
-                  .width(65)
-                  .height(65)
-                  .borderRadius(32)
+                  .width(75)
+                  .height(75)
+                  .borderRadius(37)
                   .objectFit(ImageFit.Cover)
               }
+
+              Text('城宠社区')
+                .fontSize(28)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#FF69B4')
+                .textAlign(TextAlign.Center)
+
+              Text('和宠物一起发现美好生活')
+                .fontSize(12)
+                .fontColor('#FF9D4E')
+                .textAlign(TextAlign.Center)
             }
             .alignItems(HorizontalAlign.Center)
             Blank()
           }
           .width('100%')
+          .padding({ bottom: 20 })
 
           // 账号输入框
           Row({ space: 12 }) {

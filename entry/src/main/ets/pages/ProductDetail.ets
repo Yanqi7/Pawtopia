@@ -48,54 +48,213 @@ struct ProductDetail {
   }
 
   build() {
-    Scroll() {
-      Column({ space: 12 }) {
-        Row() {
-          Text('商品详情').fontSize(18).fontWeight(FontWeight.Bold)
-          Blank()
-          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
-        }
-
-        if (this.errorText) {
-          ErrorText({ text: this.errorText })
-        }
-
-        if (this.product) {
-          Column({ space: 10 }) {
-            Text(this.product!.name).fontSize(20).fontWeight(FontWeight.Bold)
-            Text(`￥${this.product!.price}`).fontSize(18).fontColor('#2B7FFF').fontWeight(FontWeight.Bold)
-            Text(this.product!.description ?? '暂无描述').fontSize(14).fontColor('#333')
-            Text(`分类：${this.product!.category}  库存：${this.product!.stockQuantity}`).fontSize(12).fontColor('#999')
-          }
-          .padding(12)
-          .backgroundColor('#F6F7F9')
-          .borderRadius(12)
-
-          SectionTitle({ title: '购买数量' })
-          Row({ space: 10 }) {
-            Button('-')
-              .height(36)
-              .width(44)
-              .borderRadius(10)
-              .backgroundColor('#F0F2F5')
-              .onClick(() => this.qty = Math.max(1, this.qty - 1))
-            Text(String(this.qty)).fontSize(16).width(60).textAlign(TextAlign.Center)
-            Button('+')
-              .height(36)
-              .width(44)
-              .borderRadius(10)
-              .backgroundColor('#F0F2F5')
-              .onClick(() => this.qty = Math.min(99, this.qty + 1))
-          }
-          PrimaryButton({ text: '加入购物车', disabled: false, action: () => this.addToCart() })
-        } else if (this.loading) {
-          Text('加载中…').fontSize(13).fontColor('#666')
-        }
+    Column() {
+      // 顶部导航
+      Row({ space: 12 }) {
+        Image($r('app.media.more'))
+          .width(24)
+          .height(24)
+          .fillColor('#2B7FFF')
+          .onClick(() => router.back())
+        Blank()
+        Text('商品详情')
+          .fontSize(16)
+          .fontWeight(FontWeight.Bold)
+        Blank()
+        Image($r('app.media.gouwuche'))
+          .width(24)
+          .height(24)
+          .fillColor('#2B7FFF')
       }
-      .padding(16)
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .width('100%')
+      .backgroundColor('#FFFFFF')
+      .border({ width: 1, color: '#F0F0F0' })
+
+      Scroll() {
+        Column({ space: 16 }) {
+          if (this.errorText) {
+            Text(this.errorText)
+              .fontSize(13)
+              .fontColor(Color.Red)
+              .padding(16)
+          }
+
+          if (this.product) {
+            // 产品图片
+            Image($r('app.media.dog'))
+              .width('100%')
+              .height(240)
+              .borderRadius(12)
+              .objectFit(ImageFit.Cover)
+
+            // 产品信息
+            Column({ space: 12 }) {
+              // 标题和新品标签
+              Row() {
+                Text(this.product!.name)
+                  .fontSize(18)
+                  .fontWeight(FontWeight.Bold)
+                  .layoutWeight(1)
+                Text('新')
+                  .fontSize(10)
+                  .fontColor(Color.White)
+                  .backgroundColor(Color.Red)
+                  .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                  .borderRadius(2)
+              }
+              .width('100%')
+
+              // 价格
+              Row({ space: 8 }) {
+                Text(`￥${this.product!.price}`)
+                  .fontSize(24)
+                  .fontColor(Color.Red)
+                  .fontWeight(FontWeight.Bold)
+                Text(`库存：${this.product!.stockQuantity}件`)
+                  .fontSize(12)
+                  .fontColor('#999')
+              }
+              .width('100%')
+
+              // 描述
+              Text(this.product!.description ?? '暂无描述')
+                .fontSize(14)
+                .fontColor('#333')
+                .width('100%')
+                .lineHeight(1.6)
+
+              // 评分
+              Row({ space: 8 }) {
+                Text('⭐ ' + Math.floor(Math.random() * 20 + 80) / 10)
+                  .fontSize(12)
+                  .fontWeight(FontWeight.Bold)
+                Text('(已有 ' + Math.floor(Math.random() * 900 + 100) + ' 人购买)')
+                  .fontSize(12)
+                  .fontColor('#999')
+              }
+              .width('100%')
+            }
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(12)
+
+            // 购买数量
+            Column({ space: 12 }) {
+              Text('购买数量')
+                .fontSize(14)
+                .fontWeight(FontWeight.Bold)
+
+              Row({ space: 12 }) {
+                Button('-')
+                  .height(36)
+                  .width(40)
+                  .borderRadius(8)
+                  .backgroundColor('#F0F2F5')
+                  .fontColor('#666')
+                  .onClick(() => this.qty = Math.max(1, this.qty - 1))
+
+                Text(String(this.qty))
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Bold)
+                  .layoutWeight(1)
+                  .textAlign(TextAlign.Center)
+
+                Button('+')
+                  .height(36)
+                  .width(40)
+                  .borderRadius(8)
+                  .backgroundColor('#F0F2F5')
+                  .fontColor('#666')
+                  .onClick(() => this.qty = Math.min(99, this.qty + 1))
+              }
+              .width('100%')
+            }
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(12)
+
+            // 产品详情
+            Column({ space: 12 }) {
+              Text('产品详情')
+                .fontSize(14)
+                .fontWeight(FontWeight.Bold)
+
+              Column({ space: 8 }) {
+                Row() {
+                  Text('分类')
+                    .fontSize(13)
+                    .fontColor('#666')
+                    .width(60)
+                  Text(this.product!.category)
+                    .fontSize(13)
+                    .fontColor('#333')
+                    .layoutWeight(1)
+                }
+
+                Row() {
+                  Text('库存')
+                    .fontSize(13)
+                    .fontColor('#666')
+                    .width(60)
+                  Text(`${this.product!.stockQuantity} 件`)
+                    .fontSize(13)
+                    .fontColor('#333')
+                    .layoutWeight(1)
+                }
+              }
+              .width('100%')
+            }
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(12)
+          } else if (this.loading) {
+            Text('加载中…')
+              .fontSize(14)
+              .fontColor('#999')
+              .width('100%')
+              .textAlign(TextAlign.Center)
+              .padding(40)
+          }
+
+          Blank().height(16)
+        }
+        .padding(16)
+      }
+      .layoutWeight(1)
+
+      // 底部操作栏
+      if (this.product) {
+        Row({ space: 12 }) {
+          Button('加入购物车')
+            .height(44)
+            .layoutWeight(1)
+            .backgroundColor('#2B7FFF')
+            .fontColor(Color.White)
+            .borderRadius(8)
+            .fontSize(14)
+            .fontWeight(FontWeight.Bold)
+            .onClick(() => this.addToCart())
+
+          Button('立即购买')
+            .height(44)
+            .layoutWeight(1)
+            .linearGradient({
+              angle: 90,
+              colors: [['#FF9D4E', 0.0], ['#FFB347', 1.0]]
+            })
+            .fontColor(Color.White)
+            .borderRadius(8)
+            .fontSize(14)
+            .fontWeight(FontWeight.Bold)
+            .onClick(() => this.addToCart())
+        }
+        .padding(16)
+        .backgroundColor(Color.White)
+      }
     }
     .height('100%')
     .width('100%')
+    .backgroundColor('#F5F5F5')
   }
 }
