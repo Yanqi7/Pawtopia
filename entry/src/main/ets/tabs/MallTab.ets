@@ -145,7 +145,7 @@ export struct MallTab {
       if (this.errorText) {
         Text(this.errorText)
           .fontSize(13)
-          .fontColor($r('sys.color.ohos_id_color_text_warning'))
+          .fontColor('#ff4d4f')
           .padding(16)
       }
 
