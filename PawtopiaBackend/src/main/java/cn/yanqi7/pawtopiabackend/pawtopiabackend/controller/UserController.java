@@ -1,6 +1,7 @@
 package cn.yanqi7.pawtopiabackend.pawtopiabackend.controller;
 
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.User;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.security.SecurityUtil;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,9 @@ public class UserController {
     // 获取所有用户
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
+        if (!SecurityUtil.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         List<User> users = userService.getAllUsers();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
@@ -28,6 +32,9 @@ public class UserController {
     // 根据ID获取用户
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        if (!SecurityUtil.isSelfOrAdmin(id)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         Optional<User> user = userService.getUserById(id);
         if (user.isPresent()) {
             return new ResponseEntity<>(user.get(), HttpStatus.OK);
@@ -40,21 +47,26 @@ public class UserController {
     @GetMapping("/username/{username}")
     public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
         Optional<User> user = userService.getUserByUsername(username);
-        if (user.isPresent()) {
-            return new ResponseEntity<>(user.get(), HttpStatus.OK);
-        } else {
+        if (user.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        if (!SecurityUtil.isSelfOrAdmin(user.get().getId())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        return new ResponseEntity<>(user.get(), HttpStatus.OK);
     }
     
     // 创建新用户
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
+        if (!SecurityUtil.isAdmin()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         if (userService.existsByUsername(user.getUsername())) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT); // 用户名已存在
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
         if (userService.existsByEmail(user.getEmail())) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT); // 邮箱已存在
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
         User createdUser = userService.createUser(user);
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
@@ -63,9 +75,17 @@ public class UserController {
     // 更新用户信息
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+        if (!SecurityUtil.isSelfOrAdmin(id)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         try {
+            if (!SecurityUtil.isAdmin()) {
+                userDetails.setRole(null);
+            }
             User updatedUser = userService.updateUser(id, userDetails);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -74,6 +94,9 @@ public class UserController {
     // 删除用户
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteUser(@PathVariable Long id) {
+        if (!SecurityUtil.isSelfOrAdmin(id)) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         try {
             userService.deleteUser(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

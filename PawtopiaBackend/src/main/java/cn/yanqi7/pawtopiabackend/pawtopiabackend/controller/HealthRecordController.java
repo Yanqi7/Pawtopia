@@ -20,7 +20,7 @@ import java.util.Optional;
 @RequestMapping("/api/health-records")
 @CrossOrigin(origins = "*")
 public class HealthRecordController {
-    
+
     @Autowired
     private HealthRecordService healthRecordService;
 
@@ -38,37 +38,37 @@ public class HealthRecordController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }
-    
-    // 根据宠物ID获取健康记录
+
+    private void assertHospitalOrAdmin() {
+        if (!SecurityUtil.isAdmin() && SecurityUtil.role() != User.Role.PET_HOSPITAL) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+    }
+
     @GetMapping("/pet/{petId}")
     public ResponseEntity<List<HealthRecord>> getHealthRecordsByPetId(@PathVariable Long petId) {
         assertCanAccessPet(petId);
-        List<HealthRecord> records = healthRecordService.getHealthRecordsByPetId(petId);
-        return new ResponseEntity<>(records, HttpStatus.OK);
+        return new ResponseEntity<>(healthRecordService.getHealthRecordsByPetId(petId), HttpStatus.OK);
     }
-    
-    // 根据宠物ID和记录类型获取健康记录
+
     @GetMapping("/pet/{petId}/type/{recordType}")
     public ResponseEntity<List<HealthRecord>> getHealthRecordsByPetIdAndType(
-            @PathVariable Long petId, 
+            @PathVariable Long petId,
             @PathVariable HealthRecord.RecordType recordType) {
         assertCanAccessPet(petId);
-        List<HealthRecord> records = healthRecordService.getHealthRecordsByPetIdAndType(petId, recordType);
-        return new ResponseEntity<>(records, HttpStatus.OK);
+        return new ResponseEntity<>(healthRecordService.getHealthRecordsByPetIdAndType(petId, recordType), HttpStatus.OK);
     }
-    
-    // 根据日期范围获取健康记录
+
     @GetMapping("/date-range")
     public ResponseEntity<List<HealthRecord>> getHealthRecordsByDateRange(
             @RequestParam String startDate,
             @RequestParam String endDate) {
+        assertHospitalOrAdmin();
         LocalDate start = LocalDate.parse(startDate);
         LocalDate end = LocalDate.parse(endDate);
-        List<HealthRecord> records = healthRecordService.getHealthRecordsByDateRange(start, end);
-        return new ResponseEntity<>(records, HttpStatus.OK);
+        return new ResponseEntity<>(healthRecordService.getHealthRecordsByDateRange(start, end), HttpStatus.OK);
     }
-    
-    // 根据宠物ID和日期范围获取健康记录
+
     @GetMapping("/pet/{petId}/date-range")
     public ResponseEntity<List<HealthRecord>> getHealthRecordsByPetIdAndDateRange(
             @PathVariable Long petId,
@@ -77,62 +77,63 @@ public class HealthRecordController {
         assertCanAccessPet(petId);
         LocalDate start = LocalDate.parse(startDate);
         LocalDate end = LocalDate.parse(endDate);
-        List<HealthRecord> records = healthRecordService.getHealthRecordsByPetIdAndDateRange(petId, start, end);
-        return new ResponseEntity<>(records, HttpStatus.OK);
+        return new ResponseEntity<>(healthRecordService.getHealthRecordsByPetIdAndDateRange(petId, start, end), HttpStatus.OK);
     }
-    
-    // 获取即将到期的预约
+
     @GetMapping("/upcoming-appointments")
     public ResponseEntity<List<HealthRecord>> getUpcomingAppointments(
             @RequestParam String startDate,
             @RequestParam String endDate) {
+        assertHospitalOrAdmin();
         LocalDate start = LocalDate.parse(startDate);
         LocalDate end = LocalDate.parse(endDate);
-        List<HealthRecord> records = healthRecordService.getUpcomingAppointments(start, end);
-        return new ResponseEntity<>(records, HttpStatus.OK);
+        return new ResponseEntity<>(healthRecordService.getUpcomingAppointments(start, end), HttpStatus.OK);
     }
-    
-    // 根据ID获取健康记录
+
     @GetMapping("/{id}")
     public ResponseEntity<HealthRecord> getHealthRecordById(@PathVariable Long id) {
         Optional<HealthRecord> record = healthRecordService.getHealthRecordById(id);
-        if (record.isPresent()) {
-            return new ResponseEntity<>(record.get(), HttpStatus.OK);
-        } else {
+        if (record.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        assertCanAccessPet(record.get().getPetId());
+        return new ResponseEntity<>(record.get(), HttpStatus.OK);
     }
-    
-    // 创建新健康记录
+
     @PostMapping
     public ResponseEntity<HealthRecord> createHealthRecord(@RequestBody HealthRecord healthRecord) {
         if (healthRecord.getPetId() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         assertCanAccessPet(healthRecord.getPetId());
-        HealthRecord createdRecord = healthRecordService.createHealthRecord(healthRecord);
-        return new ResponseEntity<>(createdRecord, HttpStatus.CREATED);
+        return new ResponseEntity<>(healthRecordService.createHealthRecord(healthRecord), HttpStatus.CREATED);
     }
-    
-    // 更新健康记录
+
     @PutMapping("/{id}")
     public ResponseEntity<HealthRecord> updateHealthRecord(@PathVariable Long id, @RequestBody HealthRecord healthRecordDetails) {
+        Optional<HealthRecord> existingRecord = healthRecordService.getHealthRecordById(id);
+        if (existingRecord.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        assertCanAccessPet(existingRecord.get().getPetId());
+        if (!SecurityUtil.isAdmin() && SecurityUtil.role() != User.Role.PET_HOSPITAL) {
+            healthRecordDetails.setPetId(existingRecord.get().getPetId());
+        }
         try {
-            HealthRecord updatedRecord = healthRecordService.updateHealthRecord(id, healthRecordDetails);
-            return new ResponseEntity<>(updatedRecord, HttpStatus.OK);
+            return new ResponseEntity<>(healthRecordService.updateHealthRecord(id, healthRecordDetails), HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    
-    // 删除健康记录
+
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteHealthRecord(@PathVariable Long id) {
-        try {
-            healthRecordService.deleteHealthRecord(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (RuntimeException e) {
+        Optional<HealthRecord> existingRecord = healthRecordService.getHealthRecordById(id);
+        if (existingRecord.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        assertCanAccessPet(existingRecord.get().getPetId());
+        healthRecordService.deleteHealthRecord(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

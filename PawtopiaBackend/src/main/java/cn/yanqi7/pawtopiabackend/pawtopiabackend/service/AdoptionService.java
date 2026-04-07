@@ -5,6 +5,7 @@ import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Pet;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.AdoptionRequestRepository;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.PetRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ public class AdoptionService {
     }
 
     public AdoptionRequest createRequest(AdoptionRequest request) {
+        request.setStatus(AdoptionRequest.Status.PENDING);
         return adoptionRequestRepository.save(request);
     }
 
@@ -43,17 +45,43 @@ public class AdoptionService {
         return adoptionRequestRepository.findByRequesterIdOrderByCreatedAtDesc(requesterId);
     }
 
+    @Transactional
     public AdoptionRequest updateStatus(Long id, AdoptionRequest.Status status) {
-        AdoptionRequest req = adoptionRequestRepository.findById(id).orElseThrow(() -> new RuntimeException("not found"));
-        req.setStatus(status);
-        AdoptionRequest saved = adoptionRequestRepository.save(req);
-        if (status == AdoptionRequest.Status.APPROVED) {
-            petRepository.findById(req.getPetId()).ifPresent(pet -> {
-                pet.setAdoptionStatus(Pet.AdoptionStatus.ADOPTED);
-                petRepository.save(pet);
-            });
+        AdoptionRequest req = adoptionRequestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Adoption request not found with id: " + id));
+        if (req.getStatus() == status) {
+            return req;
         }
-        return saved;
+        if (req.getStatus() != AdoptionRequest.Status.PENDING) {
+            throw new IllegalArgumentException("Only pending adoption requests can be updated");
+        }
+
+        if (status == AdoptionRequest.Status.APPROVED) {
+            Pet pet = petRepository.findById(req.getPetId())
+                    .orElseThrow(() -> new RuntimeException("Pet not found with id: " + req.getPetId()));
+            if (pet.getAdoptionStatus() != Pet.AdoptionStatus.AVAILABLE) {
+                throw new IllegalArgumentException("Pet is not available for adoption");
+            }
+            pet.setAdoptionStatus(Pet.AdoptionStatus.ADOPTED);
+            pet.setOwnerId(req.getRequesterId());
+            petRepository.save(pet);
+
+            List<AdoptionRequest> requests = adoptionRequestRepository.findByPetIdOrderByCreatedAtDesc(req.getPetId());
+            for (AdoptionRequest item : requests) {
+                if (item.getId().equals(req.getId())) {
+                    item.setStatus(AdoptionRequest.Status.APPROVED);
+                } else if (item.getStatus() == AdoptionRequest.Status.PENDING) {
+                    item.setStatus(AdoptionRequest.Status.REJECTED);
+                }
+            }
+            adoptionRequestRepository.saveAll(requests);
+            return requests.stream()
+                    .filter(item -> item.getId().equals(req.getId()))
+                    .findFirst()
+                    .orElse(req);
+        }
+
+        req.setStatus(status);
+        return adoptionRequestRepository.save(req);
     }
 }
-

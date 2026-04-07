@@ -24,13 +24,11 @@ public class AdoptionController {
         this.adoptionRequestRepository = adoptionRequestRepository;
     }
 
-    // 领养列表（匿名可访问）
     @GetMapping("/listings")
     public ResponseEntity<List<Pet>> listings() {
         return new ResponseEntity<>(adoptionService.getAdoptionListings(), HttpStatus.OK);
     }
 
-    // 发起领养申请（需要登录）
     @PostMapping("/pets/{petId}/requests")
     public ResponseEntity<AdoptionRequest> createRequest(@PathVariable Long petId, @RequestBody AdoptionDtos.CreateRequestBody body) {
         Long requesterId = SecurityUtil.userId();
@@ -63,7 +61,6 @@ public class AdoptionController {
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-    // 查看某宠物的领养申请（仅宠物 owner 或 ADMIN）
     @GetMapping("/pets/{petId}/requests")
     public ResponseEntity<List<AdoptionRequest>> getRequestsByPet(@PathVariable Long petId) {
         Long currentUserId = SecurityUtil.userId();
@@ -80,7 +77,6 @@ public class AdoptionController {
         return new ResponseEntity<>(adoptionService.getRequestsByPetId(petId), HttpStatus.OK);
     }
 
-    // 我发起的领养申请（需要登录）
     @GetMapping("/requests/mine")
     public ResponseEntity<List<AdoptionRequest>> myRequests() {
         Long requesterId = SecurityUtil.userId();
@@ -90,12 +86,14 @@ public class AdoptionController {
         return new ResponseEntity<>(adoptionService.getMyRequests(requesterId), HttpStatus.OK);
     }
 
-    // 更新领养申请状态（仅宠物 owner 或 ADMIN）
     @PutMapping("/requests/{id}/status/{status}")
     public ResponseEntity<AdoptionRequest> updateStatus(@PathVariable Long id, @PathVariable AdoptionRequest.Status status) {
         Long currentUserId = SecurityUtil.userId();
         if (currentUserId == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if (status == AdoptionRequest.Status.CANCELLED) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         AdoptionRequest req = adoptionService.getRequest(id).orElse(null);
         if (req == null) {
@@ -104,11 +102,14 @@ public class AdoptionController {
         if (!SecurityUtil.isAdmin() && (req.getOwnerId() == null || !req.getOwnerId().equals(currentUserId))) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
-        AdoptionRequest updated = adoptionService.updateStatus(id, status);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+        try {
+            AdoptionRequest updated = adoptionService.updateStatus(id, status);
+            return new ResponseEntity<>(updated, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
     }
 
-    // 申请者撤回领养申请（申请者本人或 ADMIN）
     @PutMapping("/requests/{id}/cancel")
     public ResponseEntity<AdoptionRequest> cancel(@PathVariable Long id) {
         Long currentUserId = SecurityUtil.userId();
@@ -125,7 +126,11 @@ public class AdoptionController {
         if (req.getStatus() != AdoptionRequest.Status.PENDING) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
-        AdoptionRequest updated = adoptionService.updateStatus(id, AdoptionRequest.Status.CANCELLED);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+        try {
+            AdoptionRequest updated = adoptionService.updateStatus(id, AdoptionRequest.Status.CANCELLED);
+            return new ResponseEntity<>(updated, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
     }
 }

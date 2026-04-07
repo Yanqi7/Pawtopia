@@ -27,9 +27,35 @@ public class SecurityUtil {
         return p == null ? null : p.getRole();
     }
 
+    public static boolean isAuthenticated() {
+        return userId() != null;
+    }
+
     public static boolean isAdmin() {
         User.Role r = role();
         return r == User.Role.ADMIN;
+    }
+
+    public static boolean isSelf(Long targetUserId) {
+        Long currentUserId = userId();
+        return currentUserId != null && currentUserId.equals(targetUserId);
+    }
+
+    public static boolean isSelfOrAdmin(Long targetUserId) {
+        return isAdmin() || isSelf(targetUserId);
+    }
+
+    public static boolean hasAnyRole(User.Role... roles) {
+        User.Role currentRole = role();
+        if (currentRole == null || roles == null) {
+            return false;
+        }
+        for (User.Role role : roles) {
+            if (currentRole == role) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 

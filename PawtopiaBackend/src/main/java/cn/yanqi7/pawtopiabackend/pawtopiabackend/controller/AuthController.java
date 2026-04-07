@@ -50,11 +50,14 @@ public class AuthController {
         if (userRepository.existsByUsername(req.getUsername()) || userRepository.existsByEmail(req.getEmail())) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
+        if (req.getRole() != null && req.getRole() != User.Role.USER) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
         User user = new User();
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
         user.setNickname(req.getNickname());
-        user.setRole(req.getRole() == null ? User.Role.USER : req.getRole());
+        user.setRole(User.Role.USER);
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         User created = userService.createUser(user);
 
