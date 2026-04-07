@@ -27,9 +27,53 @@ export function relativeTime(value?: string): string {
 }
 
 export function postAuthorLabel(userId?: number): string {
-  return userId ? `作者 #${userId}` : '宠友分享';
+  return userId ? `宠友 #${userId}` : '宠友分享';
 }
 
 export function normalizeKeyword(value: string): string {
   return value.trim().toLowerCase();
+}
+
+export function adoptionStatusLabel(status?: string): string {
+  if (status === 'ADOPTED') {
+    return '已领养';
+  }
+  if (status === 'PAUSED') {
+    return '暂缓开放';
+  }
+  return '可申请';
+}
+
+export function petGenderLabel(gender?: string): string {
+  if (gender === 'FEMALE') {
+    return '母';
+  }
+  if (gender === 'MALE') {
+    return '公';
+  }
+  return '未知';
+}
+
+export function productCategoryLabel(category?: string): string {
+  switch (category) {
+    case 'FOOD':
+      return '主粮零食';
+    case 'TOY':
+      return '玩具互动';
+    case 'CLOTHES':
+      return '服饰穿戴';
+    case 'ACCESSORY':
+      return '护理用品';
+    case 'MEDICINE':
+      return '健康护理';
+    default:
+      return '精选好物';
+  }
+}
+
+export function shortDate(value?: string): string {
+  if (!value) {
+    return '最近更新';
+  }
+  return value.length >= 10 ? value.slice(0, 10) : value;
 }

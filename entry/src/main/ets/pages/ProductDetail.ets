@@ -2,7 +2,10 @@ import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Product } from '../model/Models';
 import { CartStore } from '../store/CartStore';
-import { PrimaryButton, ErrorText, SectionTitle } from '../components/Ui';
+import { AppPrompt } from '../common/AppPrompt';
+import { MediaAssets } from '../assets/MediaAssets';
+import { productCategoryLabel, shortDate } from '../common/Formatters';
+import { Theme } from '../common/Theme';
 
 interface IdParams {
   id?: number;
@@ -39,22 +42,24 @@ struct ProductDetail {
     }
   }
 
-  private async addToCart(): Promise<void> {
-    if (!this.productId) {
+  private async addToCart(goCart: boolean): Promise<void> {
+    if (!this.productId || !this.product) {
       return;
     }
     await CartStore.add(this.productId, this.qty);
-    AppRouter.push('pages/Cart');
+    if (goCart) {
+      AppRouter.push('pages/Cart');
+      return;
+    }
+    AppPrompt.toast('已加入购物车');
   }
 
   build() {
     Column() {
-      // 顶部导航
       Row({ space: 12 }) {
-        Image($r('app.media.more'))
+        Image($r('app.media.hero_back'))
           .width(24)
           .height(24)
-          .fillColor('#2B7FFF')
           .onClick(() => AppRouter.back())
         Blank()
         Text('商品详情')
@@ -64,12 +69,12 @@ struct ProductDetail {
         Image($r('app.media.gouwuche'))
           .width(24)
           .height(24)
-          .fillColor('#2B7FFF')
+          .fillColor(Theme.primary)
+          .onClick(() => AppRouter.push('pages/Cart'))
       }
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .width('100%')
       .backgroundColor('#FFFFFF')
-      .border({ width: 1, color: '#F0F0F0' })
 
       Scroll() {
         Column({ space: 16 }) {
@@ -81,127 +86,68 @@ struct ProductDetail {
           }
 
           if (this.product) {
-            // 产品图片
-            Image($r('app.media.dog'))
+            Image(MediaAssets.productImage(this.product.image, this.product.id ?? 0, this.product.category))
               .width('100%')
-              .height(240)
-              .borderRadius(12)
+              .height(260)
+              .borderRadius(18)
               .objectFit(ImageFit.Cover)
 
-            // 产品信息
             Column({ space: 12 }) {
-              // 标题和新品标签
-              Row() {
-                Text(this.product!.name)
-                  .fontSize(18)
+              Row({ space: 8 }) {
+                Text(this.product.name)
+                  .fontSize(20)
                   .fontWeight(FontWeight.Bold)
                   .layoutWeight(1)
-                Text('新')
-                  .fontSize(10)
-                  .fontColor(Color.White)
-                  .backgroundColor(Color.Red)
-                  .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-                  .borderRadius(2)
+                Text(productCategoryLabel(this.product.category))
+                  .fontSize(11)
+                  .fontColor('#FF8A3D')
+                  .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                  .backgroundColor('#FFF1E8')
+                  .borderRadius(12)
               }
-              .width('100%')
-
-              // 价格
-              Row({ space: 8 }) {
-                Text(`￥${this.product!.price}`)
+              Text(this.product.description ?? '暂无描述')
+                .fontSize(14)
+                .fontColor('#333')
+                .lineHeight(22)
+              Row({ space: 10 }) {
+                Text(`￥${this.product.price}`)
                   .fontSize(24)
                   .fontColor(Color.Red)
                   .fontWeight(FontWeight.Bold)
-                Text(`库存：${this.product!.stockQuantity}件`)
+                Text(`库存：${this.product.stockQuantity}`)
+                  .fontSize(12)
+                  .fontColor('#999')
+                Text(`上架：${shortDate(this.product.createdAt)}`)
                   .fontSize(12)
                   .fontColor('#999')
               }
-              .width('100%')
-
-              // 描述
-              Text(this.product!.description ?? '暂无描述')
-                .fontSize(14)
-                .fontColor('#333')
-                .width('100%')
-                .lineHeight(1.6)
-
-              // 评分
-              Row({ space: 8 }) {
-                Text('⭐ ' + Math.floor(Math.random() * 20 + 80) / 10)
-                  .fontSize(12)
-                  .fontWeight(FontWeight.Bold)
-                Text('(已有 ' + Math.floor(Math.random() * 900 + 100) + ' 人购买)')
-                  .fontSize(12)
-                  .fontColor('#999')
-              }
-              .width('100%')
             }
             .padding(16)
             .backgroundColor(Color.White)
             .borderRadius(12)
 
-            // 购买数量
             Column({ space: 12 }) {
               Text('购买数量')
                 .fontSize(14)
                 .fontWeight(FontWeight.Bold)
-
               Row({ space: 12 }) {
                 Button('-')
                   .height(36)
                   .width(40)
                   .borderRadius(8)
                   .backgroundColor('#F0F2F5')
-                  .fontColor('#666')
                   .onClick(() => this.qty = Math.max(1, this.qty - 1))
-
                 Text(String(this.qty))
                   .fontSize(16)
                   .fontWeight(FontWeight.Bold)
                   .layoutWeight(1)
                   .textAlign(TextAlign.Center)
-
                 Button('+')
                   .height(36)
                   .width(40)
                   .borderRadius(8)
                   .backgroundColor('#F0F2F5')
-                  .fontColor('#666')
-                  .onClick(() => this.qty = Math.min(99, this.qty + 1))
-              }
-              .width('100%')
-            }
-            .padding(16)
-            .backgroundColor(Color.White)
-            .borderRadius(12)
-
-            // 产品详情
-            Column({ space: 12 }) {
-              Text('产品详情')
-                .fontSize(14)
-                .fontWeight(FontWeight.Bold)
-
-              Column({ space: 8 }) {
-                Row() {
-                  Text('分类')
-                    .fontSize(13)
-                    .fontColor('#666')
-                    .width(60)
-                  Text(this.product!.category)
-                    .fontSize(13)
-                    .fontColor('#333')
-                    .layoutWeight(1)
-                }
-
-                Row() {
-                  Text('库存')
-                    .fontSize(13)
-                    .fontColor('#666')
-                    .width(60)
-                  Text(`${this.product!.stockQuantity} 件`)
-                    .fontSize(13)
-                    .fontColor('#333')
-                    .layoutWeight(1)
-                }
+                  .onClick(() => this.qty = Math.min(Math.max(1, this.product?.stockQuantity ?? 1), this.qty + 1))
               }
               .width('100%')
             }
@@ -209,7 +155,7 @@ struct ProductDetail {
             .backgroundColor(Color.White)
             .borderRadius(12)
           } else if (this.loading) {
-            Text('加载中…')
+            Text('��载中…')
               .fontSize(14)
               .fontColor('#999')
               .width('100%')
@@ -223,31 +169,26 @@ struct ProductDetail {
       }
       .layoutWeight(1)
 
-      // 底部操作栏
       if (this.product) {
         Row({ space: 12 }) {
           Button('加入购物车')
             .height(44)
             .layoutWeight(1)
-            .backgroundColor('#2B7FFF')
-            .fontColor(Color.White)
-            .borderRadius(8)
+            .backgroundColor('#E8F1FF')
+            .fontColor(Theme.primary)
+            .borderRadius(12)
             .fontSize(14)
-            .fontWeight(FontWeight.Bold)
-            .onClick(() => this.addToCart())
+            .onClick(() => this.addToCart(false))
 
-          Button('立即购买')
+          Button('去结算')
             .height(44)
             .layoutWeight(1)
-            .linearGradient({
-              angle: 90,
-              colors: [['#FF9D4E', 0.0], ['#FFB347', 1.0]]
-            })
+            .backgroundColor(Theme.primary)
             .fontColor(Color.White)
-            .borderRadius(8)
+            .borderRadius(12)
             .fontSize(14)
             .fontWeight(FontWeight.Bold)
-            .onClick(() => this.addToCart())
+            .onClick(() => this.addToCart(true))
         }
         .padding(16)
         .backgroundColor(Color.White)

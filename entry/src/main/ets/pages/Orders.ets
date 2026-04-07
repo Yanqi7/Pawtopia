@@ -1,15 +1,26 @@
 import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
-import { Order, OrderStatus } from '../model/Models';
+import { Order, OrderStatus, Product } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
-import { ErrorText, SectionTitle } from '../components/Ui';
+import { ErrorText } from '../components/Ui';
+import { Theme } from '../common/Theme';
+
+interface OrderLine {
+  order: Order;
+  products: Product[];
+}
+
+interface OrderStatusFilter {
+  status: OrderStatus | 'ALL';
+}
 
 @Entry
 @Component
 struct Orders {
   @State private loading: boolean = false;
   @State private errorText: string = '';
-  @State private orders: Order[] = [];
+  @State private lines: OrderLine[] = [];
+  @State private selectedStatus: OrderStatus | 'ALL' = 'ALL';
 
   aboutToAppear(): void {
     this.load();
@@ -21,17 +32,30 @@ struct Orders {
       AppRouter.replace('pages/Login');
       return;
     }
-    const userId = user.id;
     this.loading = true;
     this.errorText = '';
     try {
-      this.orders = await Api.getMyOrders(userId);
-      this.orders = [...this.orders].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+      const orders = await Api.getMyOrders(user.id);
+      const sorted = [...orders].sort((a: Order, b: Order) => (b.id ?? 0) - (a.id ?? 0));
+      const lines = await Promise.all(sorted.map(async (order: Order) => {
+        const ids = order.productIds.split(',').map((id: string) => Number(id)).filter((id: number) => id > 0);
+        const products = await Promise.all(ids.map((id: number) => Api.getProduct(id).catch(() => undefined)));
+        const line: OrderLine = {
+          order: order,
+          products: products.filter((item) => !!item) as Product[]
+        };
+        return line;
+      }));
+      this.lines = lines;
     } catch (e) {
       this.errorText = (e as Error).message || '加载失败';
     } finally {
       this.loading = false;
     }
+  }
+
+  private visibleLines(): OrderLine[] {
+    return this.lines.filter((line: OrderLine) => this.selectedStatus === 'ALL' || line.order.status === this.selectedStatus);
   }
 
   private async setStatus(orderId: number, status: OrderStatus): Promise<void> {
@@ -48,9 +72,22 @@ struct Orders {
       Row() {
         Text('我的订单').fontSize(18).fontWeight(FontWeight.Bold)
         Blank()
-        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
+        Text('返回').fontSize(14).fontColor(Theme.primary).onClick(() => AppRouter.back())
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
+
+      Scroll() {
+        Row({ space: 8 }) {
+          this.StatusChip('全部', 'ALL')
+          this.StatusChip('待付款', 'PENDING')
+          this.StatusChip('待发货', 'PAID')
+          this.StatusChip('运输中', 'SHIPPED')
+          this.StatusChip('已完成', 'DELIVERED')
+        }
+        .padding({ left: 16, right: 16, bottom: 10 })
+      }
+      .scrollable(ScrollDirection.Horizontal)
+      .scrollBar(BarState.Off)
 
       if (this.errorText) {
         ErrorText({ text: this.errorText })
@@ -58,47 +95,45 @@ struct Orders {
 
       Scroll() {
         Column({ space: 12 }) {
-          if (!this.loading && this.orders.length === 0) {
+          if (!this.loading && this.visibleLines().length === 0) {
             Text('暂无订单').fontSize(13).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(24)
           }
 
-          ForEach(this.orders, (o: Order) => {
-            Column({ space: 8 }) {
-              Text(`订单 #${o.id}`).fontSize(15).fontWeight(FontWeight.Medium)
-              Text(`状态：${o.status}`).fontSize(12).fontColor('#666')
-              Text(`金额：￥${o.totalAmount}`).fontSize(12).fontColor('#666')
-              Text(`商品：${o.productIds}  数量：${o.quantities}`).fontSize(12).fontColor('#999')
-              if (o.shippingAddress) {
-                Text(`地址：${o.shippingAddress}`).fontSize(12).fontColor('#999')
+          ForEach(this.visibleLines(), (line: OrderLine) => {
+            Column({ space: 10 }) {
+              Row() {
+                Text(`订单 #${line.order.id}`).fontSize(15).fontWeight(FontWeight.Medium)
+                Blank()
+                Text(line.order.status).fontSize(12).fontColor(Theme.primary)
               }
-              Row({ space: 10 }) {
-                if (o.status === 'PENDING') {
+              Text(`金额：￥${line.order.totalAmount}`).fontSize(13).fontColor('#333')
+              Text(`下单时间：${line.order.createdAt ?? '-'}`).fontSize(12).fontColor('#999')
+              Text(`收货人：${line.order.contactName ?? '-'} · ${line.order.contactPhone ?? '-'}`).fontSize(12).fontColor('#999')
+              if (line.order.shippingAddress) {
+                Text(`地址：${line.order.shippingAddress}`).fontSize(12).fontColor('#999')
+              }
+              Text(`商品：${line.products.map((product: Product) => product.name).join(' / ') || line.order.productIds}`).fontSize(12).fontColor('#666')
+
+              if (line.order.status === 'PENDING' && line.order.id) {
+                Row({ space: 10 }) {
                   Button('取消')
                     .height(32)
                     .borderRadius(16)
                     .backgroundColor('#F0F2F5')
-                    .onClick(() => {
-                      if (o.id) {
-                        this.setStatus(o.id, 'CANCELLED');
-                      }
-                    })
+                    .onClick(() => this.setStatus(line.order.id!, 'CANCELLED'))
                   Button('标记已支付')
                     .height(32)
                     .borderRadius(16)
-                    .backgroundColor('#2B7FFF')
+                    .backgroundColor(Theme.primary)
                     .fontColor(Color.White)
-                    .onClick(() => {
-                      if (o.id) {
-                        this.setStatus(o.id, 'PAID');
-                      }
-                    })
+                    .onClick(() => this.setStatus(line.order.id!, 'PAID'))
                 }
               }
             }
-            .padding(12)
-            .backgroundColor('#F6F7F9')
-            .borderRadius(12)
-          }, (o: Order) => String(o.id))
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(24)
+          }, (line: OrderLine) => String(line.order.id))
         }
         .padding({ left: 16, right: 16, bottom: 24 })
         .width('100%')
@@ -107,5 +142,16 @@ struct Orders {
     }
     .height('100%')
     .width('100%')
+    .backgroundColor(Theme.background)
+  }
+
+  @Builder private StatusChip(label: string, status: OrderStatus | 'ALL') {
+    Text(label)
+      .fontSize(12)
+      .fontColor(this.selectedStatus === status ? Color.White : Theme.textSecondary)
+      .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+      .backgroundColor(this.selectedStatus === status ? Theme.primary : Color.White)
+      .borderRadius(16)
+      .onClick(() => this.selectedStatus = status)
   }
 }

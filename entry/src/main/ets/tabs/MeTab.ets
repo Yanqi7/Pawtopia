@@ -1,20 +1,64 @@
 import { AppRouter } from '../common/AppRouter';
 import { SessionStore } from '../store/SessionStore';
 import { Api } from '../api/Api';
-import { User } from '../model/Models';
+import { User, AdoptionRequest, Order, Pet, Post } from '../model/Models';
 import { AppStatus } from '../app/AppStatus';
+import { AppPrompt } from '../common/AppPrompt';
+import { Theme } from '../common/Theme';
+import { CartStore } from '../store/CartStore';
 
 function roleLabel(role: string): string {
   return role === 'PET_SHOP' ? '宠物店' : role === 'PET_HOSPITAL' ? '宠物医院' : role === 'SELLER' ? '卖家' : role === 'ADMIN' ? '管理员' : '普通用户';
+}
+
+interface MainTabParams {
+  tab?: number;
 }
 
 @Component
 export struct MeTab {
   @State private user?: User = SessionStore.getUser();
   @State private loading: boolean = false;
+  @State private postCount: number = 0;
+  @State private petCount: number = 0;
+  @State private orderCount: number = 0;
+  @State private adoptionCount: number = 0;
 
   aboutToAppear(): void {
     this.user = SessionStore.getUser();
+    this.loadSummary();
+  }
+
+  private async loadSummary(): Promise<void> {
+    const user = SessionStore.getUser();
+    if (!user || !user.id) {
+      this.postCount = 0;
+      this.petCount = 0;
+      this.orderCount = 0;
+      this.adoptionCount = 0;
+      return;
+    }
+    this.loading = true;
+    try {
+      const userId = user.id;
+      const result = await Promise.all([
+        Api.getUserPosts(userId),
+        Api.getMyPets(userId),
+        Api.getMyOrders(userId),
+        Api.getMyAdoptionRequests()
+      ]);
+      const posts = result[0] as Post[];
+      const pets = result[1] as Pet[];
+      const orders = result[2] as Order[];
+      const adoptions = result[3] as AdoptionRequest[];
+      this.postCount = posts.length;
+      this.petCount = pets.length;
+      this.orderCount = orders.length;
+      this.adoptionCount = adoptions.length;
+    } catch (e) {
+    } finally {
+      this.loading = false;
+    }
   }
 
   private async logout(): Promise<void> {
@@ -22,285 +66,92 @@ export struct MeTab {
     AppRouter.replace('pages/Login');
   }
 
+  private async clearCache(): Promise<void> {
+    await CartStore.clear();
+    AppPrompt.toast('购物车缓存已清空');
+  }
+
+  private navigateTab(tab: number): void {
+    AppRouter.replace('pages/MainTabs', { tab: tab } as MainTabParams);
+  }
+
   build() {
     Column() {
       if (this.user) {
-        // 蓝色渐变顶部
-        Column({ space: 12 }) {
-          Row() {
-            // 左侧：头像 + 用户信息
-            Column({ space: 4 }) {
-              Image($r('app.media.people'))
-                .width(60)
-                .height(60)
-                .borderRadius(30)
-              Text(this.user.nickname || '铲屎官小A')
-                .fontSize(16)
+        Column({ space: 14 }) {
+          Row({ space: 14 }) {
+            Image($r('app.media.people'))
+              .width(72)
+              .height(72)
+              .borderRadius(36)
+
+            Column({ space: 6 }) {
+              Text(this.user?.nickname || this.user?.username || '')
+                .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Color.White)
+              Text(roleLabel(this.user?.role ?? 'USER'))
+                .fontSize(12)
+                .fontColor('#EAF2FF')
+                .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                .backgroundColor('#FFFFFF22')
+                .borderRadius(12)
+              Text(this.user?.email || '')
+                .fontSize(12)
+                .fontColor('#F8FAFC')
+              Text(AppStatus.isBackendOnline() ? '云端已连接' : '当前离线模式')
+                .fontSize(12)
+                .fontColor('#F8FAFC')
             }
-            .alignItems(HorizontalAlign.Center)
-
-            Blank()
-
-            // 右侧：通知铃铛
-            Stack() {
-              Image($r('app.media.lingdang'))
-                .width(28)
-                .height(28)
-                .fillColor(Color.White)
-              Circle()
-                .width(8)
-                .height(8)
-                .fill(Color.Red)
-                .position({ right: 0, top: 0 })
-            }
+            .layoutWeight(1)
           }
           .width('100%')
-          .padding({ left: 16, right: 16, bottom: 16 })
+
+          Row({ space: 12 }) {
+            this.StatCard('帖子', this.postCount, () => this.navigateTab(0))
+            this.StatCard('宠物', this.petCount, () => this.navigateTab(2))
+            this.StatCard('订单', this.orderCount, () => AppRouter.push('pages/Orders'))
+            this.StatCard('领养', this.adoptionCount, () => AppRouter.push('pages/MyAdoptions'))
+          }
+          .width('100%')
         }
         .width('100%')
-        .linearGradient({
-          angle: 135,
-          colors: [['#3B9AFF', 0.0], ['#2B7FFF', 1.0]]
-        })
-        .padding({ top: 16 })
+        .padding({ left: 16, right: 16, top: 20, bottom: 18 })
+        .linearGradient({ angle: 135, colors: [['#3B9AFF', 0], ['#2B7FFF', 1]] })
 
-        // 菜单列表
         Scroll() {
-          Column({ space: 0 }) {
-            // 我的发布
-            Row({ space: 12 }) {
-              Image($r('app.media.tiezi'))
-                .width(24)
-                .height(24)
-                .fillColor('#2B7FFF')
-              Text('我的发布')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('5')
-                .fontSize(12)
-                .fontColor('#999')
-              Text('>')
-                .fontSize(16)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 我的宠物
-            Row({ space: 12 }) {
-              Image($r('app.media.dangan'))
-                .width(24)
-                .height(24)
-                .fillColor('#FF69B4')
-              Text('我的宠物')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('3')
-                .fontSize(12)
-                .fontColor('#999')
-              Text('>')
-                .fontSize(16)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 我的订单
-            Row({ space: 12 }) {
-              Image($r('app.media.shopping'))
-                .width(24)
-                .height(24)
-                .fillColor('#FF9D4E')
-              Text('我的订单')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('2')
-                .fontSize(12)
-                .fontColor('#999')
-              Text('>')
-                .fontSize(16)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-            .onClick(() => AppRouter.push('pages/Orders'))
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 我的收藏
-            Row({ space: 12 }) {
-              Image($r('app.media.like'))
-                .width(24)
-                .height(24)
-                .fillColor('#FF6B6B')
-              Text('我的收藏')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('12')
-                .fontSize(12)
-                .fontColor('#999')
-              Text('>')
-                .fontSize(16)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 切换账号
-            Row({ space: 12 }) {
-              Image($r('app.media.ic_switch'))
-                .width(24)
-                .height(24)
-                .fillColor('#666')
-              Text('切换账号')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('>')
-                .fontSize(16)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-            .onClick(() => AppRouter.push('pages/Login'))
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 关于我们
-            Row({ space: 12 }) {
-              Image($r('app.media.more'))
-                .width(24)
-                .height(24)
-                .fillColor('#666')
-              Text('关于我们')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('>')
-                .fontSize(16)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 内存清理
-            Row({ space: 12 }) {
-              Image($r('app.media.ic_trash'))
-                .width(24)
-                .height(24)
-                .fillColor('#666')
-              Text('内存清理')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('23.5MB')
-                .fontSize(13)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 版本信息
-            Row({ space: 12 }) {
-              Image($r('app.media.more'))
-                .width(24)
-                .height(24)
-                .fillColor('#666')
-              Text('版本信息')
-                .fontSize(14)
-                .fontColor('#333')
-                .layoutWeight(1)
-              Text('v3.1.2')
-                .fontSize(13)
-                .fontColor('#999')
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-
-            Divider()
-              .strokeWidth(1)
-              .color('#EFEFEF')
-
-            // 退出登录
-            Row({ space: 12 }) {
-              Image($r('app.media.ic_logout'))
-                .width(24)
-                .height(24)
-                .fillColor(Color.Red)
-              Text('退出登录')
-                .fontSize(14)
-                .fontColor(Color.Red)
-                .layoutWeight(1)
-              Text('›')
-                .fontSize(24)
-                .fontColor(Color.Red)
-            }
-            .padding(16)
-            .width('100%')
-            .backgroundColor(Color.White)
-            .onClick(() => this.logout())
+          Column({ space: 12 }) {
+            this.MenuItem('我的发布', `${this.postCount}`, $r('app.media.tiezi'), () => this.navigateTab(0))
+            this.MenuItem('我的宠物', `${this.petCount}`, $r('app.media.dangan'), () => this.navigateTab(2))
+            this.MenuItem('我的订单', `${this.orderCount}`, $r('app.media.shopping'), () => AppRouter.push('pages/Orders'))
+            this.MenuItem('我的领养申请', `${this.adoptionCount}`, $r('app.media.like'), () => AppRouter.push('pages/MyAdoptions'))
+            this.MenuItem('继续逛商城', '精选好物', $r('app.media.gouwuche'), () => this.navigateTab(3))
+            this.MenuItem('切换账号', '', $r('app.media.ic_switch'), () => AppRouter.push('pages/Login'))
+            this.MenuItem('关于 Pawtopia', '宠物社区 · 领养 · 档案 · 商城', $r('app.media.more'), () => AppPrompt.toast('Pawtopia 正在持续完善中'))
+            this.MenuItem('清理缓存', '清空购物车缓存', $r('app.media.ic_trash'), () => this.clearCache())
+            this.MenuItem('版本信息', this.loading ? '同步中…' : 'HarmonyOS 6.0.2 / dev', $r('app.media.more'), () => AppPrompt.toast('当前为 dev 分支最新构建'))
+            this.MenuItem('退出登录', '', $r('app.media.ic_logout'), () => this.logout(), true)
           }
           .width('100%')
+          .padding(16)
         }
         .layoutWeight(1)
-
-        // 底部版权信息
-        Text('© 2026 城宠社区 版权所有')
-          .fontSize(12)
-          .fontColor('#999')
-          .width('100%')
-          .textAlign(TextAlign.Center)
-          .padding({ top: 16, bottom: 20 })
       } else {
-        Column() {
-          Text('未登录')
-            .fontSize(16)
-            .fontColor('#666')
-            .margin({ bottom: 20 })
-          Button('去登录')
-            .width('60%')
-            .height(44)
-            .type(ButtonType.Capsule)
-            .backgroundColor('#2B7FFF')
+        Column({ space: 14 }) {
+          Text('登录后体验完整的宠物社区')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Theme.textPrimary)
+          Text('你可以发布宠物动态、维护档案、提交领养申请和管理订单。')
+            .fontSize(13)
+            .fontColor(Theme.textSecondary)
+            .textAlign(TextAlign.Center)
+          Button('立即登录')
+            .width('70%')
+            .height(46)
+            .backgroundColor(Theme.primary)
             .fontColor(Color.White)
+            .borderRadius(23)
             .onClick(() => AppRouter.push('pages/Login'))
         }
         .height('100%')
@@ -311,6 +162,54 @@ export struct MeTab {
     }
     .height('100%')
     .width('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Theme.background)
+  }
+
+  @Builder private StatCard(label: string, value: number, action: () => void) {
+    Column({ space: 4 }) {
+      Text(String(value))
+        .fontSize(18)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(Color.White)
+      Text(label)
+        .fontSize(11)
+        .fontColor('#EAF2FF')
+    }
+    .layoutWeight(1)
+    .height(72)
+    .backgroundColor('#FFFFFF1A')
+    .borderRadius(18)
+    .alignItems(HorizontalAlign.Center)
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => action())
+  }
+
+  @Builder private MenuItem(title: string, desc: string, icon: Resource, action: () => void, danger: boolean = false) {
+    Row({ space: 12 }) {
+      Image(icon)
+        .width(22)
+        .height(22)
+        .fillColor(danger ? '#FF5A5F' : Theme.primary)
+      Column({ space: 4 }) {
+        Text(title)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(danger ? '#FF5A5F' : Theme.textPrimary)
+        if (desc) {
+          Text(desc)
+            .fontSize(12)
+            .fontColor(Theme.textSecondary)
+        }
+      }
+      .layoutWeight(1)
+      Text('›')
+        .fontSize(22)
+        .fontColor(danger ? '#FF5A5F' : Theme.textMuted)
+    }
+    .padding(16)
+    .width('100%')
+    .backgroundColor(Color.White)
+    .borderRadius(20)
+    .onClick(() => action())
   }
 }

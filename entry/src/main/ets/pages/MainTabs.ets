@@ -7,6 +7,11 @@ import { MallTab } from '../tabs/MallTab';
 import { MeTab } from '../tabs/MeTab';
 import { appContext } from '../common/AppContext';
 import { Theme } from '../common/Theme';
+import { AppRouter } from '../common/AppRouter';
+
+interface MainTabParams {
+  tab?: number;
+}
 
 @Entry
 @Component
@@ -15,6 +20,8 @@ struct MainTabs {
   @State private currentTabIndex: number = 0;
 
   aboutToAppear(): void {
+    const params = AppRouter.params<MainTabParams>();
+    this.currentTabIndex = Math.max(0, Math.min(4, Number(params?.tab ?? this.currentTabIndex)));
     const context = appContext(this);
     Promise.all([SessionStore.init(context), CartStore.init(context)]).then(() => {
       this.ready = true;
@@ -72,6 +79,7 @@ struct MainTabs {
         .backgroundColor(Theme.surface)
         .barBackgroundColor('#FFFFFFF5')
         .divider({ strokeWidth: 1, color: Theme.border })
+        .scrollable(false)
         .onChange((index: number) => {
           this.currentTabIndex = index;
         })

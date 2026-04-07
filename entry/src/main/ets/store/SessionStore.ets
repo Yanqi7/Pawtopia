@@ -30,11 +30,11 @@ export class SessionStore {
   }
 
   static isLoggedIn(): boolean {
-    return !!SessionStore.user?.id;
+    return !!SessionStore.user?.id && !!SessionStore.token;
   }
 
   static getUser(): User | undefined {
-    return SessionStore.user;
+    return SessionStore.isLoggedIn() ? SessionStore.user : undefined;
   }
 
   static getRole(): UserRole {

@@ -88,8 +88,24 @@ export class Api {
   }
 
   static async getMyPets(ownerId: number): Promise<Pet[]> {
-    const c = await Api.client();
-    return await c.get<Pet[]>(`/api/pets/owner/${ownerId}`);
+    try {
+      const c = await Api.client();
+      const res = await c.get<Pet[]>(`/api/pets/owner/${ownerId}`);
+      AppStatus.setBackendOnline(true);
+      return MockData.decoratePets(res);
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请重新登录后查看宠物档案');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看这些宠物档案');
+        }
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      return MockData.decoratePets(MockData.petsAll().filter((pet) => pet.ownerId === ownerId));
+    }
   }
 
   static async getAllPets(): Promise<Pet[]> {
@@ -97,7 +113,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Pet[]>('/api/pets');
       AppStatus.setBackendOnline(true);
-      return res;
+      return MockData.decoratePets(res);
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -112,7 +128,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Pet[]>('/api/adoptions/listings');
       AppStatus.setBackendOnline(true);
-      return res;
+      return MockData.decoratePets(res);
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -185,7 +201,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Pet>(`/api/pets/${petId}`);
       AppStatus.setBackendOnline(true);
-      return res;
+      return MockData.decoratePet(res);
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -226,7 +242,16 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Page<Post>>('/api/posts', `page=${page}&size=${size}`);
       AppStatus.setBackendOnline(true);
-      return res;
+      return {
+        content: MockData.decoratePosts(res.content),
+        totalElements: res.totalElements,
+        totalPages: res.totalPages,
+        number: res.number,
+        size: res.size,
+        first: res.first,
+        last: res.last,
+        empty: res.empty
+      };
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -241,7 +266,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Post>(`/api/posts/${postId}`);
       AppStatus.setBackendOnline(true);
-      return res;
+      return MockData.decoratePost(res);
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -261,7 +286,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Post[]>(`/api/posts/user/${userId}/all`);
       AppStatus.setBackendOnline(true);
-      return res;
+      return MockData.decoratePosts(res);
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -301,7 +326,16 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Page<Product>>('/api/products', `page=${page}&size=${size}&sortBy=id`);
       AppStatus.setBackendOnline(true);
-      return res;
+      return {
+        content: MockData.decorateProducts(res.content),
+        totalElements: res.totalElements,
+        totalPages: res.totalPages,
+        number: res.number,
+        size: res.size,
+        first: res.first,
+        last: res.last,
+        empty: res.empty
+      };
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -316,7 +350,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Product>(`/api/products/${productId}`);
       AppStatus.setBackendOnline(true);
-      return res;
+      return MockData.decorateProduct(res);
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -331,7 +365,16 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Page<Product>>('/api/products/search', `name=${encodeURIComponent(name)}&page=${page}&size=${size}`);
       AppStatus.setBackendOnline(true);
-      return res;
+      return {
+        content: MockData.decorateProducts(res.content),
+        totalElements: res.totalElements,
+        totalPages: res.totalPages,
+        number: res.number,
+        size: res.size,
+        first: res.first,
+        last: res.last,
+        empty: res.empty
+      };
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -364,6 +407,28 @@ export class Api {
       }
       AppStatus.setBackendOnline(false);
       return MockData.ordersByUser(userId);
+    }
+  }
+
+  static async getMyAdoptionRequests(): Promise<AdoptionRequest[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<AdoptionRequest[]>('/api/adoptions/requests/mine');
+      AppStatus.setBackendOnline(true);
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请重新登录后查看领养申请');
+        }
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      const user = SessionStore.getUser();
+      if (!user || !user.id) {
+        return [];
+      }
+      return MockData.adoptionRequestsByPet(1, user.id);
     }
   }
 

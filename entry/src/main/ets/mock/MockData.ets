@@ -431,6 +431,111 @@ export class MockData {
     ];
   }
 
+  static decoratePosts(posts: Post[]): Post[] {
+    return posts.map((post: Post) => MockData.decoratePost(post));
+  }
+
+  static decoratePost(post: Post): Post {
+    const templates = MockData.postsPage(0, 20).content;
+    const base = templates[Math.abs((post.id ?? 1) - 1) % templates.length];
+    const title = post.title ?? '';
+    const content = post.content ?? '';
+    const genericTitle = !title || title.indexOf('帖子标题') >= 0 || title.indexOf('测试') >= 0 || title.indexOf('post') >= 0;
+    const genericContent = !content || content.indexOf('内容') >= 0 || content.indexOf('示例') >= 0 || content.length < 12;
+    const result: Post = {
+      id: post.id ?? base.id,
+      title: genericTitle ? base.title : post.title,
+      content: genericContent ? base.content : post.content,
+      userId: post.userId ?? base.userId,
+      likeCount: (post.likeCount ?? 0) > 0 ? post.likeCount : base.likeCount,
+      commentCount: (post.commentCount ?? 0) > 0 ? post.commentCount : base.commentCount,
+      viewCount: (post.viewCount ?? 0) > 0 ? post.viewCount : base.viewCount,
+      createdAt: post.createdAt ?? base.createdAt,
+      imageUrls: post.imageUrls ? post.imageUrls : MockData.postImageKey(post.id)
+    };
+    return result;
+  }
+
+  static decoratePets(pets: Pet[]): Pet[] {
+    return pets.map((pet: Pet) => MockData.decoratePet(pet));
+  }
+
+  static decoratePet(pet: Pet): Pet {
+    const templates = MockData.petsAll();
+    const base = templates[Math.abs((pet.id ?? 1) - 1) % templates.length];
+    const name = pet.name ?? '';
+    const description = pet.description ?? '';
+    const genericName = !name || name.indexOf('宠物') >= 0 || name.indexOf('test') >= 0;
+    const genericDescription = !description || description.length < 8;
+    const result: Pet = {
+      id: pet.id ?? base.id,
+      name: genericName ? base.name : pet.name,
+      species: pet.species ?? base.species,
+      breed: pet.breed ?? base.breed,
+      gender: pet.gender ?? base.gender,
+      age: pet.age ?? base.age,
+      description: genericDescription ? base.description : pet.description,
+      image: pet.image ?? MockData.petImageKey(pet.id, pet.species),
+      adoptionStatus: pet.adoptionStatus ?? base.adoptionStatus,
+      adoptionCity: pet.adoptionCity ?? base.adoptionCity,
+      adoptionNote: pet.adoptionNote ?? base.adoptionNote,
+      ownerId: pet.ownerId ?? base.ownerId,
+      createdAt: pet.createdAt ?? base.createdAt
+    };
+    return result;
+  }
+
+  static decorateProducts(products: Product[]): Product[] {
+    return products.map((product: Product) => MockData.decorateProduct(product));
+  }
+
+  static decorateProduct(product: Product): Product {
+    const templates = MockData.productsPage(0, 20).content;
+    const base = templates[Math.abs((product.id ?? 1) - 1) % templates.length];
+    const name = product.name ?? '';
+    const description = product.description ?? '';
+    const genericName = !name || name.indexOf('商品') >= 0 || name.indexOf('测试') >= 0;
+    const genericDescription = !description || description.length < 8;
+    const priceNum = Number(product.price);
+    const result: Product = {
+      id: product.id ?? base.id,
+      name: genericName ? base.name : product.name,
+      description: genericDescription ? base.description : product.description,
+      image: product.image ?? MockData.productImageKey(product.id, product.category),
+      price: Number.isNaN(priceNum) || priceNum <= 0 ? base.price : product.price,
+      stockQuantity: (product.stockQuantity ?? 0) > 0 ? product.stockQuantity : base.stockQuantity,
+      category: product.category ?? base.category,
+      createdAt: product.createdAt ?? base.createdAt
+    };
+    return result;
+  }
+
+  static postImageKey(seed?: number): string {
+    const keys = ['pet_cat_real_2', 'pet_dog_real_1', 'adopt_cat_real_1', 'adopt_dog_real_2', 'pet_dog_real_3'];
+    return keys[Math.abs(seed ?? 0) % keys.length];
+  }
+
+  static petImageKey(seed?: number, species?: string): string {
+    const cats = ['pet_cat_real_1', 'pet_cat_real_2', 'pet_cat_real_3', 'adopt_cat_real_1', 'adopt_cat_real_2'];
+    const dogs = ['pet_dog_real_1', 'pet_dog_real_2', 'pet_dog_real_3', 'adopt_dog_real_1', 'adopt_dog_real_2'];
+    const pool = (species ?? '').indexOf('猫') >= 0 ? cats : dogs;
+    return pool[Math.abs(seed ?? 0) % pool.length];
+  }
+
+  static productImageKey(seed?: number, category?: ProductCategory): string {
+    switch (category) {
+      case 'FOOD':
+        return Math.abs(seed ?? 0) % 2 === 0 ? 'shop_banner_real_1' : 'pet_dog_real_2';
+      case 'TOY':
+        return Math.abs(seed ?? 0) % 2 === 0 ? 'pet_cat_real_3' : 'pet_dog_real_3';
+      case 'MEDICINE':
+      case 'ACCESSORY':
+        return Math.abs(seed ?? 0) % 2 === 0 ? 'shop_banner_real_2' : 'pet_cat_real_1';
+      default:
+        return Math.abs(seed ?? 0) % 2 === 0 ? 'pet_dog_real_1' : 'pet_cat_real_2';
+    }
+  }
+
   // ============ 分页工具 ============
   private static pageOf<T>(all: T[], page: number, size: number): Page<T> {
     const start = Math.max(0, page) * Math.max(1, size);

@@ -3,6 +3,9 @@ import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Pet } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
+import { MediaAssets } from '../assets/MediaAssets';
+import { adoptionStatusLabel, petGenderLabel } from '../common/Formatters';
+import { Theme } from '../common/Theme';
 
 interface IdParams {
   id?: number;
@@ -27,6 +30,9 @@ struct PetDetail {
   aboutToAppear(): void {
     const params = AppRouter.params<IdParams>();
     this.petId = Number(params?.id ?? 0);
+    const user = SessionStore.getUser();
+    this.adoptContactName = user?.nickname ?? '';
+    this.adoptContactPhone = user?.phone ?? '';
     this.load();
   }
 
@@ -47,11 +53,8 @@ struct PetDetail {
   }
 
   private ownedByMe(): boolean {
-    const u = SessionStore.getUser();
-    if (!u || !u.id || !this.pet) {
-      return false;
-    }
-    return this.pet.ownerId === u.id;
+    const user = SessionStore.getUser();
+    return !!user?.id && !!this.pet && this.pet.ownerId === user.id;
   }
 
   private async submitAdoptionRequest(): Promise<void> {
@@ -80,8 +83,6 @@ struct PetDetail {
         contactPhone: this.adoptContactPhone.trim()
       });
       this.adoptMessage = '';
-      this.adoptContactName = '';
-      this.adoptContactPhone = '';
       AppPrompt.toast('已提交领养申请');
     } catch (e) {
       this.errorText = (e as Error).message || '提交失败';
@@ -92,213 +93,99 @@ struct PetDetail {
 
   build() {
     Column() {
-      // 顶部导航
       Row({ space: 12 }) {
-        Image($r('app.media.more'))
-          .width(24)
-          .height(24)
-          .fillColor('#2B7FFF')
-          .onClick(() => AppRouter.back())
+        Image($r('app.media.hero_back')).width(24).height(24).onClick(() => AppRouter.back())
         Blank()
-        Text('宠物详情')
-          .fontSize(16)
-          .fontWeight(FontWeight.Bold)
+        Text('宠物详情').fontSize(16).fontWeight(FontWeight.Bold)
         Blank()
-        Image($r('app.media.like'))
-          .width(24)
-          .height(24)
-          .fillColor('#FF69B4')
+        Text(this.pet ? adoptionStatusLabel(this.pet.adoptionStatus) : '').fontSize(12).fontColor(Theme.primary)
       }
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .width('100%')
-      .backgroundColor('#FFFFFF')
-      .border({ width: 1, color: '#F0F0F0' })
+      .backgroundColor(Color.White)
 
       Scroll() {
         Column({ space: 16 }) {
           if (this.errorText) {
-            Text(this.errorText)
-              .fontSize(13)
-              .fontColor(Color.Red)
-              .padding(16)
+            Text(this.errorText).fontSize(13).fontColor('#D14343').padding(16)
           }
 
           if (this.pet) {
-            // 宠物图片
-            Stack() {
-              Image(this.pet!.image ? $r(`app.media.${this.pet!.image}`) : $r('app.media.dog'))
-                .width('100%')
-                .height(240)
-                .objectFit(ImageFit.Cover)
-              Row() {
-                Blank()
-                Column() {
-                  Text('👑')
-                    .fontSize(28)
-                }
-                .width(50)
-                .height(50)
-                .backgroundColor('#FFE8F0')
-                .borderRadius(25)
-                .alignItems(HorizontalAlign.Center)
-                .justifyContent(FlexAlign.Center)
-              }
+            Image(MediaAssets.petImage(this.pet.image, this.pet.id ?? 0, this.pet.species))
               .width('100%')
-              .padding(12)
-            }
-            .width('100%')
+              .height(280)
+              .borderRadius(28)
+              .objectFit(ImageFit.Cover)
 
-            // 宠物基本信息
             Column({ space: 12 }) {
-              Text(`${this.pet!.name}（${this.pet!.species}）`)
-                .fontSize(20)
-                .fontWeight(FontWeight.Bold)
-
-              Row({ space: 20 }) {
-                Column({ space: 4 }) {
-                  Text('品种')
-                    .fontSize(12)
-                    .fontColor('#999')
-                  Text(this.pet!.breed ?? '未知')
-                    .fontSize(14)
-                    .fontWeight(FontWeight.Medium)
-                }
-                .alignItems(HorizontalAlign.Center)
-
-                Column({ space: 4 }) {
-                  Text('年龄')
-                    .fontSize(12)
-                    .fontColor('#999')
-                  Text(`${this.pet!.age ?? '-'}岁`)
-                    .fontSize(14)
-                    .fontWeight(FontWeight.Medium)
-                }
-                .alignItems(HorizontalAlign.Center)
-
-                Column({ space: 4 }) {
-                  Text('性别')
-                    .fontSize(12)
-                    .fontColor('#999')
-                  Text(this.pet!.gender === 'MALE' ? '公' : this.pet!.gender === 'FEMALE' ? '母' : '未知')
-                    .fontSize(14)
-                    .fontWeight(FontWeight.Medium)
-                }
-                .alignItems(HorizontalAlign.Center)
+              Row({ space: 8 }) {
+                Text(this.pet.name).fontSize(24).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
+                Text(adoptionStatusLabel(this.pet.adoptionStatus)).fontSize(11).fontColor(Theme.primary)
+                  .padding({ left: 10, right: 10, top: 4, bottom: 4 }).backgroundColor('#E8F1FF').borderRadius(12)
               }
-              .width('100%')
-              .backgroundColor('#F9F9F9')
-              .borderRadius(8)
-              .padding(12)
-
-              Text(this.pet!.description ?? '暂无描述')
-                .fontSize(14)
-                .fontColor('#333')
-                .width('100%')
-                .lineHeight(1.6)
-
-              if (this.pet!.adoptionNote) {
-                Row() {
-                  Text('💡')
-                    .fontSize(14)
-                    .margin({ right: 8 })
-                  Text(this.pet!.adoptionNote)
-                    .fontSize(12)
-                    .fontColor('#FF9D4E')
-                    .layoutWeight(1)
-                }
-                .backgroundColor('#FFF3E0')
-                .borderRadius(8)
-                .padding(12)
+              Text(`${this.pet.species} · ${this.pet.breed ?? '品种待补充'} · ${petGenderLabel(this.pet.gender)} · ${this.pet.age ?? '-'} 岁`)
+                .fontSize(13).fontColor(Theme.textSecondary)
+              Text(this.pet.description ?? '暂无描述').fontSize(14).fontColor(Theme.textPrimary).lineHeight(22)
+              if (this.pet.adoptionCity) {
+                Text(`所在城市：${this.pet.adoptionCity}`).fontSize(12).fontColor('#666')
+              }
+              if (this.pet.adoptionNote) {
+                Text(this.pet.adoptionNote).fontSize(12).fontColor('#FF8A3D')
+                  .padding(12).backgroundColor('#FFF3E0').borderRadius(12)
               }
             }
-            .padding(16)
+            .padding(18)
             .backgroundColor(Color.White)
-            .borderRadius(12)
+            .borderRadius(24)
 
             if (this.ownedByMe()) {
               Column({ space: 12 }) {
-                Text('健康档案')
-                  .fontSize(14)
-                  .fontWeight(FontWeight.Bold)
-
+                Text('档案与领养管理').fontSize(14).fontWeight(FontWeight.Bold)
                 Button('查看健康档案')
                   .height(44)
                   .width('100%')
-                  .backgroundColor('#2B7FFF')
+                  .backgroundColor(Theme.primary)
                   .fontColor(Color.White)
-                  .borderRadius(8)
+                  .borderRadius(16)
                   .onClick(() => AppRouter.push('pages/HealthRecords', { petId: this.petId } as PetRouteParams))
-
-                Text('领养管理')
-                  .fontSize(14)
-                  .fontWeight(FontWeight.Bold)
-                  .margin({ top: 8 })
-
                 Button('查看领养申请')
                   .height(44)
                   .width('100%')
-                  .backgroundColor('#F0F2F5')
-                  .fontColor('#2B7FFF')
-                  .borderRadius(8)
+                  .backgroundColor('#E8F1FF')
+                  .fontColor(Theme.primary)
+                  .borderRadius(16)
                   .onClick(() => AppRouter.push('pages/AdoptionRequests', { petId: this.petId } as PetRouteParams))
               }
-              .padding(16)
+              .padding(18)
               .backgroundColor(Color.White)
-              .borderRadius(12)
+              .borderRadius(24)
             } else {
               Column({ space: 12 }) {
-                Text('申请领养')
-                  .fontSize(14)
-                  .fontWeight(FontWeight.Bold)
-
-                Text('提交后宠物主人会看到你的申请')
-                  .fontSize(12)
-                  .fontColor('#666')
-
+                Text('提交领养申请').fontSize(14).fontWeight(FontWeight.Bold)
                 TextInput({ placeholder: '你的名字（可选）', text: this.adoptContactName })
-                  .height(40)
-                  .backgroundColor('#F9F9F9')
-                  .border({ width: 1, color: '#E8E8E8' })
-                  .borderRadius(8)
-                  .padding({ left: 12, right: 12 })
+                  .height(40).backgroundColor('#F6F8FC').borderRadius(12).border({ width: 0 }).padding({ left: 12, right: 12 })
                   .onChange((v: string) => this.adoptContactName = v)
-
                 TextInput({ placeholder: '联系电话', text: this.adoptContactPhone })
-                  .height(40)
-                  .backgroundColor('#F9F9F9')
-                  .border({ width: 1, color: '#E8E8E8' })
-                  .borderRadius(8)
-                  .padding({ left: 12, right: 12 })
+                  .height(40).backgroundColor('#F6F8FC').borderRadius(12).border({ width: 0 }).padding({ left: 12, right: 12 })
                   .onChange((v: string) => this.adoptContactPhone = v)
-
-                TextArea({ placeholder: '说说你为什么想领养这只宠物...', text: this.adoptMessage })
-                  .height(80)
-                  .backgroundColor('#F9F9F9')
-                  .border({ width: 1, color: '#E8E8E8' })
-                  .borderRadius(8)
-                  .padding(12)
+                TextArea({ placeholder: '介绍你的养宠经验、居住环境和陪伴计划', text: this.adoptMessage })
+                  .height(90).backgroundColor('#F6F8FC').borderRadius(12).border({ width: 0 }).padding(12)
                   .onChange((v: string) => this.adoptMessage = v)
-
                 Button(this.adoptSubmitting ? '提交中…' : '提交领养申请')
                   .height(44)
                   .width('100%')
-                  .backgroundColor('#FF69B4')
+                  .backgroundColor('#FF7AA2')
                   .fontColor(Color.White)
-                  .borderRadius(8)
+                  .borderRadius(16)
                   .enabled(!this.adoptSubmitting)
                   .onClick(() => this.submitAdoptionRequest())
               }
-              .padding(16)
+              .padding(18)
               .backgroundColor(Color.White)
-              .borderRadius(12)
+              .borderRadius(24)
             }
           } else if (this.loading) {
-            Text('加载中…')
-              .fontSize(14)
-              .fontColor('#999')
-              .width('100%')
-              .textAlign(TextAlign.Center)
-              .padding(40)
+            Text('加载中…').fontSize(14).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(40)
           }
         }
         .padding(16)
@@ -307,6 +194,6 @@ struct PetDetail {
     }
     .height('100%')
     .width('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Theme.background)
   }
 }
