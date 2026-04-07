@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { HealthRecord } from '../model/Models';
 import { ErrorText, SectionTitle } from '../components/Ui';
@@ -16,7 +16,7 @@ struct HealthRecords {
   @State private records: HealthRecord[] = [];
 
   aboutToAppear(): void {
-    const params = router.getParams() as PetIdParams;
+    const params = AppRouter.params<PetIdParams>();
     this.petId = Number(params?.petId ?? 0);
     this.load();
   }
@@ -47,12 +47,12 @@ struct HealthRecords {
           .borderRadius(16)
           .backgroundColor('#2B7FFF')
           .fontColor(Color.White)
-          .onClick(() => router.pushUrl({ url: 'pages/NewHealthRecord', params: { petId: this.petId } }))
+          .onClick(() => AppRouter.push('pages/NewHealthRecord', { petId: this.petId } as PetIdParams))
         Text('返回')
           .fontSize(14)
           .fontColor('#2B7FFF')
           .margin({ left: 10 })
-          .onClick(() => router.back())
+          .onClick(() => AppRouter.back())
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 

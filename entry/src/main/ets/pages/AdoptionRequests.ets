@@ -1,5 +1,5 @@
-import router from '@ohos.router';
-import promptAction from '@ohos.promptAction';
+import { AppPrompt } from '../common/AppPrompt';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { AdoptionRequest, AdoptionRequestStatus, Pet } from '../model/Models';
 import { ErrorText, SectionTitle } from '../components/Ui';
@@ -18,7 +18,7 @@ struct AdoptionRequests {
   @State private requests: AdoptionRequest[] = [];
 
   aboutToAppear(): void {
-    const params = router.getParams() as Params;
+    const params = AppRouter.params<Params>();
     this.petId = Number(params?.petId ?? 0);
     this.load();
   }
@@ -43,7 +43,7 @@ struct AdoptionRequests {
   private async setStatus(id: number, status: AdoptionRequestStatus): Promise<void> {
     try {
       await Api.updateAdoptionRequestStatus(id, status);
-      promptAction.showToast({ message: '已更新' });
+      AppPrompt.toast('已更新');
       await this.load();
     } catch (e) {
       this.errorText = (e as Error).message || '更新失败';
@@ -55,7 +55,7 @@ struct AdoptionRequests {
       Row() {
         Text('领养申请').fontSize(18).fontWeight(FontWeight.Bold)
         Blank()
-        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
+        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 

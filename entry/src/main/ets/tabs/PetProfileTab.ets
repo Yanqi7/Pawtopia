@@ -1,9 +1,13 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Pet } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
 import { AppStatus } from '../app/AppStatus';
 import { OfflineBanner } from '../components/Ui';
+
+interface NewPetParams {
+  mode?: string;
+}
 
 @Component
 export struct PetProfileTab {
@@ -80,7 +84,7 @@ export struct PetProfileTab {
         .padding({ top: 12, bottom: 8 })
 
         if (!AppStatus.isBackendOnline()) {
-          OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
+          OfflineBanner({ action: () => AppRouter.push('pages/Login') })
             .padding({ left: 16, right: 16, bottom: 10 })
         }
 
@@ -153,7 +157,7 @@ export struct PetProfileTab {
               .height(56)
               .borderRadius(28)
               .backgroundColor('#2B7FFF')
-              .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'MEDICAL' } }))
+              .onClick(() => AppRouter.push('pages/NewPet', { mode: 'MEDICAL' } as NewPetParams))
             Text('+')
               .fontSize(28)
               .fontColor(Color.White)

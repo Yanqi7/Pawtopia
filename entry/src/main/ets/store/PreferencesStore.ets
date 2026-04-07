@@ -9,22 +9,35 @@ export class PreferencesStore {
     if (PreferencesStore.prefs) {
       return;
     }
-    PreferencesStore.prefs = await preferences.getPreferences(context, { name: AppConfig.PREFS_NAME });
+    try {
+      PreferencesStore.prefs = await preferences.getPreferences(context, { name: AppConfig.PREFS_NAME });
+    } catch (e) {
+      PreferencesStore.prefs = undefined;
+      const message = e instanceof Error ? e.message : '偏好存储初始化失败';
+      throw new Error(message);
+    }
   }
 
   static async getString(key: string, defaultValue: string = ''): Promise<string> {
     if (!PreferencesStore.prefs) {
       return defaultValue;
     }
-    const value = await PreferencesStore.prefs.get(key, defaultValue);
-    return typeof value === 'string' ? value : defaultValue;
+    try {
+      const value = await PreferencesStore.prefs.get(key, defaultValue);
+      return typeof value === 'string' ? value : defaultValue;
+    } catch (e) {
+      return defaultValue;
+    }
   }
 
   static async setString(key: string, value: string): Promise<void> {
     if (!PreferencesStore.prefs) {
       return;
     }
-    await PreferencesStore.prefs.put(key, value);
-    await PreferencesStore.prefs.flush();
+    try {
+      await PreferencesStore.prefs.put(key, value);
+      await PreferencesStore.prefs.flush();
+    } catch (e) {
+    }
   }
 }

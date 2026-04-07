@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Pet } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
@@ -6,6 +6,10 @@ import { AppStatus } from '../app/AppStatus';
 import { OfflineBanner } from '../components/Ui';
 
 type AdoptFilter = 'ALL' | 'MINE';
+
+interface NewPetParams {
+  mode?: string;
+}
 
 @Component
 export struct AdoptTab {
@@ -83,7 +87,7 @@ export struct AdoptTab {
         .padding({ top: 12 })
 
         if (!AppStatus.isBackendOnline()) {
-          OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
+          OfflineBanner({ action: () => AppRouter.push('pages/Login') })
             .padding({ left: 16, right: 16, bottom: 10 })
         }
 
@@ -140,7 +144,7 @@ export struct AdoptTab {
               .height(56)
               .borderRadius(28)
               .backgroundColor('#2B7FFF')
-              .onClick(() => router.pushUrl({ url: 'pages/NewPet', params: { mode: 'ADOPT' } }))
+              .onClick(() => AppRouter.push('pages/NewPet', { mode: 'ADOPT' } as NewPetParams))
             Text('+')
               .fontSize(28)
               .fontColor(Color.White)

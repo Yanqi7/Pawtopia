@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Product } from '../model/Models';
 import { CartStore } from '../store/CartStore';
@@ -18,7 +18,7 @@ struct ProductDetail {
   @State private qty: number = 1;
 
   aboutToAppear(): void {
-    const params = router.getParams() as IdParams;
+    const params = AppRouter.params<IdParams>();
     this.productId = Number(params?.id ?? 0);
     this.load();
   }
@@ -44,7 +44,7 @@ struct ProductDetail {
       return;
     }
     await CartStore.add(this.productId, this.qty);
-    router.pushUrl({ url: 'pages/Cart' });
+    AppRouter.push('pages/Cart');
   }
 
   build() {
@@ -55,7 +55,7 @@ struct ProductDetail {
           .width(24)
           .height(24)
           .fillColor('#2B7FFF')
-          .onClick(() => router.back())
+          .onClick(() => AppRouter.back())
         Blank()
         Text('商品详情')
           .fontSize(16)

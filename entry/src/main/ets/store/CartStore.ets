@@ -26,7 +26,7 @@ export class CartStore {
           if (id > 0 && qty > 0) {
             CartStore.items.set(id, qty);
           }
-        })
+        });
       } catch (e) {
         CartStore.items.clear();
       }

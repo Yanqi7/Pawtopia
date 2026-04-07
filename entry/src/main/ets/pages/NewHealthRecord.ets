@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { PrimaryButton, Field, ErrorText, SectionTitle, OptionGroup } from '../components/Ui';
 import { HealthRecord, HealthRecordType } from '../model/Models';
@@ -23,7 +23,7 @@ struct NewHealthRecord {
   @State private errorText: string = '';
 
   aboutToAppear(): void {
-    const params = router.getParams() as PetIdParams;
+    const params = AppRouter.params<PetIdParams>();
     this.petId = Number(params?.petId ?? 0);
     const today = new Date();
     const y = String(today.getFullYear());
@@ -53,7 +53,7 @@ struct NewHealthRecord {
         nextDueDate: this.nextDueDate.trim() || undefined,
         veterinarian: this.veterinarian.trim() || undefined
       });
-      router.back();
+      AppRouter.back();
     } catch (e) {
       this.errorText = (e as Error).message || '创建失败';
     } finally {
@@ -67,7 +67,7 @@ struct NewHealthRecord {
         Row() {
           Text('新增健康记录').fontSize(18).fontWeight(FontWeight.Bold)
           Blank()
-          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
+          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
         }
 
         SectionTitle({ title: '类型' })

@@ -1,11 +1,15 @@
-import router from '@ohos.router';
-import promptAction from '@ohos.promptAction';
+import { AppPrompt } from '../common/AppPrompt';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Pet } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
 
 interface IdParams {
   id?: number;
+}
+
+interface PetRouteParams {
+  petId?: number;
 }
 
 @Entry
@@ -21,7 +25,7 @@ struct PetDetail {
   @State private adoptSubmitting: boolean = false;
 
   aboutToAppear(): void {
-    const params = router.getParams() as IdParams;
+    const params = AppRouter.params<IdParams>();
     this.petId = Number(params?.id ?? 0);
     this.load();
   }
@@ -56,11 +60,11 @@ struct PetDetail {
     }
     const user = SessionStore.getUser();
     if (!user || !user.id) {
-      router.replaceUrl({ url: 'pages/Login' });
+      AppRouter.replace('pages/Login');
       return;
     }
     if ((this.pet.adoptionStatus ?? 'AVAILABLE') !== 'AVAILABLE') {
-      promptAction.showToast({ message: '当前暂不开放领养申请' });
+      AppPrompt.toast('当前暂不开放领养申请');
       return;
     }
     if (!this.adoptContactPhone.trim()) {
@@ -78,7 +82,7 @@ struct PetDetail {
       this.adoptMessage = '';
       this.adoptContactName = '';
       this.adoptContactPhone = '';
-      promptAction.showToast({ message: '已提交领养申请' });
+      AppPrompt.toast('已提交领养申请');
     } catch (e) {
       this.errorText = (e as Error).message || '提交失败';
     } finally {
@@ -94,7 +98,7 @@ struct PetDetail {
           .width(24)
           .height(24)
           .fillColor('#2B7FFF')
-          .onClick(() => router.back())
+          .onClick(() => AppRouter.back())
         Blank()
         Text('宠物详情')
           .fontSize(16)
@@ -223,7 +227,7 @@ struct PetDetail {
                   .backgroundColor('#2B7FFF')
                   .fontColor(Color.White)
                   .borderRadius(8)
-                  .onClick(() => router.pushUrl({ url: 'pages/HealthRecords', params: { petId: this.petId } }))
+                  .onClick(() => AppRouter.push('pages/HealthRecords', { petId: this.petId } as PetRouteParams))
 
                 Text('领养管理')
                   .fontSize(14)
@@ -236,7 +240,7 @@ struct PetDetail {
                   .backgroundColor('#F0F2F5')
                   .fontColor('#2B7FFF')
                   .borderRadius(8)
-                  .onClick(() => router.pushUrl({ url: 'pages/AdoptionRequests', params: { petId: this.petId } }))
+                  .onClick(() => AppRouter.push('pages/AdoptionRequests', { petId: this.petId } as PetRouteParams))
               }
               .padding(16)
               .backgroundColor(Color.White)

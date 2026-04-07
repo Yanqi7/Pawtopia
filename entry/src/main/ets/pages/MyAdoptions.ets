@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { AdoptionRequest } from '../model/Models';
 import { ErrorText, SectionTitle } from '../components/Ui';
@@ -18,7 +18,7 @@ struct MyAdoptions {
   private async load(): Promise<void> {
     const u = SessionStore.getUser();
     if (!u || !u.id) {
-      router.replaceUrl({ url: 'pages/Login' });
+      AppRouter.replace('pages/Login');
       return;
     }
     this.loading = true;
@@ -48,7 +48,7 @@ struct MyAdoptions {
       Row() {
         Text('我的领养申请').fontSize(18).fontWeight(FontWeight.Bold)
         Blank()
-        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
+        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 

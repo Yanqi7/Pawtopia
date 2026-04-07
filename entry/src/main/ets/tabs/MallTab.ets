@@ -1,9 +1,13 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Product } from '../model/Models';
 import { CartStore } from '../store/CartStore';
 import { AppStatus } from '../app/AppStatus';
 import { OfflineBanner } from '../components/Ui';
+
+interface ProductDetailParams {
+  id?: number;
+}
 
 @Component
 export struct MallTab {
@@ -87,7 +91,7 @@ export struct MallTab {
               .height(40)
               .borderRadius(8)
               .backgroundColor('#2B7FFF')
-              .onClick(() => router.pushUrl({ url: 'pages/Cart' }))
+              .onClick(() => AppRouter.push('pages/Cart'))
             Image($r('app.media.gouwuche'))
               .width(20)
               .height(20)
@@ -149,7 +153,7 @@ export struct MallTab {
       .backgroundColor('#3B9AFF')
 
       if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ action: () => router.pushUrl({ url: 'pages/Login' }) })
+        OfflineBanner({ action: () => AppRouter.push('pages/Login') })
           .padding({ left: 16, right: 16, top: 10, bottom: 10 })
       }
 
@@ -238,7 +242,7 @@ export struct MallTab {
                 }
               }
               .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-              .onClick(() => router.pushUrl({ url: 'pages/ProductDetail', params: { id: p.id } }))
+              .onClick(() => AppRouter.push('pages/ProductDetail', { id: p.id } as ProductDetailParams))
             }, (p: Product) => String(p.id))
 
             ListItem() {

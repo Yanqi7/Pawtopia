@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { SessionStore } from '../store/SessionStore';
 import { Api } from '../api/Api';
 import { User } from '../model/Models';
@@ -19,7 +19,7 @@ export struct MeTab {
 
   private async logout(): Promise<void> {
     await SessionStore.logout();
-    router.replaceUrl({ url: 'pages/Login' });
+    AppRouter.replace('pages/Login');
   }
 
   build() {
@@ -139,7 +139,7 @@ export struct MeTab {
             .padding(16)
             .width('100%')
             .backgroundColor(Color.White)
-            .onClick(() => router.pushUrl({ url: 'pages/Orders' }))
+            .onClick(() => AppRouter.push('pages/Orders'))
 
             Divider()
               .strokeWidth(1)
@@ -187,7 +187,7 @@ export struct MeTab {
             .padding(16)
             .width('100%')
             .backgroundColor(Color.White)
-            .onClick(() => router.pushUrl({ url: 'pages/Login' }))
+            .onClick(() => AppRouter.push('pages/Login'))
 
             Divider()
               .strokeWidth(1)
@@ -301,7 +301,7 @@ export struct MeTab {
             .type(ButtonType.Capsule)
             .backgroundColor('#2B7FFF')
             .fontColor(Color.White)
-            .onClick(() => router.pushUrl({ url: 'pages/Login' }))
+            .onClick(() => AppRouter.push('pages/Login'))
         }
         .height('100%')
         .width('100%')

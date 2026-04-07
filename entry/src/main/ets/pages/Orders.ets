@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Order, OrderStatus } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
@@ -18,7 +18,7 @@ struct Orders {
   private async load(): Promise<void> {
     const user = SessionStore.getUser();
     if (!user || !user.id) {
-      router.replaceUrl({ url: 'pages/Login' });
+      AppRouter.replace('pages/Login');
       return;
     }
     const userId = user.id;
@@ -48,7 +48,7 @@ struct Orders {
       Row() {
         Text('我的订单').fontSize(18).fontWeight(FontWeight.Bold)
         Blank()
-        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
+        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 

@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Product } from '../model/Models';
 import { CartStore, CartItem } from '../store/CartStore';
@@ -58,7 +58,7 @@ struct Cart {
   private async submitOrder(): Promise<void> {
     const user = SessionStore.getUser();
     if (!user || !user.id) {
-      router.replaceUrl({ url: 'pages/Login' });
+      AppRouter.replace('pages/Login');
       return;
     }
     const userId = user.id;
@@ -90,7 +90,7 @@ struct Cart {
         contactPhone: this.contactPhone.trim()
       });
       await CartStore.clear();
-      router.replaceUrl({ url: 'pages/Orders' });
+      AppRouter.replace('pages/Orders');
     } catch (e) {
       this.errorText = (e as Error).message || '下单失败';
     } finally {
@@ -104,7 +104,7 @@ struct Cart {
         Row() {
           Text('购物车').fontSize(18).fontWeight(FontWeight.Bold)
           Blank()
-          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
+          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
         }
 
         if (this.errorText) {

@@ -16,7 +16,7 @@ export class SessionStore {
     await PreferencesStore.init(context);
     const userText = await PreferencesStore.getString(AppConfig.PREF_KEY_SESSION_USER, '');
     const roleText = await PreferencesStore.getString(AppConfig.PREF_KEY_SESSION_ROLE, AppConfig.DEFAULT_ROLE);
-    const tokenText = await PreferencesStore.getString('session_token', '');
+    const tokenText = await PreferencesStore.getString(AppConfig.PREF_KEY_SESSION_TOKEN, '');
     SessionStore.role = (roleText as UserRole) || (AppConfig.DEFAULT_ROLE as UserRole);
     if (userText) {
       try {
@@ -45,13 +45,17 @@ export class SessionStore {
     return SessionStore.token;
   }
 
+  static async getBaseUrl(): Promise<string> {
+    return await PreferencesStore.getString(AppConfig.PREF_KEY_BASE_URL, AppConfig.DEFAULT_BASE_URL);
+  }
+
   static async setRole(role: UserRole): Promise<void> {
     SessionStore.role = role;
     await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_ROLE, role);
   }
 
   static async setBaseUrl(url: string): Promise<void> {
-    await PreferencesStore.setString(AppConfig.PREF_KEY_BASE_URL, url);
+    await PreferencesStore.setString(AppConfig.PREF_KEY_BASE_URL, url.trim());
   }
 
   static async login(user: User, role: UserRole, token: string = ''): Promise<void> {
@@ -60,7 +64,7 @@ export class SessionStore {
     SessionStore.token = token || '';
     await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_USER, JSON.stringify(user));
     await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_ROLE, role);
-    await PreferencesStore.setString('session_token', SessionStore.token);
+    await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_TOKEN, SessionStore.token);
   }
 
   static async logout(): Promise<void> {
@@ -69,6 +73,6 @@ export class SessionStore {
     SessionStore.token = '';
     await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_USER, '');
     await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_ROLE, AppConfig.DEFAULT_ROLE);
-    await PreferencesStore.setString('session_token', '');
+    await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_TOKEN, '');
   }
 }

@@ -4,6 +4,7 @@ export class AppConfig {
   static readonly PREF_KEY_BASE_URL: string = 'base_url';
   static readonly PREF_KEY_SESSION_USER: string = 'session_user';
   static readonly PREF_KEY_SESSION_ROLE: string = 'session_role';
+  static readonly PREF_KEY_SESSION_TOKEN: string = 'session_token';
   static readonly DEFAULT_ROLE: string = 'USER';
 }
 

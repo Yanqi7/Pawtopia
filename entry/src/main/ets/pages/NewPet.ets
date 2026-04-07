@@ -1,4 +1,4 @@
-import router from '@ohos.router';
+import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { PrimaryButton, Field, ErrorText, SectionTitle, OptionGroup } from '../components/Ui';
 import { SessionStore } from '../store/SessionStore';
@@ -26,14 +26,14 @@ struct NewPet {
   @State private errorText: string = '';
 
   aboutToAppear(): void {
-    const params = router.getParams() as Params;
+    const params = AppRouter.params<Params>();
     this.mode = String(params?.mode ?? 'ADOPT');
   }
 
   private async submit(): Promise<void> {
     const user = SessionStore.getUser();
     if (!user || !user.id) {
-      router.replaceUrl({ url: 'pages/Login' });
+      AppRouter.replace('pages/Login');
       return;
     }
     const userId = user.id;
@@ -56,7 +56,7 @@ struct NewPet {
         adoptionNote: this.mode === 'MEDICAL' ? undefined : this.adoptionNote.trim(),
         ownerId: userId
       });
-      router.back();
+      AppRouter.back();
     } catch (e) {
       this.errorText = (e as Error).message || '创建失败';
     } finally {
@@ -70,7 +70,7 @@ struct NewPet {
         Row() {
           Text(this.mode === 'MEDICAL' ? '添加宠物' : '发布领养').fontSize(18).fontWeight(FontWeight.Bold)
           Blank()
-          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => router.back())
+          Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
         }
 
         SectionTitle({ title: '基本信息' })
