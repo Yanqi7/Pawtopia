@@ -1,207 +1,204 @@
-import router from '@ohos.router';
 import { Api } from '../api/Api';
-import { UserRole } from '../model/Models';
+import { AppConfig } from '../app/AppConfig';
+import { MediaAssets } from '../assets/MediaAssets';
+import { appContext } from '../common/AppContext';
+import { AppRouter } from '../common/AppRouter';
+import { Theme } from '../common/Theme';
+import { SessionStore } from '../store/SessionStore';
 
 @Entry
 @Component
 struct Register {
   @State private username: string = '';
   @State private password: string = '';
+  @State private confirmPassword: string = '';
   @State private email: string = '';
   @State private nickname: string = '';
-  @State private selectedRole: UserRole = 'USER';
+  @State private baseUrl: string = AppConfig.DEFAULT_BASE_URL;
   @State private loading: boolean = false;
   @State private errorText: string = '';
 
+  aboutToAppear(): void {
+    this.prepare();
+  }
+
+  private async prepare(): Promise<void> {
+    await SessionStore.init(appContext(this));
+    this.baseUrl = await SessionStore.getBaseUrl();
+  }
+
   private async doRegister(): Promise<void> {
-    if (!this.username || !this.password || !this.email) {
-      this.errorText = '请填写用户名、密码、邮箱';
+    if (!this.username.trim() || !this.email.trim() || !this.password) {
+      this.errorText = '请完整填写用户名、邮箱和密码';
+      return;
+    }
+    if (this.password.length < 6) {
+      this.errorText = '密码至少 6 位';
+      return;
+    }
+    if (this.password !== this.confirmPassword) {
+      this.errorText = '两次输入的密码不一致';
       return;
     }
     this.loading = true;
     this.errorText = '';
     try {
-      await Api.register(
-        this.username.trim(),
-        this.password,
-        this.email.trim(),
-        this.nickname.trim(),
-        this.selectedRole
-      );
-      router.replaceUrl({ url: 'pages/MainTabs' });
+      await SessionStore.setBaseUrl(this.baseUrl.trim() || AppConfig.DEFAULT_BASE_URL);
+      await Api.register(this.username.trim(), this.password, this.email.trim(), this.nickname.trim(), 'USER');
+      AppRouter.replace('pages/MainTabs');
     } catch (e) {
-      this.errorText = (e as Error).message || '注册失败';
+      this.errorText = e instanceof Error ? e.message : '注册失败';
     } finally {
       this.loading = false;
     }
   }
 
   build() {
-    Column() {
+    Stack() {
+      Image(MediaAssets.heroCat())
+        .width('100%')
+        .height('100%')
+        .objectFit(ImageFit.Cover)
+        .opacity(0.1)
+
+      Column()
+        .width('100%')
+        .height('100%')
+        .linearGradient({
+          angle: 180,
+          colors: [['#FFF9FB', 0], ['#F5F8FF', 0.6], ['#F7F8FC', 1]]
+        })
+
       Scroll() {
-        Column({ space: 16 }) {
-          Blank().height(20)
-
-          // Title
-          Column({ space: 4 }) {
-            Text('注册账户')
-              .fontSize(28)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#333333')
-            Text('选择你的身份，进入不同的功能视图')
-              .fontSize(12)
-              .fontColor('#666666')
+        Column({ space: 18 }) {
+          Row({ space: 12 }) {
+            Image($r('app.media.hero_back'))
+              .width(24)
+              .height(24)
+              .onClick(() => AppRouter.back())
+            Column({ space: 4 }) {
+              Text('创建你的 Pawtopia 账号')
+                .fontSize(24)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(Theme.textPrimary)
+              Text('普通用户注册后即可进入社区、领养、档案和商城。')
+                .fontSize(12)
+                .fontColor(Theme.textSecondary)
+            }
           }
           .width('100%')
+          .alignItems(VerticalAlign.Top)
 
-          // Username
-          Column({ space: 6 }) {
-            Text('用户名')
-              .fontSize(12)
-              .fontColor('#666666')
-            TextInput({ placeholder: '唯一用户名', text: this.username })
-              .width('100%')
-              .height(40)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(8)
-              .backgroundColor('#FFFFFF')
-              .border({ width: 1, color: '#E8E8E8' })
-              .fontSize(14)
-              .onChange((v: string) => this.username = v)
-          }
-          .width('100%')
+          Column({ space: 14 }) {
+            TextInput({ placeholder: '用户名', text: this.username })
+              .height(48)
+              .backgroundColor('#FFFFFFE8')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .onChange((value: string) => this.username = value)
 
-          // Password
-          Column({ space: 6 }) {
-            Text('密码')
-              .fontSize(12)
-              .fontColor('#666666')
-            TextInput({ placeholder: '至少6位', text: this.password })
-              .width('100%')
-              .height(40)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(8)
-              .backgroundColor('#FFFFFF')
-              .border({ width: 1, color: '#E8E8E8' })
+            TextInput({ placeholder: '昵称（可选）', text: this.nickname })
+              .height(48)
+              .backgroundColor('#FFFFFFE8')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .onChange((value: string) => this.nickname = value)
+
+            TextInput({ placeholder: '邮箱', text: this.email })
+              .height(48)
+              .backgroundColor('#FFFFFFE8')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .onChange((value: string) => this.email = value)
+
+            TextInput({ placeholder: '密码', text: this.password })
+              .height(48)
               .type(InputType.Password)
-              .fontSize(14)
-              .onChange((v: string) => this.password = v)
-          }
-          .width('100%')
+              .backgroundColor('#FFFFFFE8')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .onChange((value: string) => this.password = value)
 
-          // Email
-          Column({ space: 6 }) {
-            Text('邮箱')
-              .fontSize(12)
-              .fontColor('#666666')
-            TextInput({ placeholder: '用于找回密码', text: this.email })
+            TextInput({ placeholder: '确认密码', text: this.confirmPassword })
+              .height(48)
+              .type(InputType.Password)
+              .backgroundColor('#FFFFFFE8')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .onChange((value: string) => this.confirmPassword = value)
+
+            TextInput({ placeholder: '服务器地址', text: this.baseUrl })
+              .height(48)
+              .backgroundColor('#FFFFFFE8')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .onChange((value: string) => this.baseUrl = value)
+
+            Row({ space: 8 }) {
+              Image($r('app.media.hero_bell'))
+                .width(18)
+                .height(18)
+              Text('商家、宠物医院、管理员账号需由后台开通。')
+                .fontSize(12)
+                .fontColor(Theme.textSecondary)
+                .layoutWeight(1)
+            }
+            .padding(12)
+            .backgroundColor('#FFF5EC')
+            .borderRadius(14)
+
+            if (this.errorText) {
+              Text(this.errorText)
+                .fontSize(12)
+                .fontColor('#D14343')
+                .width('100%')
+            }
+
+            Button(this.loading ? '注册中…' : '完成注册')
               .width('100%')
-              .height(40)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(8)
-              .backgroundColor('#FFFFFF')
-              .border({ width: 1, color: '#E8E8E8' })
-              .fontSize(14)
-              .onChange((v: string) => this.email = v)
-          }
-          .width('100%')
-
-          // Nickname
-          Column({ space: 6 }) {
-            Text('昵称（可选）')
-              .fontSize(12)
-              .fontColor('#666666')
-            TextInput({ placeholder: '你的昵称', text: this.nickname })
-              .width('100%')
-              .height(40)
-              .padding({ left: 12, right: 12 })
-              .borderRadius(8)
-              .backgroundColor('#FFFFFF')
-              .border({ width: 1, color: '#E8E8E8' })
-              .fontSize(14)
-              .onChange((v: string) => this.nickname = v)
-          }
-          .width('100%')
-
-          // Role selection
-          Column({ space: 8 }) {
-            Text('选择身份')
-              .fontSize(12)
-              .fontColor('#666666')
+              .height(50)
+              .fontSize(16)
               .fontWeight(FontWeight.Medium)
-            this.RoleSelectionRow()
-          }
+              .fontColor(Color.White)
+              .borderRadius(16)
+              .linearGradient({
+                angle: 90,
+                colors: [[Theme.accent, 0], ['#FFAE7D', 1]]
+              })
+              .enabled(!this.loading)
+              .onClick(() => this.doRegister())
 
-          // Error
-          if (this.errorText) {
-            Text(this.errorText)
-              .fontSize(12)
-              .fontColor('#ff4d4f')
-              .width('100%')
-              .textAlign(TextAlign.Center)
-          }
-
-          // Register button
-          Button(this.loading ? '注册中…' : '完成注册')
+            Row() {
+              Text('已有账号？')
+                .fontSize(13)
+                .fontColor(Theme.textSecondary)
+              Text('返回登录')
+                .fontSize(13)
+                .fontColor(Theme.primary)
+                .fontWeight(FontWeight.Medium)
+                .onClick(() => AppRouter.back())
+            }
             .width('100%')
-            .height(44)
-            .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .type(ButtonType.Capsule)
-            .backgroundColor('#2B7FFF')
-            .fontColor(Color.White)
-            .enabled(!this.loading)
-            .onClick(() => this.doRegister())
-
-          // Back to login
-          Text('返回登录')
-            .fontSize(13)
-            .fontColor('#2B7FFF')
-            .onClick(() => router.back())
-
-          Blank()
+            .justifyContent(FlexAlign.Center)
+          }
+          .width('100%')
+          .padding(18)
+          .backgroundColor('#FFFFFFD9')
+          .borderRadius(24)
         }
-        .padding({ left: 20, right: 20, bottom: 30 })
+        .padding({ left: 20, right: 20, top: 20, bottom: 24 })
         .width('100%')
       }
       .height('100%')
-      .width('100%')
     }
+    .width('100%')
     .height('100%')
-    .width('100%')
-    .backgroundColor('#F5F5F5')
-  }
-
-  @Builder RoleSelectionRow() {
-    Row({ space: 12 }) {
-      Button('用户')
-        .layoutWeight(1)
-        .height(36)
-        .fontSize(13)
-        .type(ButtonType.Normal)
-        .backgroundColor(this.selectedRole === 'USER' ? '#2B7FFF' : '#F0F2F5')
-        .fontColor(this.selectedRole === 'USER' ? Color.White : '#333333')
-        .borderRadius(6)
-        .onClick(() => this.selectedRole = 'USER')
-      Button('商家')
-        .layoutWeight(1)
-        .height(36)
-        .fontSize(13)
-        .type(ButtonType.Normal)
-        .backgroundColor(this.selectedRole === 'SELLER' ? '#2B7FFF' : '#F0F2F5')
-        .fontColor(this.selectedRole === 'SELLER' ? Color.White : '#333333')
-        .borderRadius(6)
-        .onClick(() => this.selectedRole = 'SELLER')
-      Button('医生')
-        .layoutWeight(1)
-        .height(36)
-        .fontSize(13)
-        .type(ButtonType.Normal)
-        .backgroundColor(this.selectedRole === 'PET_HOSPITAL' ? '#2B7FFF' : '#F0F2F5')
-        .fontColor(this.selectedRole === 'PET_HOSPITAL' ? Color.White : '#333333')
-        .borderRadius(6)
-        .onClick(() => this.selectedRole = 'PET_HOSPITAL')
-    }
-    .width('100%')
+    .backgroundColor(Theme.background)
   }
 }

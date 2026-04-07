@@ -256,6 +256,21 @@ export class Api {
     return await c.postJson<Post>('/api/posts', JSON.stringify(post));
   }
 
+  static async getUserPosts(userId: number): Promise<Post[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<Post[]>(`/api/posts/user/${userId}/all`);
+      AppStatus.setBackendOnline(true);
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      return MockData.postsPage(0, 50).content.filter((post) => post.userId === userId);
+    }
+  }
+
   static async likePost(postId: number): Promise<Post> {
     const c = await Api.client();
     return await c.post<Post>(`/api/posts/${postId}/like`);
@@ -355,5 +370,17 @@ export class Api {
   static async updateOrderStatus(orderId: number, status: OrderStatus): Promise<Order> {
     const c = await Api.client();
     return await c.put<Order>(`/api/orders/${orderId}/status/${status}`);
+  }
+
+  static async probeBackend(): Promise<boolean> {
+    try {
+      const c = new HttpClient(await Api.getBaseUrl());
+      await c.get<Page<Post>>('/api/posts', 'page=0&size=1');
+      AppStatus.setBackendOnline(true);
+      return true;
+    } catch (e) {
+      AppStatus.setBackendOnline(false);
+      return false;
+    }
   }
 }

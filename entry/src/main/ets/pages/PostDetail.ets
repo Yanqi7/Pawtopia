@@ -1,8 +1,11 @@
-import router from '@ohos.router';
 import { Api } from '../api/Api';
+import { MediaAssets } from '../assets/MediaAssets';
+import { EmptyState, ErrorText } from '../components/Ui';
+import { AppRouter } from '../common/AppRouter';
+import { postAuthorLabel, relativeTime } from '../common/Formatters';
+import { Theme } from '../common/Theme';
 import { Comment, Post } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
-import { PrimaryButton, ErrorText, SectionTitle } from '../components/Ui';
 
 interface IdParams {
   id?: number;
@@ -14,13 +17,13 @@ struct PostDetail {
   @State private postId: number = 0;
   @State private loading: boolean = false;
   @State private errorText: string = '';
-  @State private post: Post | undefined = undefined;
+  @State private post?: Post = undefined;
   @State private comments: Comment[] = [];
   @State private commentText: string = '';
   @State private submitting: boolean = false;
 
   aboutToAppear(): void {
-    const params = router.getParams() as IdParams;
+    const params = AppRouter.params<IdParams>();
     this.postId = Number(params?.id ?? 0);
     this.load();
   }
@@ -37,47 +40,43 @@ struct PostDetail {
       const page = await Api.getComments(this.postId, 0, 50);
       this.comments = page.content;
     } catch (e) {
-      this.errorText = (e as Error).message || '加载失败';
+      this.errorText = e instanceof Error ? e.message : '加载失败';
     } finally {
       this.loading = false;
     }
   }
 
   private async like(): Promise<void> {
-    if (!this.postId) {
+    if (!this.postId || !this.post) {
       return;
     }
     try {
       const updated = await Api.likePost(this.postId);
-      if (this.post) {
-        const cur = this.post;
-        const next: Post = {
-          id: cur.id,
-          title: cur.title,
-          content: cur.content,
-          userId: cur.userId,
-          petId: cur.petId,
-          imageUrls: cur.imageUrls,
-          viewCount: cur.viewCount,
-          likeCount: updated.likeCount,
-          commentCount: cur.commentCount,
-          createdAt: cur.createdAt,
-          updatedAt: cur.updatedAt
-        };
-        this.post = next;
-      }
+      const current = this.post;
+      this.post = {
+        id: current.id,
+        title: current.title,
+        content: current.content,
+        userId: current.userId,
+        petId: current.petId,
+        imageUrls: current.imageUrls,
+        viewCount: current.viewCount,
+        likeCount: updated.likeCount ?? current.likeCount,
+        commentCount: current.commentCount,
+        createdAt: current.createdAt,
+        updatedAt: current.updatedAt
+      };
     } catch (e) {
-      this.errorText = (e as Error).message || '点赞失败';
+      this.errorText = e instanceof Error ? e.message : '点赞失败';
     }
   }
 
   private async submitComment(): Promise<void> {
     const user = SessionStore.getUser();
     if (!user || !user.id) {
-      router.replaceUrl({ url: 'pages/Login' });
+      AppRouter.replace('pages/Login');
       return;
     }
-    const userId = user.id;
     if (!this.commentText.trim()) {
       return;
     }
@@ -85,14 +84,14 @@ struct PostDetail {
     try {
       await Api.createComment({
         postId: this.postId,
-        userId: userId,
+        userId: user.id,
         parentId: undefined,
         content: this.commentText.trim()
       });
       this.commentText = '';
       await this.load();
     } catch (e) {
-      this.errorText = (e as Error).message || '评论失败';
+      this.errorText = e instanceof Error ? e.message : '评论失败';
     } finally {
       this.submitting = false;
     }
@@ -100,218 +99,206 @@ struct PostDetail {
 
   build() {
     Column() {
-      // 顶部导航
       Row({ space: 12 }) {
-        Image($r('app.media.more'))
+        Image($r('app.media.hero_back'))
           .width(24)
           .height(24)
-          .fillColor('#2B7FFF')
-          .onClick(() => router.back())
-        Blank()
+          .onClick(() => AppRouter.back())
         Text('帖子详情')
-          .fontSize(16)
+          .fontSize(18)
           .fontWeight(FontWeight.Bold)
+          .fontColor(Theme.textPrimary)
         Blank()
-        Image($r('app.media.more'))
+        Image($r('app.media.hero_bell'))
           .width(24)
           .height(24)
-          .fillColor('#999')
       }
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .width('100%')
+      .padding({ left: 16, right: 16, top: 14, bottom: 12 })
       .backgroundColor('#FFFFFF')
-      .border({ width: 1, color: '#F0F0F0' })
 
       Scroll() {
         Column({ space: 16 }) {
           if (this.errorText) {
-            Text(this.errorText)
-              .fontSize(13)
-              .fontColor(Color.Red)
-              .padding(16)
+            ErrorText({ text: this.errorText })
+          }
+
+          if (this.loading && !this.post) {
+            Column({ space: 10 }) {
+              LoadingProgress()
+                .width(24)
+                .height(24)
+                .color(Theme.primary)
+              Text('正在加载帖子内容…')
+                .fontSize(13)
+                .fontColor(Theme.textSecondary)
+            }
+            .width('100%')
+            .padding(24)
+            .alignItems(HorizontalAlign.Center)
           }
 
           if (this.post) {
-            // 帖子头部信息
-            Column({ space: 12 }) {
-              // 用户信息
-              Row({ space: 12 }) {
-                Image($r('app.media.people'))
-                  .width(40)
-                  .height(40)
-                  .borderRadius(20)
+            Column({ space: 14 }) {
+              Image(MediaAssets.postImage(this.post!.imageUrls, this.post!.id ?? 0))
+                .width('100%')
+                .height(240)
+                .borderRadius(26)
+                .objectFit(ImageFit.Cover)
 
+              Row({ space: 12 }) {
+                Image(MediaAssets.avatar())
+                  .width(44)
+                  .height(44)
+                  .borderRadius(22)
                 Column({ space: 4 }) {
-                  Text('发布者')
+                  Text(postAuthorLabel(this.post!.userId))
                     .fontSize(14)
                     .fontWeight(FontWeight.Medium)
-                  Text('3小时前')
+                    .fontColor(Theme.textPrimary)
+                  Text(relativeTime(this.post!.createdAt))
                     .fontSize(12)
-                    .fontColor('#999')
+                    .fontColor(Theme.textMuted)
                 }
                 .layoutWeight(1)
-
-                Text('…')
-                  .fontSize(16)
-                  .fontColor('#999')
+                Text(`#${this.post!.id ?? '-'}`)
+                  .fontSize(12)
+                  .fontColor(Theme.primary)
+                  .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                  .backgroundColor('#E8F1FF')
+                  .borderRadius(14)
               }
               .width('100%')
 
-              // 帖子标题
               Text(this.post!.title)
-                .fontSize(18)
+                .fontSize(24)
                 .fontWeight(FontWeight.Bold)
+                .fontColor(Theme.textPrimary)
                 .width('100%')
 
-              // 帖子内容
               Text(this.post!.content)
                 .fontSize(14)
-                .fontColor('#333')
+                .lineHeight(24)
+                .fontColor(Theme.textSecondary)
                 .width('100%')
-                .lineHeight(1.6)
 
-              // 帖子图片（如有）
-              if (this.post!.imageUrls) {
-                Image($r('app.media.dog'))
-                  .width('100%')
-                  .height(200)
-                  .borderRadius(8)
-                  .objectFit(ImageFit.Cover)
-              }
-
-              // 互动数据
-              Row({ space: 20 }) {
-                Column({ space: 4 }) {
-                  Text(`${this.post!.likeCount ?? 0}`)
-                    .fontSize(14)
-                    .fontWeight(FontWeight.Bold)
-                  Text('赞')
-                    .fontSize(12)
-                    .fontColor('#999')
-                }
-                .alignItems(HorizontalAlign.Center)
-
-                Column({ space: 4 }) {
-                  Text(`${this.post!.commentCount ?? 0}`)
-                    .fontSize(14)
-                    .fontWeight(FontWeight.Bold)
-                  Text('评论')
-                    .fontSize(12)
-                    .fontColor('#999')
-                }
-                .alignItems(HorizontalAlign.Center)
-
-                Column({ space: 4 }) {
-                  Text(`${this.post!.viewCount ?? 0}`)
-                    .fontSize(14)
-                    .fontWeight(FontWeight.Bold)
-                  Text('浏览')
-                    .fontSize(12)
-                    .fontColor('#999')
-                }
-                .alignItems(HorizontalAlign.Center)
-
+              Row({ space: 16 }) {
+                this.StatPill('点赞', String(this.post!.likeCount ?? 0))
+                this.StatPill('评论', String(this.post!.commentCount ?? 0))
+                this.StatPill('浏览', String(this.post!.viewCount ?? 0))
                 Blank()
-
-                Button('👍 点赞')
-                  .height(36)
-                  .fontSize(12)
-                  .backgroundColor('#FFE8E8')
-                  .fontColor('#FF6B6B')
-                  .borderRadius(18)
+                Button('点赞')
+                  .height(34)
+                  .padding({ left: 16, right: 16 })
+                  .backgroundColor('#FFEAF2')
+                  .fontColor(Theme.accent)
+                  .borderRadius(17)
                   .onClick(() => this.like())
               }
               .width('100%')
-              .padding({ top: 12, bottom: 12 })
-              .backgroundColor('#F9F9F9')
-              .borderRadius(8)
             }
+            .width('100%')
             .padding(16)
-            .backgroundColor(Color.White)
-            .borderRadius(12)
-          } else if (this.loading) {
-            Text('加载中…')
-              .fontSize(14)
-              .fontColor('#999')
-              .width('100%')
-              .textAlign(TextAlign.Center)
-              .padding(40)
+            .backgroundColor('#FFFFFF')
+            .borderRadius(24)
           }
 
-          // 评论区域
           Column({ space: 12 }) {
-            Text(`评论（${this.comments.length}）`)
-              .fontSize(14)
+            Text('评论区')
+              .fontSize(18)
               .fontWeight(FontWeight.Bold)
+              .fontColor(Theme.textPrimary)
+              .width('100%')
 
-            // 评论输入框
-            Column({ space: 8 }) {
-              TextArea({ placeholder: '发表你的看法…', text: this.commentText })
-                .height(80)
-                .backgroundColor('#F9F9F9')
-                .border({ width: 1, color: '#E8E8E8' })
-                .borderRadius(8)
-                .padding(12)
-                .onChange((v: string) => this.commentText = v)
+            Column({ space: 10 }) {
+              TextArea({ placeholder: '写下你的想法…', text: this.commentText })
+                .height(110)
+                .backgroundColor('#F8FAFF')
+                .border({ width: 1, color: Theme.border })
+                .borderRadius(18)
+                .padding(14)
+                .fontSize(14)
+                .onChange((value: string) => this.commentText = value)
 
-              Button(this.submitting ? '发表中…' : '发表评论')
+              Button(this.submitting ? '发送中…' : '发表评论')
                 .width('100%')
-                .height(40)
-                .backgroundColor('#2B7FFF')
+                .height(42)
+                .backgroundColor(Theme.primary)
                 .fontColor(Color.White)
-                .borderRadius(8)
+                .borderRadius(16)
                 .enabled(!this.submitting)
                 .onClick(() => this.submitComment())
             }
-            .padding(12)
-            .backgroundColor(Color.White)
-            .borderRadius(12)
+            .width('100%')
+            .padding(16)
+            .backgroundColor('#FFFFFF')
+            .borderRadius(24)
 
-            // 评论列表
-            ForEach(this.comments, (c: Comment) => {
-              Column({ space: 8 }) {
-                Row({ space: 8 }) {
-                  Image($r('app.media.people'))
-                    .width(32)
-                    .height(32)
-                    .borderRadius(16)
-
-                  Column({ space: 4 }) {
-                    Text('评论者')
-                      .fontSize(12)
-                      .fontWeight(FontWeight.Medium)
-                    Text('1小时前')
-                      .fontSize(10)
-                      .fontColor('#999')
+            if (this.comments.length === 0 && !this.loading) {
+              EmptyState({
+                title: '还没有评论',
+                description: '你可以成为第一个互动的人。'
+              })
+            } else {
+              ForEach(this.comments, (comment: Comment) => {
+                Column({ space: 8 }) {
+                  Row({ space: 10 }) {
+                    Image(MediaAssets.avatar())
+                      .width(34)
+                      .height(34)
+                      .borderRadius(17)
+                    Column({ space: 4 }) {
+                      Text(postAuthorLabel(comment.userId))
+                        .fontSize(13)
+                        .fontWeight(FontWeight.Medium)
+                        .fontColor(Theme.textPrimary)
+                      Text(relativeTime(comment.createdAt))
+                        .fontSize(11)
+                        .fontColor(Theme.textMuted)
+                    }
+                    .layoutWeight(1)
+                    Text(`赞 ${comment.likeCount ?? 0}`)
+                      .fontSize(11)
+                      .fontColor(Theme.primary)
                   }
-                  .layoutWeight(1)
-
-                  Text('赞 ' + (c.likeCount ?? 0))
-                    .fontSize(11)
-                    .fontColor('#2B7FFF')
+                  Text(comment.content)
+                    .fontSize(13)
+                    .fontColor(Theme.textSecondary)
+                    .lineHeight(20)
+                    .width('100%')
                 }
                 .width('100%')
-
-                Text(c.content)
-                  .fontSize(13)
-                  .fontColor('#333')
-                  .width('100%')
-                  .lineHeight(1.5)
-              }
-              .padding(12)
-              .backgroundColor(Color.White)
-              .borderRadius(8)
-              .width('100%')
-            }, (c: Comment) => String(c.id))
+                .padding(14)
+                .backgroundColor('#FFFFFF')
+                .borderRadius(20)
+              }, (comment: Comment) => String(comment.id))
+            }
           }
-          .padding(16)
+          .width('100%')
         }
+        .padding({ left: 16, right: 16, top: 16, bottom: 24 })
         .width('100%')
       }
       .layoutWeight(1)
     }
-    .height('100%')
     .width('100%')
-    .backgroundColor('#F5F5F5')
+    .height('100%')
+    .backgroundColor(Theme.background)
+  }
+
+  @Builder private StatPill(label: string, value: string) {
+    Column({ space: 2 }) {
+      Text(value)
+        .fontSize(14)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(Theme.textPrimary)
+      Text(label)
+        .fontSize(11)
+        .fontColor(Theme.textMuted)
+    }
+    .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+    .backgroundColor('#F8FAFF')
+    .borderRadius(16)
+    .alignItems(HorizontalAlign.Center)
   }
 }

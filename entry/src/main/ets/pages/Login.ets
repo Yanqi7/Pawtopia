@@ -1,292 +1,243 @@
-import router from '@ohos.router';
 import { Api } from '../api/Api';
 import { AppConfig } from '../app/AppConfig';
-import { PreferencesStore } from '../store/PreferencesStore';
+import { MediaAssets } from '../assets/MediaAssets';
+import { appContext } from '../common/AppContext';
+import { AppPrompt } from '../common/AppPrompt';
+import { AppRouter } from '../common/AppRouter';
+import { Theme } from '../common/Theme';
 import { SessionStore } from '../store/SessionStore';
-import { UserRole } from '../model/Models';
 
 @Entry
 @Component
 struct Login {
   @State private username: string = '';
   @State private password: string = '';
-  @State private passwordVisible: boolean = false;
-  @State private selectedRole: UserRole = 'USER';
+  @State private baseUrl: string = AppConfig.DEFAULT_BASE_URL;
   @State private loading: boolean = false;
+  @State private passwordVisible: boolean = false;
   @State private errorText: string = '';
+  @State private online: boolean = true;
 
   aboutToAppear(): void {
-    const context = getContext(this);
-    PreferencesStore.init(context);
+    this.prepare();
+  }
+
+  private async prepare(): Promise<void> {
+    try {
+      await SessionStore.init(appContext(this));
+      this.baseUrl = await SessionStore.getBaseUrl();
+      this.online = await Api.probeBackend();
+    } catch (e) {
+      this.online = false;
+    }
+  }
+
+  private async saveBaseUrl(showToast: boolean): Promise<void> {
+    const nextBaseUrl = this.baseUrl.trim() || AppConfig.DEFAULT_BASE_URL;
+    this.baseUrl = nextBaseUrl;
+    await SessionStore.setBaseUrl(nextBaseUrl);
+    this.online = await Api.probeBackend();
+    if (showToast) {
+      AppPrompt.toast('服务器地址已保存');
+    }
   }
 
   private async doLogin(): Promise<void> {
-    if (!this.username || !this.password) {
+    if (!this.username.trim() || !this.password) {
       this.errorText = '请输入用户名和密码';
       return;
     }
-    this.errorText = '';
     this.loading = true;
+    this.errorText = '';
     try {
+      await this.saveBaseUrl(false);
       await Api.login(this.username.trim(), this.password);
-      router.replaceUrl({ url: 'pages/MainTabs' });
+      AppRouter.replace('pages/MainTabs');
     } catch (e) {
-      this.errorText = (e as Error).message || '登录失败';
+      this.errorText = e instanceof Error ? e.message : '登录失败';
     } finally {
       this.loading = false;
     }
   }
 
+  private async resetBaseUrl(): Promise<void> {
+    this.baseUrl = AppConfig.DEFAULT_BASE_URL;
+    await this.saveBaseUrl(true);
+  }
+
   build() {
     Stack() {
-      // 渐变背景
+      Image(MediaAssets.loginBackground())
+        .width('100%')
+        .height('100%')
+        .objectFit(ImageFit.Cover)
+        .opacity(0.18)
+
       Column()
         .width('100%')
         .height('100%')
         .linearGradient({
-          angle: 135,
-          colors: [['#E8EEF2', 0.0], ['#F0E8FF', 0.5], ['#F0FFF8', 1.0]]
+          angle: 180,
+          colors: [['#F9FCFF', 0], ['#F2F7FF', 0.55], ['#F7F8FC', 1]]
         })
 
-      // 装饰元素：爪子印和骨头
-      Stack() {
-        // 左上爪子
-        Image($r('app.media.paw'))
-          .width(80)
-          .height(80)
-          .opacity(0.15)
-          .position({ left: -20, top: -20 })
-
-        // 右上骨头
-        Image($r('app.media.paw_1'))
-          .width(60)
-          .height(60)
-          .opacity(0.12)
-          .position({ right: -10, top: 20 })
-
-        // 左下骨头
-        Image($r('app.media.paw_1'))
-          .width(70)
-          .height(70)
-          .opacity(0.12)
-          .position({ left: 0, bottom: 150 })
-
-        // 右下爪子
-        Image($r('app.media.paw'))
-          .width(85)
-          .height(85)
-          .opacity(0.1)
-          .position({ right: -30, bottom: -30 })
-      }
-      .width('100%')
-      .height('100%')
-
-      // 主内容
       Scroll() {
-        Column({ space: 20 }) {
-          Blank().height(30)
+        Column({ space: 18 }) {
+          Blank().height(10)
 
-          // APP标题和狗狗头像
-          Row() {
-            Blank()
+          Stack({ alignContent: Alignment.BottomEnd }) {
+            Image(MediaAssets.heroDog())
+              .width('100%')
+              .height(220)
+              .borderRadius(30)
+              .objectFit(ImageFit.Cover)
             Column({ space: 8 }) {
-              Stack() {
-                Circle()
-                  .width(80)
-                  .height(80)
-                  .fill('#FFE8F0')
-                Image($r('app.media.dog'))
-                  .width(75)
-                  .height(75)
-                  .borderRadius(37)
-                  .objectFit(ImageFit.Cover)
+              Row({ space: 8 }) {
+                Image($r('app.media.hero_bell'))
+                  .width(24)
+                  .height(24)
+                Text(this.online ? '服务在线' : '离线模式')
+                  .fontSize(12)
+                  .fontColor(this.online ? Theme.success : Theme.secondary)
               }
-
-              Text('城宠社区')
-                .fontSize(28)
+              Text('和毛孩子一起，过更好的每一天')
+                .fontSize(26)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#FF69B4')
-                .textAlign(TextAlign.Center)
-
-              Text('和宠物一起发现美好生活')
-                .fontSize(12)
-                .fontColor('#FF9D4E')
-                .textAlign(TextAlign.Center)
+                .fontColor(Color.White)
+                .maxLines(2)
             }
-            .alignItems(HorizontalAlign.Center)
-            Blank()
+            .width('100%')
+            .padding(20)
+            .backgroundColor('#0F172A66')
+            .borderRadius(30)
+          }
+
+          Column({ space: 14 }) {
+            Row({ space: 8 }) {
+              Image($r('app.media.hero_search'))
+                .width(20)
+                .height(20)
+              Text('连接服务器')
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(Theme.textPrimary)
+            }
+            TextInput({ placeholder: AppConfig.DEFAULT_BASE_URL, text: this.baseUrl })
+              .height(46)
+              .backgroundColor('#F8FAFF')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .fontSize(14)
+              .onChange((value: string) => this.baseUrl = value)
+
+            Row({ space: 10 }) {
+              Button('保存地址')
+                .height(34)
+                .backgroundColor('#E8F1FF')
+                .fontColor(Theme.primary)
+                .borderRadius(17)
+                .onClick(() => this.saveBaseUrl(true))
+              Button('恢复默认')
+                .height(34)
+                .backgroundColor('#FFF1E7')
+                .fontColor(Theme.secondary)
+                .borderRadius(17)
+                .onClick(() => this.resetBaseUrl())
+              Blank()
+            }
+
+            Text('普通用户可直接注册；商家、宠物医院账号由管理员开通。')
+              .fontSize(12)
+              .fontColor(Theme.textSecondary)
           }
           .width('100%')
-          .padding({ bottom: 20 })
+          .padding(18)
+          .backgroundColor('#FFFFFFEE')
+          .borderRadius(24)
 
-          // 账号输入框
-          Row({ space: 12 }) {
-            Image($r('app.media.ic_people'))
-              .width(20)
-              .height(20)
-              .fillColor('#999')
-            Column() {
-              TextInput({ placeholder: '请输入账号/手机号', text: this.username })
-                .width('100%')
-                .height(44)
-                .backgroundColor('transparent')
-                .fontSize(14)
-                .onChange((v: string) => this.username = v)
-            }
-            .layoutWeight(1)
-            .height(44)
-            .justifyContent(FlexAlign.Center)
+          Column({ space: 14 }) {
+            Text('账号登录')
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Theme.textPrimary)
+              .width('100%')
 
-            Divider()
-              .vertical(true)
-              .strokeWidth(1)
-              .color('#DDD')
-              .height(20)
+            TextInput({ placeholder: '请输入用户名', text: this.username })
+              .height(48)
+              .backgroundColor('#F8FAFF')
+              .border({ width: 1, color: Theme.border })
+              .borderRadius(14)
+              .padding({ left: 14, right: 14 })
+              .fontSize(14)
+              .onChange((value: string) => this.username = value)
 
-            if (this.username) {
-              Text('清除')
-                .fontSize(12)
-                .fontColor('#2B7FFF')
-                .onClick(() => this.username = '')
-                .padding({ right: 4 })
-            }
-          }
-          .padding({ left: 16, right: 12 })
-          .height(44)
-          .backgroundColor('#FFFFFF')
-          .border({ width: 1, color: '#E0E0E0' })
-          .borderRadius(22)
-
-          // 密码输入框
-          Row({ space: 12 }) {
-            Image($r('app.media.lock'))
-              .width(20)
-              .height(20)
-              .fillColor('#999')
-            Column() {
+            Row({ space: 10 }) {
               TextInput({ placeholder: '请输入密码', text: this.password })
-                .width('100%')
-                .height(44)
-                .backgroundColor('transparent')
+                .layoutWeight(1)
+                .height(48)
+                .backgroundColor('#F8FAFF')
+                .border({ width: 1, color: Theme.border })
+                .borderRadius(14)
+                .padding({ left: 14, right: 14 })
                 .fontSize(14)
                 .type(this.passwordVisible ? InputType.Normal : InputType.Password)
-                .onChange((v: string) => this.password = v)
+                .onChange((value: string) => this.password = value)
+              Button(this.passwordVisible ? '隐藏' : '显示')
+                .height(48)
+                .padding({ left: 16, right: 16 })
+                .backgroundColor('#EEF2FF')
+                .fontColor(Theme.primary)
+                .borderRadius(14)
+                .onClick(() => this.passwordVisible = !this.passwordVisible)
             }
-            .layoutWeight(1)
-            .height(44)
-            .justifyContent(FlexAlign.Center)
 
-            Divider()
-              .vertical(true)
-              .strokeWidth(1)
-              .color('#DDD')
-              .height(20)
-
-            Text(this.passwordVisible ? '隐藏' : '显示')
-              .fontSize(12)
-              .fontColor('#2B7FFF')
-              .onClick(() => this.passwordVisible = !this.passwordVisible)
-              .padding({ right: 4 })
-          }
-          .padding({ left: 16, right: 12 })
-          .height(44)
-          .backgroundColor('#FFFFFF')
-          .border({ width: 1, color: '#E0E0E0' })
-          .borderRadius(22)
-
-          // 注册和忘记密码按钮
-          Row({ space: 12 }) {
-            Button('注册')
-              .layoutWeight(1)
-              .height(40)
-              .fontSize(14)
-              .fontColor(Color.White)
-              .backgroundColor('#2B7FFF')
-              .borderRadius(20)
-              .onClick(() => router.pushUrl({ url: 'pages/Register' }))
-
-            Button('忘记密码?')
-              .layoutWeight(1)
-              .height(40)
-              .fontSize(14)
-              .fontColor(Color.White)
-              .backgroundColor('#2B7FFF')
-              .borderRadius(20)
-          }
-
-          // 身份选择
-          Column({ space: 10 }) {
-            Text('身份选择')
-              .fontSize(14)
-              .fontColor('#333')
-              .fontWeight(FontWeight.Medium)
-
-            Row({ space: 12 }) {
-              Button('用户')
-                .layoutWeight(1)
-                .height(36)
-                .fontSize(13)
-                .backgroundColor(this.selectedRole === 'USER' ? '#FFFFFF' : '#FFFFFF')
-                .fontColor(this.selectedRole === 'USER' ? '#FF9D4E' : '#666')
-                .border({ width: 1, color: this.selectedRole === 'USER' ? '#FF9D4E' : '#DDD' })
-                .borderRadius(18)
-                .onClick(() => this.selectedRole = 'USER')
-
-              Button('商家')
-                .layoutWeight(1)
-                .height(36)
-                .fontSize(13)
-                .backgroundColor(this.selectedRole === 'SELLER' ? '#FFB88C' : '#FFFFFF')
-                .fontColor(this.selectedRole === 'SELLER' ? Color.White : '#666')
-                .border({ width: 1, color: this.selectedRole === 'SELLER' ? '#FF9D4E' : '#DDD' })
-                .borderRadius(18)
-                .onClick(() => this.selectedRole = 'SELLER')
-
-              Button('医生')
-                .layoutWeight(1)
-                .height(36)
-                .fontSize(13)
-                .backgroundColor(this.selectedRole === 'PET_HOSPITAL' ? '#FFFFFF' : '#FFFFFF')
-                .fontColor(this.selectedRole === 'PET_HOSPITAL' ? '#FF9D4E' : '#666')
-                .border({ width: 1, color: this.selectedRole === 'PET_HOSPITAL' ? '#FF9D4E' : '#DDD' })
-                .borderRadius(18)
-                .onClick(() => this.selectedRole = 'PET_HOSPITAL')
+            if (this.errorText) {
+              Text(this.errorText)
+                .fontSize(12)
+                .fontColor('#D14343')
+                .width('100%')
             }
-            .width('100%')
-          }
 
-          // 错误信息
-          if (this.errorText) {
-            Text(this.errorText)
-              .fontSize(12)
-              .fontColor(Color.Red)
+            Button(this.loading ? '登录中…' : '登录 Pawtopia')
               .width('100%')
-              .textAlign(TextAlign.Center)
-          }
+              .height(50)
+              .fontSize(16)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Color.White)
+              .borderRadius(16)
+              .linearGradient({
+                angle: 90,
+                colors: [[Theme.primary, 0], ['#5CA8FF', 1]]
+              })
+              .enabled(!this.loading)
+              .onClick(() => this.doLogin())
 
-          // 登录按钮
-          Button(this.loading ? '登录中…' : '登 录')
+            Row() {
+              Text('还没有账号？')
+                .fontSize(13)
+                .fontColor(Theme.textSecondary)
+              Text('立即注册')
+                .fontSize(13)
+                .fontColor(Theme.primary)
+                .fontWeight(FontWeight.Medium)
+                .onClick(() => AppRouter.push('pages/Register'))
+            }
             .width('100%')
-            .height(50)
-            .borderRadius(25)
-            .fontSize(16)
-            .fontColor(Color.White)
-            .fontWeight(FontWeight.Medium)
-            .linearGradient({
-              angle: 90,
-              colors: [['#FF9D4E', 0.0], ['#FFB347', 1.0]]
-            })
-            .enabled(!this.loading)
-            .onClick(() => this.doLogin())
-
-          Blank()
+            .justifyContent(FlexAlign.Center)
+          }
+          .width('100%')
+          .padding(18)
+          .backgroundColor('#FFFFFFEE')
+          .borderRadius(24)
         }
-        .padding({ left: 20, right: 20 })
+        .padding({ left: 20, right: 20, top: 18, bottom: 24 })
         .width('100%')
       }
       .height('100%')
     }
     .width('100%')
     .height('100%')
+    .backgroundColor(Theme.background)
   }
 }

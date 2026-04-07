@@ -97,10 +97,9 @@ export struct OfflineBanner {
 
   build() {
     Row({ space: 8 }) {
-      Image($r('app.media.more'))
+      Image($r('app.media.hero_bell'))
         .width(20)
         .height(20)
-        .fillColor('#FF9D4E')
       Text(this.text)
         .fontSize(12)
         .fontColor('#8A4B00')
@@ -116,5 +115,44 @@ export struct OfflineBanner {
     .borderRadius(10)
     .width('100%')
     .alignItems(VerticalAlign.Center)
+  }
+}
+
+@Component
+export struct EmptyState {
+  title: string = '暂无内容';
+  description: string = '';
+  actionText: string = '';
+  action: () => void = () => {};
+
+  build() {
+    Column({ space: 10 }) {
+      Image($r('app.media.hero_follow'))
+        .width(56)
+        .height(56)
+      Text(this.title)
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor('#1F2937')
+      if (this.description) {
+        Text(this.description)
+          .fontSize(12)
+          .fontColor('#6B7280')
+          .textAlign(TextAlign.Center)
+      }
+      if (this.actionText) {
+        Button(this.actionText)
+          .height(34)
+          .padding({ left: 16, right: 16 })
+          .fontSize(12)
+          .backgroundColor('#E8F1FF')
+          .fontColor('#2B7FFF')
+          .borderRadius(17)
+          .onClick(() => this.action())
+      }
+    }
+    .width('100%')
+    .padding(24)
+    .alignItems(HorizontalAlign.Center)
   }
 }
