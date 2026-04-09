@@ -463,24 +463,19 @@ export class MockData {
   }
 
   static decoratePost(post: Post): Post {
-    const templates = MockData.postsPage(0, 20).content;
-    const base = templates[Math.abs((post.id ?? 1) - 1) % templates.length];
-    const title = post.title ?? '';
-    const content = post.content ?? '';
-    const genericTitle = !title || title.indexOf('帖子标题') >= 0 || title.indexOf('测试') >= 0 || title.indexOf('post') >= 0;
-    const genericContent = !content || content.indexOf('示例') >= 0 || content.indexOf('自动生成') >= 0 || content.indexOf('演示') >= 0 || content.length < 12;
-    const result: Post = {
-      id: post.id ?? base.id,
-      title: genericTitle ? base.title : post.title,
-      content: genericContent ? base.content : post.content,
-      userId: post.userId ?? base.userId,
-      likeCount: (post.likeCount ?? 0) > 0 ? post.likeCount : base.likeCount,
-      commentCount: (post.commentCount ?? 0) > 0 ? post.commentCount : base.commentCount,
-      viewCount: (post.viewCount ?? 0) > 0 ? post.viewCount : base.viewCount,
-      createdAt: post.createdAt ?? base.createdAt,
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      userId: post.userId,
+      petId: post.petId,
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      viewCount: post.viewCount,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
       imageUrls: post.imageUrls ? post.imageUrls : MockData.postImageKey(post.id)
     };
-    return result;
   }
 
   static decoratePets(pets: Pet[]): Pet[] {
@@ -517,24 +512,17 @@ export class MockData {
   }
 
   static decorateProduct(product: Product): Product {
-    const templates = MockData.productsPage(0, 20).content;
-    const base = templates[Math.abs((product.id ?? 1) - 1) % templates.length];
-    const name = product.name ?? '';
-    const description = product.description ?? '';
-    const genericName = !name || name.indexOf('商品') >= 0 || name.indexOf('测试') >= 0;
-    const genericDescription = !description || description.length < 8;
-    const priceNum = Number(product.price);
-    const result: Product = {
-      id: product.id ?? base.id,
-      name: genericName ? base.name : product.name,
-      description: genericDescription ? base.description : product.description,
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
       image: product.image ?? MockData.productImageKey(product.id, product.category),
-      price: Number.isNaN(priceNum) || priceNum <= 0 ? base.price : product.price,
-      stockQuantity: (product.stockQuantity ?? 0) > 0 ? product.stockQuantity : base.stockQuantity,
-      category: product.category ?? base.category,
-      createdAt: product.createdAt ?? base.createdAt
+      price: product.price,
+      stockQuantity: product.stockQuantity,
+      category: product.category,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
     };
-    return result;
   }
 
   static postImageKey(seed?: number): string {

@@ -32,6 +32,8 @@ public class Pet {
     
     private String description;
 
+    private String image;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "adoption_status", nullable = false)
     private AdoptionStatus adoptionStatus = AdoptionStatus.AVAILABLE;

@@ -94,28 +94,7 @@ export class Api {
       AppStatus.setBackendOnline(true);
       return MockData.decoratePets(res);
     } catch (e) {
-      const localPets = MockData.decoratePets(MockData.petsAll().map((pet: Pet) => {
-        const item: Pet = {
-          id: pet.id,
-          name: pet.name,
-          species: pet.species,
-          breed: pet.breed,
-          color: pet.color,
-          age: pet.age,
-          gender: pet.gender,
-          size: pet.size,
-          description: pet.description,
-          image: pet.image,
-          adoptionStatus: pet.adoptionStatus,
-          adoptionCity: pet.adoptionCity,
-          adoptionNote: pet.adoptionNote,
-          birthDate: pet.birthDate,
-          ownerId: ownerId,
-          createdAt: pet.createdAt,
-          updatedAt: pet.updatedAt
-        };
-        return item;
-      }));
+      const localPets = MockData.petsAll().filter((pet: Pet) => pet.ownerId === ownerId);
       if (e instanceof HttpError) {
         if (e.statusCode === 401 || e.statusCode === 403) {
           return localPets;
@@ -147,7 +126,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Pet[]>('/api/adoptions/listings');
       AppStatus.setBackendOnline(true);
-      return MockData.decoratePets(res);
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -258,16 +237,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Page<Post>>('/api/posts', `page=${page}&size=${size}`);
       AppStatus.setBackendOnline(true);
-      return {
-        content: MockData.decoratePosts(res.content),
-        totalElements: res.totalElements,
-        totalPages: res.totalPages,
-        number: res.number,
-        size: res.size,
-        first: res.first,
-        last: res.last,
-        empty: res.empty
-      };
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -302,7 +272,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Post[]>(`/api/posts/user/${userId}/all`);
       AppStatus.setBackendOnline(true);
-      return MockData.decoratePosts(res);
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -366,7 +336,7 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Product>(`/api/products/${productId}`);
       AppStatus.setBackendOnline(true);
-      return MockData.decorateProduct(res);
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
@@ -437,15 +407,14 @@ export class Api {
       if (!user || !user.id) {
         return [];
       }
-      const localRequests = MockData.adoptionRequestsByPet(1, user.id).concat(MockData.adoptionRequestsByPet(3, user.id));
       if (e instanceof HttpError) {
         if (e.statusCode === 401 || e.statusCode === 403) {
-          return localRequests;
+          return [];
         }
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return localRequests;
+      return [];
     }
   }
 
