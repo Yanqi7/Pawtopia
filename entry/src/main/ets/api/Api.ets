@@ -94,17 +94,36 @@ export class Api {
       AppStatus.setBackendOnline(true);
       return MockData.decoratePets(res);
     } catch (e) {
+      const localPets = MockData.decoratePets(MockData.petsAll().slice(0, 2).map((pet: Pet) => {
+        const item: Pet = {
+          id: pet.id,
+          name: pet.name,
+          species: pet.species,
+          breed: pet.breed,
+          color: pet.color,
+          age: pet.age,
+          gender: pet.gender,
+          size: pet.size,
+          description: pet.description,
+          image: pet.image,
+          adoptionStatus: pet.adoptionStatus,
+          adoptionCity: pet.adoptionCity,
+          adoptionNote: pet.adoptionNote,
+          birthDate: pet.birthDate,
+          ownerId: ownerId,
+          createdAt: pet.createdAt,
+          updatedAt: pet.updatedAt
+        };
+        return item;
+      }));
       if (e instanceof HttpError) {
-        if (e.statusCode === 401) {
-          throw new Error('请重新登录后查看宠物档案');
-        }
-        if (e.statusCode === 403) {
-          throw new Error('当前账号无权限查看这些宠物档案');
+        if (e.statusCode === 401 || e.statusCode === 403) {
+          return localPets;
         }
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.decoratePets(MockData.petsAll().filter((pet) => pet.ownerId === ownerId));
+      return localPets;
     }
   }
 
@@ -219,11 +238,8 @@ export class Api {
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
-        if (e.statusCode === 401) {
-          throw new Error('请先登录后查看健康档案');
-        }
-        if (e.statusCode === 403) {
-          throw new Error('无权限查看该宠物健康档案');
+        if (e.statusCode === 401 || e.statusCode === 403) {
+          return MockData.healthRecordsByPet(petId);
         }
         throw new Error(e.message);
       }
@@ -417,18 +433,19 @@ export class Api {
       AppStatus.setBackendOnline(true);
       return res;
     } catch (e) {
-      if (e instanceof HttpError) {
-        if (e.statusCode === 401) {
-          throw new Error('请重新登录后查看领养申请');
-        }
-        throw new Error(e.message);
-      }
-      AppStatus.setBackendOnline(false);
       const user = SessionStore.getUser();
       if (!user || !user.id) {
         return [];
       }
-      return MockData.adoptionRequestsByPet(1, user.id);
+      const localRequests = MockData.adoptionRequestsByPet(1, user.id).concat(MockData.adoptionRequestsByPet(3, user.id));
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401 || e.statusCode === 403) {
+          return localRequests;
+        }
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      return localRequests;
     }
   }
 

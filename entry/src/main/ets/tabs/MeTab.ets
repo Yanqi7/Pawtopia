@@ -6,6 +6,7 @@ import { AppStatus } from '../app/AppStatus';
 import { AppPrompt } from '../common/AppPrompt';
 import { Theme } from '../common/Theme';
 import { CartStore } from '../store/CartStore';
+import { EmptyState, OfflineBanner } from '../components/Ui';
 
 function roleLabel(role: string): string {
   return role === 'PET_SHOP' ? '宠物店' : role === 'PET_HOSPITAL' ? '宠物医院' : role === 'SELLER' ? '卖家' : role === 'ADMIN' ? '管理员' : '普通用户';
@@ -77,87 +78,78 @@ export struct MeTab {
 
   build() {
     Column() {
-      if (this.user) {
-        Column({ space: 14 }) {
-          Row({ space: 14 }) {
-            Image($r('app.media.people'))
-              .width(72)
-              .height(72)
-              .borderRadius(36)
-
-            Column({ space: 6 }) {
-              Text(this.user?.nickname || this.user?.username || '')
-                .fontSize(20)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(Color.White)
-              Text(roleLabel(this.user?.role ?? 'USER'))
-                .fontSize(12)
-                .fontColor('#EAF2FF')
-                .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-                .backgroundColor('#FFFFFF22')
-                .borderRadius(12)
-              Text(this.user?.email || '')
-                .fontSize(12)
-                .fontColor('#F8FAFC')
-              Text(AppStatus.isBackendOnline() ? '云端已连接' : '当前离线模式')
-                .fontSize(12)
-                .fontColor('#F8FAFC')
-            }
-            .layoutWeight(1)
-          }
-          .width('100%')
-
-          Row({ space: 12 }) {
-            this.StatCard('帖子', this.postCount, () => this.navigateTab(0))
-            this.StatCard('宠物', this.petCount, () => this.navigateTab(2))
-            this.StatCard('订单', this.orderCount, () => AppRouter.push('pages/Orders'))
-            this.StatCard('领养', this.adoptionCount, () => AppRouter.push('pages/MyAdoptions'))
-          }
-          .width('100%')
-        }
-        .width('100%')
-        .padding({ left: 16, right: 16, top: 20, bottom: 18 })
-        .linearGradient({ angle: 135, colors: [['#3B9AFF', 0], ['#2B7FFF', 1]] })
-
-        Scroll() {
-          Column({ space: 12 }) {
-            this.MenuItem('我的发布', `${this.postCount}`, $r('app.media.tiezi'), () => this.navigateTab(0))
-            this.MenuItem('我的宠物', `${this.petCount}`, $r('app.media.dangan'), () => this.navigateTab(2))
-            this.MenuItem('我的订单', `${this.orderCount}`, $r('app.media.shopping'), () => AppRouter.push('pages/Orders'))
-            this.MenuItem('我的领养申请', `${this.adoptionCount}`, $r('app.media.like'), () => AppRouter.push('pages/MyAdoptions'))
-            this.MenuItem('继续逛商城', '精选好物', $r('app.media.gouwuche'), () => this.navigateTab(3))
-            this.MenuItem('切换账号', '', $r('app.media.ic_switch'), () => AppRouter.push('pages/Login'))
-            this.MenuItem('关于 Pawtopia', '宠物社区 · 领养 · 档案 · 商城', $r('app.media.more'), () => AppPrompt.toast('Pawtopia 正在持续完善中'))
-            this.MenuItem('清理缓存', '清空购物车缓存', $r('app.media.ic_trash'), () => this.clearCache())
-            this.MenuItem('版本信息', this.loading ? '同步中…' : 'HarmonyOS 6.0.2 / dev', $r('app.media.more'), () => AppPrompt.toast('当前为 dev 分支最新构建'))
-            this.MenuItem('退出登录', '', $r('app.media.ic_logout'), () => this.logout(), true)
-          }
-          .width('100%')
-          .padding(16)
-        }
-        .layoutWeight(1)
+      if (!this.user) {
+        EmptyState({
+          title: '登录后查看你的宠物生活',
+          description: '你可以管理宠物档案、领养申请、商城订单和社区内容。',
+          actionText: '立即登录',
+          action: () => AppRouter.push('pages/Login')
+        })
       } else {
-        Column({ space: 14 }) {
-          Text('登录后体验完整的宠物社区')
-            .fontSize(18)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(Theme.textPrimary)
-          Text('你可以发布宠物动态、维护档案、提交领养申请和管理订单。')
-            .fontSize(13)
-            .fontColor(Theme.textSecondary)
-            .textAlign(TextAlign.Center)
-          Button('立即登录')
-            .width('70%')
-            .height(46)
-            .backgroundColor(Theme.primary)
-            .fontColor(Color.White)
-            .borderRadius(23)
-            .onClick(() => AppRouter.push('pages/Login'))
+        Column({ space: 12 }) {
+          Column({ space: 12 }) {
+            Row({ space: 14 }) {
+              Image($r('app.media.people'))
+                .width(68)
+                .height(68)
+                .borderRadius(34)
+              Column({ space: 6 }) {
+                Text(this.user?.nickname || this.user?.username || '')
+                  .fontSize(22)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(Color.White)
+                Text(roleLabel(this.user?.role ?? 'USER'))
+                  .fontSize(12)
+                  .fontColor('#EEF5FF')
+                Text(this.user?.email || '')
+                  .fontSize(12)
+                  .fontColor('#EEF5FF')
+              }
+              .layoutWeight(1)
+              Text(AppStatus.isBackendOnline() ? '在线' : '离线')
+                .fontSize(11)
+                .fontColor(Color.White)
+                .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                .backgroundColor('#FFFFFF22')
+                .borderRadius(14)
+            }
+            .width('100%')
+
+            Row({ space: 10 }) {
+              this.StatCard('我的帖子', this.postCount, () => this.navigateTab(0))
+              this.StatCard('宠物档案', this.petCount, () => this.navigateTab(2))
+              this.StatCard('订单', this.orderCount, () => AppRouter.push('pages/Orders'))
+              this.StatCard('领养申请', this.adoptionCount, () => AppRouter.push('pages/MyAdoptions'))
+            }
+            .width('100%')
+          }
+          .padding(16)
+          .width('100%')
+          .linearGradient({ angle: 135, colors: [['#4AA3FF', 0], ['#2B7FFF', 1]] })
+          .borderRadius(28)
+
+          if (!AppStatus.isBackendOnline()) {
+            OfflineBanner({ text: '当前处于离线模式，统计和列表使用本地演示数据', action: () => this.loadSummary() })
+          }
+
+          Scroll() {
+            Column({ space: 12 }) {
+              this.MenuItem('我的发布', '查看你发过的宠物讨论与笔记', () => this.navigateTab(0))
+              this.MenuItem('我的宠物', '进入宠物档案和健康记录', () => this.navigateTab(2))
+              this.MenuItem('我的订单', '查看购买与支付状态', () => AppRouter.push('pages/Orders'))
+              this.MenuItem('我的领养申请', '查看申请进度与留言', () => AppRouter.push('pages/MyAdoptions'))
+              this.MenuItem('继续逛商城', '挑选粮食、玩具和护理用品', () => this.navigateTab(3))
+              this.MenuItem('切换账号', '返回登录页重新登录', () => AppRouter.push('pages/Login'))
+              this.MenuItem('清理购物车缓存', '清空本地购物车商品', () => this.clearCache())
+              this.MenuItem('版本信息', this.loading ? '统计同步中…' : 'HarmonyOS 6.0.2 · dev', () => AppPrompt.toast('当前为 dev 分支构建'))
+              this.MenuItem('退出登录', '退出当前账号', () => this.logout(), true)
+            }
+            .width('100%')
+            .padding({ bottom: 16 })
+          }
+          .layoutWeight(1)
         }
-        .height('100%')
-        .width('100%')
-        .justifyContent(FlexAlign.Center)
-        .alignItems(HorizontalAlign.Center)
+        .padding(16)
       }
     }
     .height('100%')
@@ -173,10 +165,12 @@ export struct MeTab {
         .fontColor(Color.White)
       Text(label)
         .fontSize(11)
-        .fontColor('#EAF2FF')
+        .fontColor('#EEF5FF')
+        .textAlign(TextAlign.Center)
     }
     .layoutWeight(1)
     .height(72)
+    .padding({ left: 6, right: 6 })
     .backgroundColor('#FFFFFF1A')
     .borderRadius(18)
     .alignItems(HorizontalAlign.Center)
@@ -184,32 +178,31 @@ export struct MeTab {
     .onClick(() => action())
   }
 
-  @Builder private MenuItem(title: string, desc: string, icon: Resource, action: () => void, danger: boolean = false) {
+  @Builder private MenuItem(title: string, desc: string, action: () => void, danger: boolean = false) {
     Row({ space: 12 }) {
-      Image(icon)
-        .width(22)
-        .height(22)
-        .fillColor(danger ? '#FF5A5F' : Theme.primary)
+      Column()
+        .width(8)
+        .height(36)
+        .borderRadius(4)
+        .backgroundColor(danger ? '#FF6B6B' : Theme.primary)
       Column({ space: 4 }) {
         Text(title)
-          .fontSize(14)
+          .fontSize(15)
           .fontWeight(FontWeight.Medium)
-          .fontColor(danger ? '#FF5A5F' : Theme.textPrimary)
-        if (desc) {
-          Text(desc)
-            .fontSize(12)
-            .fontColor(Theme.textSecondary)
-        }
+          .fontColor(danger ? '#C53D3D' : Theme.textPrimary)
+        Text(desc)
+          .fontSize(12)
+          .fontColor(Theme.textSecondary)
       }
       .layoutWeight(1)
       Text('›')
         .fontSize(22)
-        .fontColor(danger ? '#FF5A5F' : Theme.textMuted)
+        .fontColor(danger ? '#C53D3D' : Theme.textMuted)
     }
     .padding(16)
     .width('100%')
     .backgroundColor(Color.White)
-    .borderRadius(20)
+    .borderRadius(22)
     .onClick(() => action())
   }
 }

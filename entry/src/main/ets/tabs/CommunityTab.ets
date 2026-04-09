@@ -149,7 +149,7 @@ export struct CommunityTab {
               .borderRadius(21)
             Column({ space: 4 }) {
               Text('Pawtopia 社区')
-                .fontSize(24)
+                .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Color.White)
               Text('分享日常、学习喂养知识、记录宠物故事')
@@ -198,7 +198,7 @@ export struct CommunityTab {
           }
           .width('100%')
         }
-        .padding({ left: 16, right: 16, bottom: 18 })
+        .padding({ left: 16, right: 16, bottom: 12 })
         .width('100%')
       }
 

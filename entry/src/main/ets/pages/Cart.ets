@@ -3,7 +3,7 @@ import { Api } from '../api/Api';
 import { Product } from '../model/Models';
 import { CartStore, CartItem } from '../store/CartStore';
 import { SessionStore } from '../store/SessionStore';
-import { PrimaryButton, ErrorText, Field, SectionTitle } from '../components/Ui';
+import { ErrorText, Field } from '../components/Ui';
 import { MediaAssets } from '../assets/MediaAssets';
 import { Theme } from '../common/Theme';
 import { productCategoryLabel } from '../common/Formatters';
@@ -111,68 +111,181 @@ struct Cart {
   }
 
   build() {
-    Scroll() {
-      Column({ space: 12 }) {
+    Stack({ alignContent: Alignment.Bottom }) {
+      Column() {
         Row() {
-          Text('购物车').fontSize(18).fontWeight(FontWeight.Bold)
+          Text('购物车')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
           Blank()
           if (this.lines.length > 0) {
-            Text('清空').fontSize(13).fontColor('#FF5A5F').margin({ right: 12 }).onClick(() => this.clearCart())
+            Text('清空')
+              .fontSize(13)
+              .fontColor('#FF5A5F')
+              .margin({ right: 12 })
+              .onClick(() => this.clearCart())
           }
-          Text('返回').fontSize(14).fontColor(Theme.primary).onClick(() => AppRouter.back())
+          Text('返回')
+            .fontSize(14)
+            .fontColor(Theme.primary)
+            .onClick(() => AppRouter.back())
         }
+        .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 
         if (this.errorText) {
           ErrorText({ text: this.errorText })
         }
 
-        SectionTitle({ title: `商品（${this.lines.length}）` })
-        ForEach(this.lines, (line: CartLine) => {
-          Row({ space: 12 }) {
-            Image(MediaAssets.productImage(line.product?.image, line.item.productId, line.product?.category))
-              .width(92)
-              .height(92)
-              .borderRadius(20)
-              .objectFit(ImageFit.Cover)
-
-            Column({ space: 8 }) {
-              Text(line.product?.name ?? `商品 #${line.item.productId}`).fontSize(16).fontWeight(FontWeight.Medium)
-              Text(productCategoryLabel(line.product?.category)).fontSize(11).fontColor('#FF8A3D')
-              Text(`￥${line.product?.price ?? '-'} · 库存 ${line.product?.stockQuantity ?? '-'}`).fontSize(12).fontColor('#666')
-              Row({ space: 10 }) {
-                Button('-').height(32).width(36).borderRadius(10).backgroundColor('#F0F2F5').onClick(() => this.adjustQuantity(line, -1))
-                Text(String(line.item.quantity)).fontSize(16).fontWeight(FontWeight.Bold)
-                Button('+').height(32).width(36).borderRadius(10).backgroundColor('#F0F2F5').onClick(() => this.adjustQuantity(line, 1))
-                Blank()
-                Text('移除').fontSize(12).fontColor('#FF5A5F').onClick(() => this.remove(line.item.productId))
+        Scroll() {
+          Column({ space: 12 }) {
+            if (!this.loading && this.lines.length === 0) {
+              Column({ space: 10 }) {
+                Text('购物车还是空的')
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor(Theme.textPrimary)
+                Text('去商城选一些粮食、玩具或护理用品吧。')
+                  .fontSize(13)
+                  .fontColor(Theme.textSecondary)
+                Button('去商城逛逛')
+                  .height(40)
+                  .padding({ left: 18, right: 18 })
+                  .backgroundColor('#E8F1FF')
+                  .fontColor(Theme.primary)
+                  .borderRadius(20)
+                  .onClick(() => AppRouter.replace('pages/MainTabs'))
               }
-              .width('100%')
+              .padding(20)
+              .backgroundColor(Color.White)
+              .borderRadius(24)
             }
-            .layoutWeight(1)
-            .alignItems(HorizontalAlign.Start)
+
+            ForEach(this.lines, (line: CartLine) => {
+              Column({ space: 12 }) {
+                Row({ space: 12 }) {
+                  Image(MediaAssets.productImage(line.product?.name, line.item.productId, line.product?.category))
+                    .width(96)
+                    .height(96)
+                    .borderRadius(18)
+                    .objectFit(ImageFit.Cover)
+                  Column({ space: 8 }) {
+                    Text(line.product?.name ?? `商品 #${line.item.productId}`)
+                      .fontSize(15)
+                      .fontWeight(FontWeight.Medium)
+                      .fontColor(Theme.textPrimary)
+                      .maxLines(2)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    Text(productCategoryLabel(line.product?.category))
+                      .fontSize(11)
+                      .fontColor('#FF8A3D')
+                      .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+                      .backgroundColor('#FFF3E0')
+                      .borderRadius(10)
+                    Row({ space: 8 }) {
+                      Text(`￥${line.product?.price ?? '-'}`)
+                        .fontSize(18)
+                        .fontWeight(FontWeight.Bold)
+                        .fontColor('#FF5A5F')
+                      Text(`库存 ${line.product?.stockQuantity ?? '-'}`)
+                        .fontSize(11)
+                        .fontColor(Theme.textMuted)
+                    }
+                  }
+                  .layoutWeight(1)
+                  .alignItems(HorizontalAlign.Start)
+                }
+
+                Row() {
+                  Text('移除')
+                    .fontSize(12)
+                    .fontColor('#FF5A5F')
+                    .onClick(() => this.remove(line.item.productId))
+                  Blank()
+                  Row({ space: 0 }) {
+                    Button('-')
+                      .width(34)
+                      .height(30)
+                      .backgroundColor('#F1F3F7')
+                      .borderRadius({ topLeft: 12, bottomLeft: 12, topRight: 0, bottomRight: 0 })
+                      .fontColor(Theme.textPrimary)
+                      .onClick(() => this.adjustQuantity(line, -1))
+                    Text(String(line.item.quantity))
+                      .width(44)
+                      .height(30)
+                      .textAlign(TextAlign.Center)
+                      .fontSize(14)
+                      .fontWeight(FontWeight.Medium)
+                      .backgroundColor('#F8FAFD')
+                    Button('+')
+                      .width(34)
+                      .height(30)
+                      .backgroundColor('#F1F3F7')
+                      .borderRadius({ topLeft: 0, bottomLeft: 0, topRight: 12, bottomRight: 12 })
+                      .fontColor(Theme.textPrimary)
+                      .onClick(() => this.adjustQuantity(line, 1))
+                  }
+                }
+                .width('100%')
+              }
+              .padding(16)
+              .backgroundColor(Color.White)
+              .borderRadius(22)
+            }, (line: CartLine) => String(line.item.productId))
+
+            if (this.lines.length > 0) {
+              Column({ space: 10 }) {
+                Text('收货信息')
+                  .fontSize(15)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(Theme.textPrimary)
+                Field({ label: '地址', placeholder: '请输入收货地址', value: this.address, onChange: (v: string) => this.address = v })
+                Field({ label: '联系人', placeholder: '姓名', value: this.contactName, onChange: (v: string) => this.contactName = v })
+                Field({ label: '电话', placeholder: '手机号', value: this.contactPhone, onChange: (v: string) => this.contactPhone = v, type: InputType.PhoneNumber })
+              }
+              .padding(16)
+              .backgroundColor(Color.White)
+              .borderRadius(22)
+            }
+
+            Blank().height(92)
           }
           .padding(16)
-          .backgroundColor(Color.White)
-          .borderRadius(24)
-        }, (line: CartLine) => String(line.item.productId))
-
-        if (!this.loading && this.lines.length === 0) {
-          Text('购物车为空').fontSize(13).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(24)
+          .width('100%')
         }
-
-        SectionTitle({ title: '收货信息' })
-        Field({ label: '地址', placeholder: '请输入收货地址', value: this.address, onChange: (v: string) => this.address = v })
-        Field({ label: '联系人', placeholder: '姓名', value: this.contactName, onChange: (v: string) => this.contactName = v })
-        Field({ label: '电话', placeholder: '手机号', value: this.contactPhone, onChange: (v: string) => this.contactPhone = v, type: InputType.PhoneNumber })
-
-        Text(`合计：￥${this.totalAmount().toFixed(2)}`).fontSize(16).fontColor('#333').fontWeight(FontWeight.Medium)
-        PrimaryButton({ text: this.submitting ? '提交中…' : '提交订单', disabled: this.submitting || this.lines.length === 0, action: () => this.submitOrder() })
+        .layoutWeight(1)
       }
-      .padding(16)
+      .height('100%')
       .width('100%')
+      .backgroundColor(Theme.background)
+
+      if (this.lines.length > 0) {
+        Row({ space: 12 }) {
+          Column({ space: 4 }) {
+            Text('合计')
+              .fontSize(12)
+              .fontColor(Theme.textSecondary)
+            Text(`￥${this.totalAmount().toFixed(2)}`)
+              .fontSize(22)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#FF5A5F')
+          }
+          .layoutWeight(1)
+          Button(this.submitting ? '提交中…' : '结算')
+            .width(132)
+            .height(44)
+            .backgroundColor(Theme.primary)
+            .fontColor(Color.White)
+            .fontWeight(FontWeight.Bold)
+            .borderRadius(22)
+            .enabled(!this.submitting)
+            .onClick(() => this.submitOrder())
+        }
+        .padding({ left: 16, right: 16, top: 12, bottom: 18 })
+        .width('100%')
+        .backgroundColor('#FFFFFFF8')
+      }
     }
     .height('100%')
     .width('100%')
-    .backgroundColor(Theme.background)
   }
 }
