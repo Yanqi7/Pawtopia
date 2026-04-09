@@ -5,6 +5,19 @@ import { appContext } from '../common/AppContext';
 import { AppRouter } from '../common/AppRouter';
 import { Theme } from '../common/Theme';
 import { SessionStore } from '../store/SessionStore';
+import { UserRole } from '../model/Models';
+
+interface RoleOption {
+  label: string;
+  value: UserRole;
+}
+
+const ROLE_OPTIONS: RoleOption[] = [
+  { label: '普通用户', value: 'USER' },
+  { label: '宠物店', value: 'PET_SHOP' },
+  { label: '宠物医院', value: 'PET_HOSPITAL' },
+  { label: '卖家', value: 'SELLER' }
+];
 
 @Entry
 @Component
@@ -15,6 +28,7 @@ struct Register {
   @State private email: string = '';
   @State private nickname: string = '';
   @State private baseUrl: string = AppConfig.DEFAULT_BASE_URL;
+  @State private selectedRole: UserRole = 'USER';
   @State private loading: boolean = false;
   @State private errorText: string = '';
 
@@ -44,7 +58,7 @@ struct Register {
     this.errorText = '';
     try {
       await SessionStore.setBaseUrl(this.baseUrl.trim() || AppConfig.DEFAULT_BASE_URL);
-      await Api.register(this.username.trim(), this.password, this.email.trim(), this.nickname.trim(), 'USER');
+      await Api.register(this.username.trim(), this.password, this.email.trim(), this.nickname.trim(), this.selectedRole);
       AppRouter.replace('pages/MainTabs');
     } catch (e) {
       this.errorText = e instanceof Error ? e.message : '注册失败';
@@ -81,7 +95,7 @@ struct Register {
                 .fontSize(24)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Theme.textPrimary)
-              Text('普通用户注册后即可进入社区、领养、档案和商城。')
+              Text('注册时请选择你的身份类型，后续会影响可见功能和服务入口。')
                 .fontSize(12)
                 .fontColor(Theme.textSecondary)
             }
@@ -90,6 +104,23 @@ struct Register {
           .alignItems(VerticalAlign.Top)
 
           Column({ space: 14 }) {
+            Text('身份类型')
+              .fontSize(13)
+              .fontColor('#444')
+              .width('100%')
+            Flex({ wrap: FlexWrap.Wrap }) {
+              ForEach(ROLE_OPTIONS, (option: RoleOption) => {
+                Button(option.label)
+                  .height(34)
+                  .margin({ right: 10, bottom: 10 })
+                  .borderRadius(17)
+                  .backgroundColor(this.selectedRole === option.value ? Theme.primary : '#F0F2F5')
+                  .fontColor(this.selectedRole === option.value ? Color.White : '#333')
+                  .onClick(() => this.selectedRole = option.value)
+              }, (option: RoleOption) => option.value)
+            }
+            .width('100%')
+
             TextInput({ placeholder: '用户名', text: this.username })
               .height(48)
               .backgroundColor('#FFFFFFE8')
@@ -140,18 +171,10 @@ struct Register {
               .padding({ left: 14, right: 14 })
               .onChange((value: string) => this.baseUrl = value)
 
-            Row({ space: 8 }) {
-              Image($r('app.media.hero_bell'))
-                .width(18)
-                .height(18)
-              Text('商家、宠物医院、管理员账号需由后台开通。')
-                .fontSize(12)
-                .fontColor(Theme.textSecondary)
-                .layoutWeight(1)
-            }
-            .padding(12)
-            .backgroundColor('#FFF5EC')
-            .borderRadius(14)
+            Text('管理员账号需后台开通；其他身份可用于演示完整业务流程。')
+              .fontSize(12)
+              .fontColor(Theme.textSecondary)
+              .width('100%')
 
             if (this.errorText) {
               Text(this.errorText)
@@ -167,10 +190,7 @@ struct Register {
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
               .borderRadius(16)
-              .linearGradient({
-                angle: 90,
-                colors: [[Theme.accent, 0], ['#FFAE7D', 1]]
-              })
+              .linearGradient({ angle: 90, colors: [[Theme.accent, 0], ['#FFAE7D', 1]] })
               .enabled(!this.loading)
               .onClick(() => this.doRegister())
 

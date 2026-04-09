@@ -67,6 +67,23 @@ struct Orders {
     }
   }
 
+  private statusLabel(status: OrderStatus): string {
+    switch (status) {
+      case 'PENDING':
+        return '待付款';
+      case 'PAID':
+        return '待发货';
+      case 'SHIPPED':
+        return '运输中';
+      case 'DELIVERED':
+        return '已完成';
+      case 'CANCELLED':
+        return '已取消';
+      default:
+        return status;
+    }
+  }
+
   build() {
     Column() {
       Row() {
@@ -104,7 +121,7 @@ struct Orders {
               Row() {
                 Text(`订单 #${line.order.id}`).fontSize(15).fontWeight(FontWeight.Medium)
                 Blank()
-                Text(line.order.status).fontSize(12).fontColor(Theme.primary)
+                Text(this.statusLabel(line.order.status)).fontSize(12).fontColor(Theme.primary)
               }
               Text(`金额：￥${line.order.totalAmount}`).fontSize(13).fontColor('#333')
               Text(`下单时间：${line.order.createdAt ?? '-'}`).fontSize(12).fontColor('#999')

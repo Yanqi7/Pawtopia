@@ -67,6 +67,11 @@ export class SessionStore {
     await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_TOKEN, SessionStore.token);
   }
 
+  static async updateCurrentUser(user: User): Promise<void> {
+    SessionStore.user = user;
+    await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_USER, JSON.stringify(user));
+  }
+
   static async logout(): Promise<void> {
     SessionStore.user = undefined;
     SessionStore.role = AppConfig.DEFAULT_ROLE as UserRole;

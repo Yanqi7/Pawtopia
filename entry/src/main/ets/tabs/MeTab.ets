@@ -165,6 +165,7 @@ export struct MeTab {
             .borderRadius(24)
 
             Column({ space: 12 }) {
+              this.MenuItem('资料编辑', '修改昵称、手机号和当前服务地址', () => AppRouter.push('pages/ProfileSettings'))
               this.MenuItem('继续逛商城', '去选购主粮、玩具和护理用品', () => this.navigateTab(3))
               this.MenuItem('切换账号', '返回登录页重新登录', () => AppRouter.push('pages/Login'))
               this.MenuItem('清理购物车缓存', '清空本地购物车商品', () => this.clearCache())

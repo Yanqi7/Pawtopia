@@ -11,6 +11,11 @@ interface IdParams {
   id?: number;
 }
 
+interface CommentThread {
+  comment: Comment;
+  replies: Comment[];
+}
+
 @Entry
 @Component
 struct PostDetail {
@@ -18,9 +23,10 @@ struct PostDetail {
   @State private loading: boolean = false;
   @State private errorText: string = '';
   @State private post?: Post = undefined;
-  @State private comments: Comment[] = [];
+  @State private threads: CommentThread[] = [];
   @State private commentText: string = '';
   @State private submitting: boolean = false;
+  @State private replyTo?: Comment = undefined;
 
   aboutToAppear(): void {
     const params = AppRouter.params<IdParams>();
@@ -37,8 +43,15 @@ struct PostDetail {
     this.errorText = '';
     try {
       this.post = await Api.getPost(this.postId);
-      const page = await Api.getComments(this.postId, 0, 50);
-      this.comments = page.content;
+      const comments = await Api.getTopLevelComments(this.postId);
+      const replies = await Promise.all(comments.map((comment: Comment) => comment.id ? Api.getRepliesByParent(comment.id).catch(() => []) : Promise.resolve([])));
+      this.threads = comments.map((comment: Comment, index: number) => {
+        const thread: CommentThread = {
+          comment: comment,
+          replies: replies[index]
+        };
+        return thread;
+      });
     } catch (e) {
       this.errorText = e instanceof Error ? e.message : '加载失败';
     } finally {
@@ -71,6 +84,16 @@ struct PostDetail {
     }
   }
 
+  private startReply(comment: Comment): void {
+    this.replyTo = comment;
+    this.commentText = `@${postAuthorLabel(comment.userId)} `;
+  }
+
+  private cancelReply(): void {
+    this.replyTo = undefined;
+    this.commentText = '';
+  }
+
   private async submitComment(): Promise<void> {
     const user = SessionStore.getUser();
     if (!user || !user.id) {
@@ -85,10 +108,11 @@ struct PostDetail {
       await Api.createComment({
         postId: this.postId,
         userId: user.id,
-        parentId: undefined,
+        parentId: this.replyTo?.id,
         content: this.commentText.trim()
       });
       this.commentText = '';
+      this.replyTo = undefined;
       await this.load();
     } catch (e) {
       this.errorText = e instanceof Error ? e.message : '评论失败';
@@ -210,6 +234,22 @@ struct PostDetail {
               .fontColor(Theme.textPrimary)
               .width('100%')
 
+            if (this.replyTo) {
+              Row() {
+                Text(`正在回复 ${postAuthorLabel(this.replyTo.userId)}`)
+                  .fontSize(12)
+                  .fontColor(Theme.primary)
+                Blank()
+                Text('取消')
+                  .fontSize(12)
+                  .fontColor(Theme.textMuted)
+                  .onClick(() => this.cancelReply())
+              }
+              .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+              .backgroundColor('#E8F1FF')
+              .borderRadius(14)
+            }
+
             Column({ space: 10 }) {
               TextArea({ placeholder: '写下你的想法…', text: this.commentText })
                 .height(110)
@@ -234,44 +274,82 @@ struct PostDetail {
             .backgroundColor('#FFFFFF')
             .borderRadius(24)
 
-            if (this.comments.length === 0 && !this.loading) {
+            if (this.threads.length === 0 && !this.loading) {
               EmptyState({
                 title: '还没有评论',
                 description: '你可以成为第一个互动的人。'
               })
             } else {
-              ForEach(this.comments, (comment: Comment) => {
-                Column({ space: 8 }) {
-                  Row({ space: 10 }) {
-                    Image(MediaAssets.avatar())
-                      .width(34)
-                      .height(34)
-                      .borderRadius(17)
-                    Column({ space: 4 }) {
-                      Text(postAuthorLabel(comment.userId))
-                        .fontSize(13)
-                        .fontWeight(FontWeight.Medium)
-                        .fontColor(Theme.textPrimary)
-                      Text(relativeTime(comment.createdAt))
+              ForEach(this.threads, (thread: CommentThread) => {
+                Column({ space: 10 }) {
+                  Column({ space: 8 }) {
+                    Row({ space: 10 }) {
+                      Image(MediaAssets.avatar())
+                        .width(34)
+                        .height(34)
+                        .borderRadius(17)
+                      Column({ space: 4 }) {
+                        Text(postAuthorLabel(thread.comment.userId))
+                          .fontSize(13)
+                          .fontWeight(FontWeight.Medium)
+                          .fontColor(Theme.textPrimary)
+                        Text(relativeTime(thread.comment.createdAt))
+                          .fontSize(11)
+                          .fontColor(Theme.textMuted)
+                      }
+                      .layoutWeight(1)
+                      Text(`赞 ${thread.comment.likeCount ?? 0}`)
                         .fontSize(11)
-                        .fontColor(Theme.textMuted)
+                        .fontColor(Theme.primary)
                     }
-                    .layoutWeight(1)
-                    Text(`赞 ${comment.likeCount ?? 0}`)
-                      .fontSize(11)
-                      .fontColor(Theme.primary)
-                  }
-                  Text(comment.content)
-                    .fontSize(13)
-                    .fontColor(Theme.textSecondary)
-                    .lineHeight(20)
+                    Text(thread.comment.content)
+                      .fontSize(13)
+                      .fontColor(Theme.textSecondary)
+                      .lineHeight(20)
+                      .width('100%')
+                    Row() {
+                      Blank()
+                      Text('回复')
+                        .fontSize(12)
+                        .fontColor(Theme.primary)
+                        .onClick(() => this.startReply(thread.comment))
+                    }
                     .width('100%')
+                  }
+                  .width('100%')
+                  .padding(14)
+                  .backgroundColor('#FFFFFF')
+                  .borderRadius(20)
+
+                  if (thread.replies.length > 0) {
+                    Column({ space: 8 }) {
+                      ForEach(thread.replies, (reply: Comment) => {
+                        Column({ space: 4 }) {
+                          Row() {
+                            Text(postAuthorLabel(reply.userId))
+                              .fontSize(12)
+                              .fontWeight(FontWeight.Medium)
+                              .fontColor(Theme.textPrimary)
+                            Blank()
+                            Text(relativeTime(reply.createdAt))
+                              .fontSize(11)
+                              .fontColor(Theme.textMuted)
+                          }
+                          .width('100%')
+                          Text(reply.content)
+                            .fontSize(12)
+                            .fontColor(Theme.textSecondary)
+                            .lineHeight(18)
+                        }
+                        .padding(12)
+                        .backgroundColor('#F6F7F8')
+                        .borderRadius(16)
+                      }, (reply: Comment) => String(reply.id))
+                    }
+                    .padding({ left: 18, right: 4, bottom: 4 })
+                  }
                 }
-                .width('100%')
-                .padding(14)
-                .backgroundColor('#FFFFFF')
-                .borderRadius(20)
-              }, (comment: Comment) => String(comment.id))
+              }, (thread: CommentThread) => String(thread.comment.id))
             }
           }
           .width('100%')

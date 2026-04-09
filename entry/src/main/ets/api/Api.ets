@@ -304,6 +304,36 @@ export class Api {
     }
   }
 
+  static async getTopLevelComments(postId: number): Promise<Comment[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<Comment[]>(`/api/comments/post/${postId}/top`);
+      AppStatus.setBackendOnline(true);
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      throw new Error('当前无法连接服务，请稍后重试');
+    }
+  }
+
+  static async getRepliesByParent(parentId: number): Promise<Comment[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<Comment[]>(`/api/comments/parent/${parentId}`);
+      AppStatus.setBackendOnline(true);
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      throw new Error('当前无法连接服务，请稍后重试');
+    }
+  }
+
   static async createComment(comment: Comment): Promise<Comment> {
     const c = await Api.client();
     return await c.postJson<Comment>('/api/comments', JSON.stringify(comment));
