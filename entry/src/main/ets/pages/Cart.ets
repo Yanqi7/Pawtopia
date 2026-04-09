@@ -43,10 +43,17 @@ struct Cart {
       const items = CartStore.list();
       const products = await Promise.all(items.map((it: CartItem) => Api.getProduct(it.productId).catch(() => undefined)));
       const nextLines: CartLine[] = [];
+      let missingCount = 0;
       items.forEach((item: CartItem, index: number) => {
+        if (!products[index]) {
+          missingCount += 1;
+        }
         nextLines.push({ item: item, product: products[index] });
       });
       this.lines = nextLines;
+      if (missingCount > 0) {
+        this.errorText = `购物车中有 ${missingCount} 件商品已失效，请先移除再结算`;
+      }
     } catch (e) {
       this.errorText = (e as Error).message || '加载失败';
     } finally {
@@ -56,45 +63,57 @@ struct Cart {
 
   private totalAmount(): number {
     return this.lines.reduce((sum: number, line: CartLine) => {
-      const price = Number(line.product?.price ?? 0);
+      if (!line.product) {
+        return sum;
+      }
+      const price = Number(line.product.price ?? 0);
       return sum + (Number.isNaN(price) ? 0 : price * line.item.quantity);
     }, 0);
   }
 
-  private updateLineQuantity(productId: number, quantity: number): void {
-    const nextLines: CartLine[] = [];
-    this.lines.forEach((line: CartLine) => {
-      if (line.item.productId !== productId) {
-        nextLines.push(line);
-        return;
-      }
-      if (quantity <= 0) {
-        return;
-      }
-      nextLines.push({
-        item: { productId: line.item.productId, quantity: quantity },
-        product: line.product
-      });
-    });
-    this.lines = nextLines;
+  private totalItems(): number {
+    return this.lines.reduce((sum: number, line: CartLine) => sum + line.item.quantity, 0);
+  }
+
+  private hasInvalidLines(): boolean {
+    return this.lines.some((line: CartLine) => !line.product);
   }
 
   private async adjustQuantity(line: CartLine, delta: number): Promise<void> {
-    const stock = Math.max(1, line.product?.stockQuantity ?? 99);
+    if (!line.product) {
+      this.errorText = '该商品已失效，请先移除';
+      return;
+    }
+    const stock = Math.max(1, line.product.stockQuantity ?? 99);
     const next = Math.max(0, Math.min(stock, line.item.quantity + delta));
-    this.updateLineQuantity(line.item.productId, next);
-    await CartStore.setQuantity(line.item.productId, next);
+    try {
+      await CartStore.setQuantity(line.item.productId, next);
+      await this.reload();
+    } catch (e) {
+      this.errorText = (e as Error).message || '更新数量失败';
+      await this.reload();
+    }
   }
 
   private async remove(productId: number): Promise<void> {
-    this.updateLineQuantity(productId, 0);
-    await CartStore.setQuantity(productId, 0);
+    try {
+      await CartStore.setQuantity(productId, 0);
+      await this.reload();
+    } catch (e) {
+      this.errorText = (e as Error).message || '移除失败';
+      await this.reload();
+    }
   }
 
   private async clearCart(): Promise<void> {
-    this.lines = [];
-    await CartStore.clear();
-    AppPrompt.toast('购物车已清空');
+    try {
+      await CartStore.clear();
+      await this.reload();
+      AppPrompt.toast('购物车已清空');
+    } catch (e) {
+      this.errorText = (e as Error).message || '清空失败';
+      await this.reload();
+    }
   }
 
   private async submitOrder(): Promise<void> {
@@ -105,6 +124,10 @@ struct Cart {
     }
     if (this.lines.length === 0) {
       this.errorText = '购物车为空';
+      return;
+    }
+    if (this.hasInvalidLines()) {
+      this.errorText = '购物车中有已失效商品，请先移除后再结算';
       return;
     }
     if (!this.address.trim() || !this.contactName.trim() || !this.contactPhone.trim()) {
@@ -188,7 +211,7 @@ struct Cart {
             ForEach(this.lines, (line: CartLine) => {
               Column({ space: 12 }) {
                 Row({ space: 12 }) {
-                  Image(MediaAssets.productImage(line.product?.name, line.item.productId, line.product?.category))
+                  Image(MediaAssets.productImage(line.product?.image, line.item.productId, line.product?.category))
                     .width(96)
                     .height(96)
                     .borderRadius(18)
@@ -200,20 +223,20 @@ struct Cart {
                       .fontColor('#18191C')
                       .maxLines(2)
                       .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    Text(productCategoryLabel(line.product?.category))
+                    Text(line.product ? productCategoryLabel(line.product.category) : '商品已失效')
                       .fontSize(11)
-                      .fontColor('#FF8A3D')
+                      .fontColor(line.product ? '#FF8A3D' : '#D14343')
                       .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-                      .backgroundColor('#FFF3E0')
+                      .backgroundColor(line.product ? '#FFF3E0' : '#FDECEC')
                       .borderRadius(10)
                     Row({ space: 8 }) {
                       Text(`￥${line.product?.price ?? '-'}`)
                         .fontSize(18)
                         .fontWeight(FontWeight.Bold)
                         .fontColor('#FB7299')
-                      Text(`库存 ${line.product?.stockQuantity ?? '-'}`)
+                      Text(line.product ? `库存 ${line.product.stockQuantity ?? '-'}` : '请先移除失效商品')
                         .fontSize(11)
-                        .fontColor('#9499A0')
+                        .fontColor(line.product ? '#9499A0' : '#D14343')
                     }
                   }
                   .layoutWeight(1)
@@ -286,7 +309,7 @@ struct Cart {
       if (this.lines.length > 0) {
         Row({ space: 12 }) {
           Column({ space: 4 }) {
-            Text('合计')
+            Text(`已选 ${this.totalItems()} 件`)
               .fontSize(12)
               .fontColor('#61666D')
             Text(`￥${this.totalAmount().toFixed(2)}`)
@@ -302,7 +325,7 @@ struct Cart {
             .fontColor(Color.White)
             .fontWeight(FontWeight.Bold)
             .borderRadius(22)
-            .enabled(!this.submitting)
+            .enabled(!this.submitting && !this.hasInvalidLines())
             .onClick(() => this.submitOrder())
         }
         .padding({ left: 16, right: 16, top: 12, bottom: 18 })

@@ -34,9 +34,18 @@ export struct MallTab {
     { label: '健康护理', value: 'MEDICINE' }
   ];
 
+  private readonly cartListener = (count: number): void => {
+    this.cartCount = count;
+  };
+
   aboutToAppear(): void {
     this.cartCount = CartStore.getTotalCount();
+    CartStore.subscribe(this.cartListener);
     this.refresh();
+  }
+
+  aboutToDisappear(): void {
+    CartStore.unsubscribe(this.cartListener);
   }
 
   private async refresh(): Promise<void> {
@@ -165,7 +174,7 @@ export struct MallTab {
       .scrollBar(BarState.Off)
 
       if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ text: '当前为本地商品库，仍可浏览和下单', action: () => this.refresh() })
+        OfflineBanner({ text: '当前无法连接服务，商品与下单能力可能受限', action: () => this.refresh() })
           .padding({ left: 16, right: 16, bottom: 8 })
       }
 

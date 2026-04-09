@@ -38,6 +38,15 @@ struct Index {
         AppRouter.replace('pages/MainTabs');
         return;
       }
+      if (this.online) {
+        try {
+          this.statusText = '正在以演示账号进入…';
+          await Api.login('user1', 'user1');
+          AppRouter.replace('pages/MainTabs');
+          return;
+        } catch (e) {
+        }
+      }
       AppRouter.replace('pages/Login');
     } catch (e) {
       this.errorText = e instanceof Error ? e.message : '初始化失败';

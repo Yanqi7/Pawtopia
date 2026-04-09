@@ -147,7 +147,7 @@ struct Login {
               Blank()
             }
 
-            Text('普通用户可直接注册；商家、宠物医院账号由管理员开通。')
+            Text('可直接注册普通用户、宠物店、宠物医院或卖家账号。')
               .fontSize(12)
               .fontColor(Theme.textSecondary)
           }

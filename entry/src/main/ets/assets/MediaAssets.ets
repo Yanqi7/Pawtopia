@@ -1,5 +1,5 @@
 export class MediaAssets {
-  static readonly postCoverKeys: string[] = ['pet_cat_real_2', 'pet_dog_real_1', 'adopt_cat_real_1', 'adopt_dog_real_2', 'pet_dog_real_3'];
+  static readonly postCoverKeys: string[] = ['pet_cat_real_2', 'pet_dog_real_1', 'pet_cat_real_4', 'pet_dog_real_4', 'pet_dog_real_3'];
 
   static heroDog(): Resource {
     return $r('app.media.pet_dog_real_2');

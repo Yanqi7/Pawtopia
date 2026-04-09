@@ -224,7 +224,7 @@ export struct CommunityTab {
       .scrollBar(BarState.Off)
 
       if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ text: '当前为离线社区数据，分类与详情仍可完整浏览', action: () => this.refresh() })
+        OfflineBanner({ text: '当前无法连接服务，社区内容可能不是最新状态', action: () => this.refresh() })
           .padding({ left: 16, right: 16, bottom: 8 })
       }
 

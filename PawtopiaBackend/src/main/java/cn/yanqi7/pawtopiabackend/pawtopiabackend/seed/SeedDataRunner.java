@@ -365,6 +365,13 @@ public class SeedDataRunner implements CommandLineRunner {
         order.setContactPhone(blank(order.getContactPhone()) ? "1380000" + String.format(Locale.ROOT, "%04d", index) : order.getContactPhone());
     }
 
+    private String pickVariantName(int variant, String... names) {
+        if (names.length == 0) {
+            return "未命名";
+        }
+        return names[Math.min(variant, names.length - 1)];
+    }
+
     private void seedAdoptionRequests(List<User> users, List<Pet> pets, int desired) {
         List<User> applicants = users.stream().filter(user -> user.getRole() == User.Role.USER).toList();
         if (pets.isEmpty() || applicants.isEmpty()) {
@@ -439,17 +446,19 @@ public class SeedDataRunner implements CommandLineRunner {
     private PetTemplate petTemplate(int index, Long ownerId) {
         int templateIndex = index % 12;
         int variant = index / 12;
-        String suffix = NAME_SUFFIXES[Math.min(variant, NAME_SUFFIXES.length - 1)];
         return switch (templateIndex) {
-            case 0 -> new PetTemplate("小黑" + suffix, "狗", "柯基", "黄白", 2 + variant, Pet.Gender.MALE, "中", "活泼亲人，散步习惯稳定，适合有固定遛狗时间的家庭。", "pet_dog_real_1", availableStatus(index), cityByIndex(index), "希望领养家庭有基础养犬经验，能接受后续回访。", ownerId);
-            case 1 -> new PetTemplate("白雪" + suffix, "狗", "金毛", "奶油", 3 + variant, Pet.Gender.FEMALE, "中", "性格温顺，对人友好，已经完成基础免疫和驱虫。", "pet_dog_real_2", availableStatus(index), cityByIndex(index), "适合家庭陪伴，优先考虑有稳定居住环境的申请人。", ownerId);
-            case 2 -> new PetTemplate("橘子" + suffix, "猫", "中华田园猫", "橘白", 1 + variant, Pet.Gender.MALE, "小", "爱撒娇、亲人，正在适应新环境，吃饭规律。", "pet_cat_real_1", availableStatus(index), cityByIndex(index), "希望能提供封窗环境和基础猫砂盆配置。", ownerId);
-            case 3 -> new PetTemplate("咪咪" + suffix, "猫", "英短", "蓝灰", 2 + variant, Pet.Gender.FEMALE, "小", "安静独立，不挑食，对陌生环境适应较快。", "pet_cat_real_2", availableStatus(index), cityByIndex(index), "可接受上门回访，优先考虑有猫咪照顾经验的家庭。", ownerId);
-            case 4 -> new PetTemplate("豆包" + suffix, "狗", "拉布拉多", "米白", 2 + variant, Pet.Gender.MALE, "中", "运动量适中，社交表现稳定，已学会基础口令。", "pet_dog_real_3", availableStatus(index), cityByIndex(index), "需要规律遛狗和基础训练，适合陪伴时间充足的人。", ownerId);
-            case 5 -> new PetTemplate("年糕" + suffix, "猫", "布偶", "海豹双色", 3 + variant, Pet.Gender.FEMALE, "小", "毛发柔软，粘人度高，喜欢晒太阳和安静角落。", "pet_cat_real_3", availableStatus(index), cityByIndex(index), "建议准备梳毛工具和封闭阳台。", ownerId);
-            case 6 -> new PetTemplate("七七" + suffix, "兔", "垂耳兔", "奶白", 1 + variant, Pet.Gender.FEMALE, "小", "性格温和，饮食稳定，适合安静家庭饲养。", "media_placeholder", availableStatus(index), cityByIndex(index), "需要准备围栏与干草，接受定期反馈饲养情况。", ownerId);            case 7 -> new PetTemplate("栗子" + suffix, "狗", "泰迪", "棕色", 4 + variant, Pet.Gender.MALE, "小", "聪明活泼，喜欢互动，洗护配合度高。", "pet_dog_real_4", availableStatus(index), cityByIndex(index), "适合居家办公或陪伴时间较多的家庭。", ownerId);
-            case 8 -> new PetTemplate("芝麻" + suffix, "猫", "美短", "银灰", 2 + variant, Pet.Gender.MALE, "小", "胆子不大，但熟悉后会主动贴近主人。", "pet_cat_real_4", availableStatus(index), cityByIndex(index), "需要耐心适应期，建议单猫家庭优先。", ownerId);
-            case 9 -> new PetTemplate("团团" + suffix, "兔", "侏儒兔", "灰白", 1 + variant, Pet.Gender.MALE, "小", "日常安静，饮食规律，喜欢固定角落休息。", "media_placeholder", availableStatus(index), cityByIndex(index), "准备兔厕所和磨牙用品后更适合接回家。", ownerId);            case 10 -> new PetTemplate("奶酪" + suffix, "仓鼠", "金丝熊", "金黄", 1, Pet.Gender.FEMALE, "小", "晚上活跃，习惯跑轮，适合第一次接触小宠的人。", "media_placeholder", availableStatus(index), cityByIndex(index), "希望新主人了解基础小宠喂养知识。", ownerId);            default -> new PetTemplate("乌龙" + suffix, "狗", "中华田园犬", "黑白", 2 + variant, Pet.Gender.MALE, "中", "性格稳，适应力强，对陌生人观察后会逐渐放松。", "pet_dog_real_5", availableStatus(index), cityByIndex(index), "接受定期回访，优先考虑有独立居住环境的领养人。", ownerId);
+            case 0 -> new PetTemplate(pickVariantName(variant, "小黑", "可乐", "阿布", "黑豆"), "狗", "柯基", "黄白", 2 + variant, Pet.Gender.MALE, "中", "活泼亲人，散步习惯稳定，适合有固定遛狗时间的家庭。", "pet_dog_real_1", availableStatus(index), cityByIndex(index), "希望领养家庭有基础养犬经验，能接受后续回访。", ownerId);
+            case 1 -> new PetTemplate(pickVariantName(variant, "白雪", "奶油", "星星", "Lucky"), "狗", "金毛", "奶油", 3 + variant, Pet.Gender.FEMALE, "中", "性格温顺，对人友好，已经完成基础免疫和驱虫。", "pet_dog_real_2", availableStatus(index), cityByIndex(index), "适合家庭陪伴，优先考虑有稳定居住环境的申请人。", ownerId);
+            case 2 -> new PetTemplate(pickVariantName(variant, "橘子", "阿橘", "柿饼", "小满"), "猫", "中华田园猫", "橘白", 1 + variant, Pet.Gender.MALE, "小", "爱撒娇、亲人，正在适应新环境，吃饭规律。", "pet_cat_real_1", availableStatus(index), cityByIndex(index), "希望能提供封窗环境和基础猫砂盆配置。", ownerId);
+            case 3 -> new PetTemplate(pickVariantName(variant, "咪咪", "拿铁", "小雨", "灰灰"), "猫", "英短", "蓝灰", 2 + variant, Pet.Gender.FEMALE, "小", "安静独立，不挑食，对陌生环境适应较快。", "pet_cat_real_2", availableStatus(index), cityByIndex(index), "可接受上门回访，优先考虑有猫咪照顾经验的家庭。", ownerId);
+            case 4 -> new PetTemplate(pickVariantName(variant, "豆包", "多多", "阿诺", "Cookie"), "狗", "拉布拉多", "米白", 2 + variant, Pet.Gender.MALE, "中", "运动量适中，社交表现稳定，已学会基础口令。", "pet_dog_real_3", availableStatus(index), cityByIndex(index), "需要规律遛狗和基础训练，适合陪伴时间充足的人。", ownerId);
+            case 5 -> new PetTemplate(pickVariantName(variant, "年糕", "云朵", "糯米", "奶芙"), "猫", "布偶", "海豹双色", 3 + variant, Pet.Gender.FEMALE, "小", "毛发柔软，粘人度高，喜欢晒太阳和安静角落。", "pet_cat_real_3", availableStatus(index), cityByIndex(index), "建议准备梳毛工具和封闭阳台。", ownerId);
+            case 6 -> new PetTemplate(pickVariantName(variant, "七七", "雪球", "团子", "奶昔"), "兔", "垂耳兔", "奶白", 1 + variant, Pet.Gender.FEMALE, "小", "性格温和，饮食稳定，适合安静家庭饲养。", "media_placeholder", availableStatus(index), cityByIndex(index), "需要准备围栏与干草，接受定期反馈饲养情况。", ownerId);
+            case 7 -> new PetTemplate(pickVariantName(variant, "栗子", "摩卡", "布丁", "毛豆"), "狗", "泰迪", "棕色", 4 + variant, Pet.Gender.MALE, "小", "聪明活泼，喜欢互动，洗护配合度高。", "pet_dog_real_4", availableStatus(index), cityByIndex(index), "适合居家办公或陪伴时间较多的家庭。", ownerId);
+            case 8 -> new PetTemplate(pickVariantName(variant, "芝麻", "可可", "花卷", "十三"), "猫", "美短", "银灰", 2 + variant, Pet.Gender.MALE, "小", "胆子不大，但熟悉后会主动贴近主人。", "pet_cat_real_4", availableStatus(index), cityByIndex(index), "需要耐心适应期，建议单猫家庭优先。", ownerId);
+            case 9 -> new PetTemplate(pickVariantName(variant, "团团", "奶盖", "芋圆", "元宝"), "兔", "侏儒兔", "灰白", 1 + variant, Pet.Gender.MALE, "小", "日常安静，饮食规律，喜欢固定角落休息。", "media_placeholder", availableStatus(index), cityByIndex(index), "准备兔厕所和磨牙用品后更适合接回家。", ownerId);
+            case 10 -> new PetTemplate(pickVariantName(variant, "奶酪", "花生", "布布", "糯球"), "仓鼠", "金丝熊", "金黄", 1, Pet.Gender.FEMALE, "小", "晚上活跃，习惯跑轮，适合第一次接触小宠的人。", "media_placeholder", availableStatus(index), cityByIndex(index), "希望新主人了解基础小宠喂养知识。", ownerId);
+            default -> new PetTemplate(pickVariantName(variant, "乌龙", "大麦", "阿旺", "笨笨"), "狗", "中华田园犬", "黑白", 2 + variant, Pet.Gender.MALE, "中", "性格稳，适应力强，对陌生人观察后会逐渐放松。", "pet_dog_real_5", availableStatus(index), cityByIndex(index), "接受定期回访，优先考虑有独立居住环境的领养人。", ownerId);
         };
     }
 

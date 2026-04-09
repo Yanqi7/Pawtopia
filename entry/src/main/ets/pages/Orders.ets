@@ -8,6 +8,7 @@ import { Theme } from '../common/Theme';
 interface OrderLine {
   order: Order;
   products: Product[];
+  missingCount: number;
 }
 
 interface OrderStatusFilter {
@@ -40,9 +41,11 @@ struct Orders {
       const lines = await Promise.all(sorted.map(async (order: Order) => {
         const ids = order.productIds.split(',').map((id: string) => Number(id)).filter((id: number) => id > 0);
         const products = await Promise.all(ids.map((id: number) => Api.getProduct(id).catch(() => undefined)));
+        const validProducts = products.filter((item) => !!item) as Product[];
         const line: OrderLine = {
           order: order,
-          products: products.filter((item) => !!item) as Product[]
+          products: validProducts,
+          missingCount: ids.length - validProducts.length
         };
         return line;
       }));
@@ -130,6 +133,9 @@ struct Orders {
                 Text(`地址：${line.order.shippingAddress}`).fontSize(12).fontColor('#999')
               }
               Text(`商品：${line.products.map((product: Product) => product.name).join(' / ') || line.order.productIds}`).fontSize(12).fontColor('#666')
+              if (line.missingCount > 0) {
+                Text(`其中有 ${line.missingCount} 件商品当前无法加载详情`).fontSize(12).fontColor('#D14343')
+              }
 
               if (line.order.status === 'PENDING' && line.order.id) {
                 Row({ space: 10 }) {

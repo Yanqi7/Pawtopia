@@ -523,13 +523,13 @@ export class MockData {
   }
 
   static postImageKey(seed?: number): string {
-    const keys = ['pet_cat_real_2', 'pet_dog_real_1', 'adopt_cat_real_1', 'adopt_dog_real_2', 'pet_dog_real_3'];
+    const keys = ['pet_cat_real_2', 'pet_dog_real_1', 'pet_cat_real_4', 'pet_dog_real_4', 'pet_dog_real_3'];
     return keys[Math.abs(seed ?? 0) % keys.length];
   }
 
   static petImageKey(seed?: number, species?: string): string {
-    const cats = ['pet_cat_real_1', 'pet_cat_real_2', 'pet_cat_real_3', 'adopt_cat_real_1', 'adopt_cat_real_2'];
-    const dogs = ['pet_dog_real_1', 'pet_dog_real_2', 'pet_dog_real_3', 'adopt_dog_real_1', 'adopt_dog_real_2'];
+    const cats = ['pet_cat_real_1', 'pet_cat_real_2', 'pet_cat_real_3', 'pet_cat_real_4'];
+    const dogs = ['pet_dog_real_1', 'pet_dog_real_2', 'pet_dog_real_3', 'pet_dog_real_4', 'pet_dog_real_5'];
     const pool = (species ?? '').indexOf('猫') >= 0 ? cats : dogs;
     return pool[Math.abs(seed ?? 0) % pool.length];
   }
@@ -537,14 +537,15 @@ export class MockData {
   static productImageKey(seed?: number, category?: ProductCategory): string {
     switch (category) {
       case 'FOOD':
-        return Math.abs(seed ?? 0) % 2 === 0 ? 'shop_banner_real_1' : 'pet_dog_real_2';
+        return Math.abs(seed ?? 0) % 3 === 0 ? 'shop_banner_real_1' : Math.abs(seed ?? 0) % 3 === 1 ? 'shop_real_3' : 'shop_real_5';
       case 'TOY':
-        return Math.abs(seed ?? 0) % 2 === 0 ? 'pet_cat_real_3' : 'pet_dog_real_3';
+        return Math.abs(seed ?? 0) % 2 === 0 ? 'shop_real_4' : 'shop_banner_real_2';
       case 'MEDICINE':
+        return Math.abs(seed ?? 0) % 2 === 0 ? 'shop_real_5' : 'shop_banner_real_2';
       case 'ACCESSORY':
-        return Math.abs(seed ?? 0) % 2 === 0 ? 'shop_banner_real_2' : 'pet_cat_real_1';
+        return Math.abs(seed ?? 0) % 3 === 0 ? 'shop_real_4' : Math.abs(seed ?? 0) % 3 === 1 ? 'shop_banner_real_2' : 'shop_real_3';
       default:
-        return Math.abs(seed ?? 0) % 2 === 0 ? 'pet_dog_real_1' : 'pet_cat_real_2';
+        return Math.abs(seed ?? 0) % 2 === 0 ? 'shop_banner_real_1' : 'shop_real_3';
     }
   }
 

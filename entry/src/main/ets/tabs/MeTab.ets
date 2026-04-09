@@ -67,6 +67,11 @@ export struct MeTab {
     AppRouter.replace('pages/Login');
   }
 
+  private async switchAccount(): Promise<void> {
+    await SessionStore.logout();
+    AppRouter.replace('pages/Login');
+  }
+
   private async clearCache(): Promise<void> {
     await CartStore.clear();
     AppPrompt.toast('购物车缓存已清空');
@@ -144,7 +149,7 @@ export struct MeTab {
             .borderRadius(24)
 
             if (!AppStatus.isBackendOnline()) {
-              OfflineBanner({ text: '当前使用本地缓存数据，你仍然可以浏览核心页面。', action: () => this.loadSummary() })
+              OfflineBanner({ text: '当前无法连接服务，个人数据与统计可能不是最新状态。', action: () => this.loadSummary() })
             }
 
             Column({ space: 12 }) {
@@ -167,7 +172,7 @@ export struct MeTab {
             Column({ space: 12 }) {
               this.MenuItem('资料编辑', '修改昵称、手机号和当前服务地址', () => AppRouter.push('pages/ProfileSettings'))
               this.MenuItem('继续逛商城', '去选购主粮、玩具和护理用品', () => this.navigateTab(3))
-              this.MenuItem('切换账号', '返回登录页重新登录', () => AppRouter.push('pages/Login'))
+              this.MenuItem('切换账号', '清除当前会话并重新登录', () => this.switchAccount())
               this.MenuItem('清理购物车缓存', '清空本地购物车商品', () => this.clearCache())
               this.MenuItem('版本信息', this.loading ? '统计同步中…' : '城宠社区 · HarmonyOS 6.0.2 · dev', () => AppPrompt.toast('当前为 dev 分支构建'))
               this.MenuItem('退出登录', '退出当前账号', () => this.logout(), true)

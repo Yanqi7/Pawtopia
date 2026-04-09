@@ -75,7 +75,7 @@ export struct PetProfileTab {
         }
 
         if (!AppStatus.isBackendOnline()) {
-          OfflineBanner({ text: '当前使用本地缓存档案数据，仍可继续查看详情。', action: () => this.reload() })
+          OfflineBanner({ text: '当前无法连接服务，档案信息可能不是最新状态。', action: () => this.reload() })
             .padding({ left: 16, right: 16, top: 10 })
         }
 
