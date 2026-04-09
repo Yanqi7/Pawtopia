@@ -29,117 +29,41 @@ export class MediaAssets {
     return $r('app.media.people');
   }
 
-  static petCover(seed: number = 0): Resource {
-    const covers: Resource[] = [
-      $r('app.media.pet_dog_real_1'),
-      $r('app.media.pet_dog_real_2'),
-      $r('app.media.pet_dog_real_3'),
-      $r('app.media.pet_dog_real_4'),
-      $r('app.media.pet_dog_real_5'),
-      $r('app.media.pet_cat_real_1'),
-      $r('app.media.pet_cat_real_2'),
-      $r('app.media.pet_cat_real_3'),
-      $r('app.media.pet_cat_real_4')
-    ];
-    return covers[Math.abs(seed) % covers.length];
+  static placeholder(): Resource {
+    return $r('app.media.media_placeholder');
   }
 
-  static postCover(seed: number = 0): Resource {
-    const covers: Resource[] = [
-      $r('app.media.pet_cat_real_2'),
-      $r('app.media.pet_dog_real_1'),
-      $r('app.media.adopt_cat_real_1'),
-      $r('app.media.adopt_dog_real_2'),
-      $r('app.media.pet_dog_real_3'),
-      $r('app.media.pet_cat_real_4')
-    ];
-    return covers[Math.abs(seed) % covers.length];
+  static petImage(name?: string, _seed: number = 0, _species?: string): Resource {
+    return MediaAssets.firstImage(name);
   }
 
-  static petImage(name?: string, seed: number = 0, species?: string): Resource {
-    const mapped = MediaAssets.named(name);
-    if (mapped) {
-      return mapped;
-    }
-    const cats: Resource[] = [
-      $r('app.media.pet_cat_real_1'),
-      $r('app.media.pet_cat_real_2'),
-      $r('app.media.pet_cat_real_3'),
-      $r('app.media.pet_cat_real_4'),
-      $r('app.media.adopt_cat_real_1'),
-      $r('app.media.adopt_cat_real_2')
-    ];
-    const dogs: Resource[] = [
-      $r('app.media.pet_dog_real_1'),
-      $r('app.media.pet_dog_real_2'),
-      $r('app.media.pet_dog_real_3'),
-      $r('app.media.pet_dog_real_4'),
-      $r('app.media.pet_dog_real_5'),
-      $r('app.media.adopt_dog_real_1'),
-      $r('app.media.adopt_dog_real_2')
-    ];
-    const pool = (species ?? '').indexOf('猫') >= 0 ? cats : dogs;
-    return pool[Math.abs(seed) % pool.length];
+  static postImage(name?: string, _seed: number = 0): Resource {
+    return MediaAssets.firstImage(name);
   }
 
-  static postImage(name?: string, seed: number = 0): Resource {
-    const mapped = MediaAssets.named(name);
-    if (mapped) {
-      return mapped;
-    }
-    return MediaAssets.postCover(seed);
+  static productGallery(name?: string, _seed: number = 0, _category?: string): Resource[] {
+    return MediaAssets.resolveImages(name);
   }
 
-  static productGallery(name?: string, seed: number = 0, category?: string): Resource[] {
-    const keyword = (name ?? '').toLowerCase();
-    if (keyword.indexOf('冻干') >= 0 || keyword.indexOf('鸭肉') >= 0 || keyword.indexOf('粮') >= 0 || category === 'FOOD') {
-      return [
-        $r('app.media.shop_banner_real_1'),
-        $r('app.media.shop_real_3'),
-        $r('app.media.shop_real_4')
-      ];
-    }
-    if (keyword.indexOf('喂食器') >= 0 || keyword.indexOf('便携包') >= 0) {
-      return [
-        $r('app.media.pet_dog_real_1'),
-        $r('app.media.shop_real_4'),
-        $r('app.media.pet_dog_real_4')
-      ];
-    }
-    if (keyword.indexOf('益生菌') >= 0 || category === 'MEDICINE') {
-      return [
-        $r('app.media.pet_cat_real_1'),
-        $r('app.media.shop_banner_real_2'),
-        $r('app.media.pet_dog_real_5')
-      ];
-    }
-    if (keyword.indexOf('逗猫棒') >= 0 || keyword.indexOf('玩具') >= 0 || category === 'TOY') {
-      return [
-        $r('app.media.pet_cat_real_3'),
-        $r('app.media.adopt_cat_real_2'),
-        $r('app.media.pet_cat_real_4')
-      ];
-    }
-    if (keyword.indexOf('护理') >= 0 || keyword.indexOf('洗') >= 0 || keyword.indexOf('梳毛') >= 0 || keyword.indexOf('手套') >= 0 || category === 'ACCESSORY') {
-      return [
-        $r('app.media.shop_banner_real_2'),
-        $r('app.media.shop_real_5'),
-        $r('app.media.pet_dog_real_3')
-      ];
-    }
-    return [
-      $r('app.media.shop_banner_real_1'),
-      $r('app.media.shop_banner_real_2'),
-      MediaAssets.petCover(seed)
-    ];
+  static productImage(name?: string, _seed: number = 0, _category?: string): Resource {
+    return MediaAssets.firstImage(name);
   }
 
-  static productImage(name?: string, seed: number = 0, category?: string): Resource {
-    const mapped = MediaAssets.named(name);
-    if (mapped) {
-      return mapped;
+  private static firstImage(name?: string): Resource {
+    const images = MediaAssets.resolveImages(name);
+    return images.length > 0 ? images[0] : MediaAssets.placeholder();
+  }
+
+  private static resolveImages(name?: string): Resource[] {
+    const normalized = (name ?? '').split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0);
+    const mapped: Resource[] = [];
+    for (let i = 0; i < normalized.length; i++) {
+      const image = MediaAssets.named(normalized[i]);
+      if (image) {
+        mapped.push(image);
+      }
     }
-    return MediaAssets.productGallery(name, seed, category)[0];
+    return mapped.length > 0 ? mapped : [MediaAssets.placeholder()];
   }
 
   private static named(name?: string): Resource | undefined {
@@ -198,6 +122,8 @@ export class MediaAssets {
         return $r('app.media.shop_real_4');
       case 'shop_real_5':
         return $r('app.media.shop_real_5');
+      case 'media_placeholder':
+        return $r('app.media.media_placeholder');
       default:
         return undefined;
     }

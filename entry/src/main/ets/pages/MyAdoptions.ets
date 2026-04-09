@@ -86,7 +86,6 @@ struct MyAdoptions {
         Scroll() {
           Column({ space: 14 }) {
             SectionTitle({ title: `申请记录（${this.lines.length}）` })
-            OfflineBanner({ text: '如果服务端拒绝访问，这里会自动回退到本地申请记录', action: () => this.load() })
 
             ForEach(this.lines, (line: AdoptionLine) => {
               Column({ space: 12 }) {

@@ -63,7 +63,7 @@ export struct AdoptTab {
               .fontSize(22)
               .fontWeight(FontWeight.Bold)
               .fontColor(Theme.textPrimary)
-            Text('点击宠物卡片查看大图、基本信息、描述和用户留言')
+            Text('点击宠物卡片查看大图、基本信息、主人寄语和申请入口')
               .fontSize(12)
               .fontColor(Theme.textSecondary)
           }
@@ -160,7 +160,7 @@ export struct AdoptTab {
                     }
 
                     Row() {
-                      Text('点击卡片查看宠物信息、描述和用户留言')
+                      Text('点击卡片查看宠物信息、主人寄语与申请入口')
                         .fontSize(12)
                         .fontColor(Theme.primary)
                       Blank()

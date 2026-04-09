@@ -3,7 +3,6 @@ import { AppConfig } from '../app/AppConfig';
 import { PreferencesStore } from '../store/PreferencesStore';
 import { Comment, Order, OrderStatus, Page, Pet, Post, Product, User, UserRole, HealthRecord, AdoptionRequest, AdoptionRequestStatus } from '../model/Models';
 import { AppStatus } from '../app/AppStatus';
-import { MockData } from '../mock/MockData';
 import { SessionStore } from '../store/SessionStore';
 
 interface CreateUserBody {
@@ -92,17 +91,19 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Pet[]>(`/api/pets/owner/${ownerId}`);
       AppStatus.setBackendOnline(true);
-      return MockData.decoratePets(res);
+      return res;
     } catch (e) {
-      const localPets = MockData.petsAll().filter((pet: Pet) => pet.ownerId === ownerId);
       if (e instanceof HttpError) {
-        if (e.statusCode === 401 || e.statusCode === 403) {
-          return localPets;
+        if (e.statusCode === 401) {
+          throw new Error('请重新登录后查看宠物档案');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看这些宠物档案');
         }
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return localPets;
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -111,13 +112,13 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Pet[]>('/api/pets');
       AppStatus.setBackendOnline(true);
-      return MockData.decoratePets(res);
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.petsAll();
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -132,7 +133,7 @@ export class Api {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.petsAll().filter((p) => (p.adoptionStatus ?? 'AVAILABLE') === 'AVAILABLE');
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -173,9 +174,7 @@ export class Api {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      const u = SessionStore.getUser();
-      const ownerId = u?.id ?? 0;
-      return MockData.adoptionRequestsByPet(petId, ownerId);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -199,13 +198,13 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Pet>(`/api/pets/${petId}`);
       AppStatus.setBackendOnline(true);
-      return MockData.decoratePet(res);
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.petById(petId);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -217,13 +216,16 @@ export class Api {
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
-        if (e.statusCode === 401 || e.statusCode === 403) {
-          return MockData.healthRecordsByPet(petId);
+        if (e.statusCode === 401) {
+          throw new Error('请重新登录后查看健康档案');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看该宠物健康档案');
         }
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.healthRecordsByPet(petId);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -243,7 +245,7 @@ export class Api {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.postsPage(page, size);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -252,13 +254,13 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Post>(`/api/posts/${postId}`);
       AppStatus.setBackendOnline(true);
-      return MockData.decoratePost(res);
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.postById(postId);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -278,7 +280,7 @@ export class Api {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.postsPage(0, 50).content.filter((post) => post.userId === userId);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -298,7 +300,7 @@ export class Api {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.commentsPage(postId, page, size);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -312,22 +314,13 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Page<Product>>('/api/products', `page=${page}&size=${size}&sortBy=id`);
       AppStatus.setBackendOnline(true);
-      return {
-        content: MockData.decorateProducts(res.content),
-        totalElements: res.totalElements,
-        totalPages: res.totalPages,
-        number: res.number,
-        size: res.size,
-        first: res.first,
-        last: res.last,
-        empty: res.empty
-      };
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.productsPage(page, size);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -342,7 +335,7 @@ export class Api {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.productById(productId);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -351,22 +344,13 @@ export class Api {
       const c = await Api.client();
       const res = await c.get<Page<Product>>('/api/products/search', `name=${encodeURIComponent(name)}&page=${page}&size=${size}`);
       AppStatus.setBackendOnline(true);
-      return {
-        content: MockData.decorateProducts(res.content),
-        totalElements: res.totalElements,
-        totalPages: res.totalPages,
-        number: res.number,
-        size: res.size,
-        first: res.first,
-        last: res.last,
-        empty: res.empty
-      };
+      return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.productsPage(page, size);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -392,7 +376,7 @@ export class Api {
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return MockData.ordersByUser(userId);
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 
@@ -403,18 +387,17 @@ export class Api {
       AppStatus.setBackendOnline(true);
       return res;
     } catch (e) {
-      const user = SessionStore.getUser();
-      if (!user || !user.id) {
-        return [];
-      }
       if (e instanceof HttpError) {
-        if (e.statusCode === 401 || e.statusCode === 403) {
-          return [];
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后查看领养申请');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看领养申请');
         }
         throw new Error(e.message);
       }
       AppStatus.setBackendOnline(false);
-      return [];
+      throw new Error('当前无法连接服务，请稍后重试');
     }
   }
 

@@ -89,7 +89,7 @@ export struct MallTab {
                 .fontSize(20)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Color.White)
-              Text('按名称匹配更合适的商品图')
+              Text('零食、主粮、护理与日用好物')
                 .fontSize(11)
                 .fontColor('#F8FAFC')
             }
@@ -192,7 +192,7 @@ export struct MallTab {
           ForEach(this.visibleProducts(), (product: Product) => {
             ListItem() {
               Row({ space: 12 }) {
-                Image(MediaAssets.productImage(product.name, product.id ?? 0, product.category))
+                Image(MediaAssets.productImage(product.image, product.id ?? 0, product.category))
                   .width(108)
                   .height(108)
                   .borderRadius(22)

@@ -48,7 +48,7 @@ struct ProductDetail {
     if (!this.product) {
       return [];
     }
-    return MediaAssets.productGallery(this.product.name, this.product.id ?? 0, this.product.category);
+    return MediaAssets.productGallery(this.product.image, this.product.id ?? 0, this.product.category);
   }
 
   private async addToCart(goCart: boolean): Promise<void> {
@@ -159,7 +159,7 @@ struct ProductDetail {
               Text('· 购买数量与库存联动，结算时以后端校验为准。')
                 .fontSize(13)
                 .fontColor(Theme.textSecondary)
-              Text('· 页面图片已按商品名称与分类匹配，更接近真实商品展示。')
+              Text('· 商品图片以商家上传或平台维护的图片字段为准。')
                 .fontSize(13)
                 .fontColor(Theme.textSecondary)
               Text('· 适合宠物日常喂养、护理或互动场景。')

@@ -1,5 +1,6 @@
 package cn.yanqi7.pawtopiabackend.pawtopiabackend.seed;
 
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.AdoptionRequest;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Comment;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.HealthRecord;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Order;
@@ -7,6 +8,7 @@ import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Pet;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Post;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Product;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.User;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.AdoptionRequestRepository;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.CommentRepository;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.HealthRecordRepository;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.OrderRepository;
@@ -40,10 +42,14 @@ public class SeedDataRunner implements CommandLineRunner {
     private final CommentRepository commentRepository;
     private final HealthRecordRepository healthRecordRepository;
     private final OrderRepository orderRepository;
+    private final AdoptionRequestRepository adoptionRequestRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.seed.enabled:true}")
+    @Value("${app.seed.enabled:false}")
     private boolean seedEnabled;
+
+    @Value("${spring.datasource.url:}")
+    private String datasourceUrl;
 
     public SeedDataRunner(
             UserRepository userRepository,
@@ -53,6 +59,7 @@ public class SeedDataRunner implements CommandLineRunner {
             CommentRepository commentRepository,
             HealthRecordRepository healthRecordRepository,
             OrderRepository orderRepository,
+            AdoptionRequestRepository adoptionRequestRepository,
             PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
@@ -62,13 +69,15 @@ public class SeedDataRunner implements CommandLineRunner {
         this.commentRepository = commentRepository;
         this.healthRecordRepository = healthRecordRepository;
         this.orderRepository = orderRepository;
+        this.adoptionRequestRepository = adoptionRequestRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
         User admin = ensureUser(ADMIN_USERNAME, ADMIN_PASSWORD, "user1@chengchong.local", "社区管理员", User.Role.ADMIN);
-        if (!seedEnabled) {
+        boolean h2Mode = datasourceUrl != null && datasourceUrl.contains(":h2:");
+        if (!h2Mode && !seedEnabled) {
             return;
         }
 
@@ -87,6 +96,7 @@ public class SeedDataRunner implements CommandLineRunner {
         seedComments(seedUsers, posts, 180);
         seedHealthRecords(pets, 100);
         seedOrders(seedUsers, products, 40);
+        seedAdoptionRequests(seedUsers, pets, 36);
     }
 
     private User ensureUser(String username, String rawPassword, String email, String nickname, User.Role role) {
@@ -125,13 +135,16 @@ public class SeedDataRunner implements CommandLineRunner {
         all.sort(Comparator.comparing(Product::getId));
         List<Product> dirty = new ArrayList<>();
 
-        for (int i = 0; i < all.size(); i++) {
+        int normalizeCount = Math.min(all.size(), desired);
+        for (int i = 0; i < normalizeCount; i++) {
+            Product product = all.get(i);
+            applyProductTemplate(product, productTemplate(i));
+            dirty.add(product);
+        }
+        for (int i = normalizeCount; i < all.size(); i++) {
             Product product = all.get(i);
             ProductTemplate template = productTemplate(i);
-            if (isGeneratedProduct(product)) {
-                applyProductTemplate(product, template);
-                dirty.add(product);
-            } else if (blank(product.getImage())) {
+            if (blank(product.getImage())) {
                 product.setImage(template.imageKey());
                 dirty.add(product);
             }
@@ -198,16 +211,20 @@ public class SeedDataRunner implements CommandLineRunner {
         all.sort(Comparator.comparing(Post::getId));
         List<Post> dirty = new ArrayList<>();
 
-        for (int i = 0; i < all.size(); i++) {
+        int normalizeCount = Math.min(all.size(), desired);
+        for (int i = 0; i < normalizeCount; i++) {
             Post post = all.get(i);
             User author = findUserById(users, post.getUserId(), users.get(i % users.size()));
             Long petId = !pets.isEmpty() ? pets.get(i % pets.size()).getId() : null;
-            PostTemplate template = postTemplate(i, author.getRole(), petId);
-            if (isGeneratedPost(post)) {
-                applyPostTemplate(post, template, post.getUserId() == null ? author.getId() : post.getUserId());
-                dirty.add(post);
-            } else if (blank(post.getImageUrls())) {
-                post.setImageUrls(template.imageUrls());
+            applyPostTemplate(post, postTemplate(i, author.getRole(), petId), post.getUserId() == null ? author.getId() : post.getUserId());
+            dirty.add(post);
+        }
+        for (int i = normalizeCount; i < all.size(); i++) {
+            Post post = all.get(i);
+            if (blank(post.getImageUrls())) {
+                User author = findUserById(users, post.getUserId(), users.get(i % users.size()));
+                Long petId = !pets.isEmpty() ? pets.get(i % pets.size()).getId() : null;
+                post.setImageUrls(postTemplate(i, author.getRole(), petId).imageUrls());
                 dirty.add(post);
             }
         }
@@ -273,13 +290,12 @@ public class SeedDataRunner implements CommandLineRunner {
         all.sort(Comparator.comparing(HealthRecord::getId));
         List<HealthRecord> dirty = new ArrayList<>();
 
-        for (int i = 0; i < all.size(); i++) {
+        int normalizeCount = Math.min(all.size(), desired);
+        for (int i = 0; i < normalizeCount; i++) {
             HealthRecord record = all.get(i);
             HealthTemplate template = healthTemplate(i, pets.get(i % pets.size()));
-            if (isGeneratedHealthRecord(record)) {
-                applyHealthTemplate(record, template, record.getPetId() == null ? pets.get(i % pets.size()).getId() : record.getPetId());
-                dirty.add(record);
-            }
+            applyHealthTemplate(record, template, record.getPetId() == null ? pets.get(i % pets.size()).getId() : record.getPetId());
+            dirty.add(record);
         }
 
         while (all.size() < desired) {
@@ -349,6 +365,51 @@ public class SeedDataRunner implements CommandLineRunner {
         order.setContactPhone(blank(order.getContactPhone()) ? "1380000" + String.format(Locale.ROOT, "%04d", index) : order.getContactPhone());
     }
 
+    private void seedAdoptionRequests(List<User> users, List<Pet> pets, int desired) {
+        List<User> applicants = users.stream().filter(user -> user.getRole() == User.Role.USER).toList();
+        if (pets.isEmpty() || applicants.isEmpty()) {
+            return;
+        }
+        List<AdoptionRequest> all = new ArrayList<>(adoptionRequestRepository.findAll());
+        all.sort(Comparator.comparing(AdoptionRequest::getId));
+        List<AdoptionRequest> dirty = new ArrayList<>();
+
+        int normalizeCount = Math.min(all.size(), desired);
+        for (int i = 0; i < normalizeCount; i++) {
+            AdoptionRequest request = all.get(i);
+            Pet pet = pets.get(i % pets.size());
+            User applicant = applicants.get((i + 1) % applicants.size());
+            request.setPetId(pet.getId());
+            request.setOwnerId(pet.getOwnerId());
+            request.setRequesterId(applicant.getId());
+            request.setStatus(i % 7 == 0 ? AdoptionRequest.Status.APPROVED : AdoptionRequest.Status.PENDING);
+            request.setContactName(safeName(applicant));
+            request.setContactPhone("139" + String.format(Locale.ROOT, "%08d", 1000 + i));
+            request.setMessage("我已经准备好了基础用品，也有稳定的作息时间，希望可以进一步了解 " + pet.getName() + " 的日常习惯。");
+            dirty.add(request);
+        }
+
+        while (all.size() < desired) {
+            int index = all.size();
+            Pet pet = pets.get(index % pets.size());
+            User applicant = applicants.get((index + 1) % applicants.size());
+            AdoptionRequest request = new AdoptionRequest();
+            request.setPetId(pet.getId());
+            request.setOwnerId(pet.getOwnerId());
+            request.setRequesterId(applicant.getId());
+            request.setStatus(index % 7 == 0 ? AdoptionRequest.Status.APPROVED : AdoptionRequest.Status.PENDING);
+            request.setContactName(safeName(applicant));
+            request.setContactPhone("139" + String.format(Locale.ROOT, "%08d", 1000 + index));
+            request.setMessage("家里已经完成封窗和休息区布置，希望可以申请领养 " + pet.getName() + "，后续也愿意接受回访。");
+            all.add(request);
+            dirty.add(request);
+        }
+
+        if (!dirty.isEmpty()) {
+            adoptionRequestRepository.saveAll(dirty);
+        }
+    }
+
     private ProductTemplate productTemplate(int index) {
         int templateIndex = index % 12;
         int variant = index / 12;
@@ -386,12 +447,9 @@ public class SeedDataRunner implements CommandLineRunner {
             case 3 -> new PetTemplate("咪咪" + suffix, "猫", "英短", "蓝灰", 2 + variant, Pet.Gender.FEMALE, "小", "安静独立，不挑食，对陌生环境适应较快。", "pet_cat_real_2", availableStatus(index), cityByIndex(index), "可接受上门回访，优先考虑有猫咪照顾经验的家庭。", ownerId);
             case 4 -> new PetTemplate("豆包" + suffix, "狗", "拉布拉多", "米白", 2 + variant, Pet.Gender.MALE, "中", "运动量适中，社交表现稳定，已学会基础口令。", "pet_dog_real_3", availableStatus(index), cityByIndex(index), "需要规律遛狗和基础训练，适合陪伴时间充足的人。", ownerId);
             case 5 -> new PetTemplate("年糕" + suffix, "猫", "布偶", "海豹双色", 3 + variant, Pet.Gender.FEMALE, "小", "毛发柔软，粘人度高，喜欢晒太阳和安静角落。", "pet_cat_real_3", availableStatus(index), cityByIndex(index), "建议准备梳毛工具和封闭阳台。", ownerId);
-            case 6 -> new PetTemplate("七七" + suffix, "兔", "垂耳兔", "奶白", 1 + variant, Pet.Gender.FEMALE, "小", "性格温和，饮食稳定，适合安静家庭饲养。", "adopt_cat_real_1", availableStatus(index), cityByIndex(index), "需要准备围栏与干草，接受定期反馈饲养情况。", ownerId);
-            case 7 -> new PetTemplate("栗子" + suffix, "狗", "泰迪", "棕色", 4 + variant, Pet.Gender.MALE, "小", "聪明活泼，喜欢互动，洗护配合度高。", "pet_dog_real_4", availableStatus(index), cityByIndex(index), "适合居家办公或陪伴时间较多的家庭。", ownerId);
+            case 6 -> new PetTemplate("七七" + suffix, "兔", "垂耳兔", "奶白", 1 + variant, Pet.Gender.FEMALE, "小", "性格温和，饮食稳定，适合安静家庭饲养。", "media_placeholder", availableStatus(index), cityByIndex(index), "需要准备围栏与干草，接受定期反馈饲养情况。", ownerId);            case 7 -> new PetTemplate("栗子" + suffix, "狗", "泰迪", "棕色", 4 + variant, Pet.Gender.MALE, "小", "聪明活泼，喜欢互动，洗护配合度高。", "pet_dog_real_4", availableStatus(index), cityByIndex(index), "适合居家办公或陪伴时间较多的家庭。", ownerId);
             case 8 -> new PetTemplate("芝麻" + suffix, "猫", "美短", "银灰", 2 + variant, Pet.Gender.MALE, "小", "胆子不大，但熟悉后会主动贴近主人。", "pet_cat_real_4", availableStatus(index), cityByIndex(index), "需要耐心适应期，建议单猫家庭优先。", ownerId);
-            case 9 -> new PetTemplate("团团" + suffix, "兔", "侏儒兔", "灰白", 1 + variant, Pet.Gender.MALE, "小", "日常安静，饮食规律，喜欢固定角落休息。", "adopt_dog_real_1", availableStatus(index), cityByIndex(index), "准备兔厕所和磨牙用品后更适合接回家。", ownerId);
-            case 10 -> new PetTemplate("奶酪" + suffix, "仓鼠", "金丝熊", "金黄", 1, Pet.Gender.FEMALE, "小", "晚上活跃，习惯跑轮，适合第一次接触小宠的人。", "adopt_cat_real_2", availableStatus(index), cityByIndex(index), "希望新主人了解基础小宠喂养知识。", ownerId);
-            default -> new PetTemplate("乌龙" + suffix, "狗", "中华田园犬", "黑白", 2 + variant, Pet.Gender.MALE, "中", "性格稳，适应力强，对陌生人观察后会逐渐放松。", "pet_dog_real_5", availableStatus(index), cityByIndex(index), "接受定期回访，优先考虑有独立居住环境的领养人。", ownerId);
+            case 9 -> new PetTemplate("团团" + suffix, "兔", "侏儒兔", "灰白", 1 + variant, Pet.Gender.MALE, "小", "日常安静，饮食规律，喜欢固定角落休息。", "media_placeholder", availableStatus(index), cityByIndex(index), "准备兔厕所和磨牙用品后更适合接回家。", ownerId);            case 10 -> new PetTemplate("奶酪" + suffix, "仓鼠", "金丝熊", "金黄", 1, Pet.Gender.FEMALE, "小", "晚上活跃，习惯跑轮，适合第一次接触小宠的人。", "media_placeholder", availableStatus(index), cityByIndex(index), "希望新主人了解基础小宠喂养知识。", ownerId);            default -> new PetTemplate("乌龙" + suffix, "狗", "中华田园犬", "黑白", 2 + variant, Pet.Gender.MALE, "中", "性格稳，适应力强，对陌生人观察后会逐渐放松。", "pet_dog_real_5", availableStatus(index), cityByIndex(index), "接受定期回访，优先考虑有独立居住环境的领养人。", ownerId);
         };
     }
 
@@ -415,7 +473,7 @@ public class SeedDataRunner implements CommandLineRunner {
 
     private CommentTemplate commentTemplate(int index, Post post) {
         String[] comments = new String[]{
-                "这条经验很实��，我也遇到过类似情况，回去准备按你的方法试试。",
+                "这条经验很实用，我也遇到过类似情况，回去准备按你的方法试试。",
                 "我们家也差不多，关键还是先把作息和环境稳定下来。",
                 "感谢分享，尤其是关于适应期和回访的提醒，很有帮助。",
                 "这个建议真的有效，我家小家伙就是调整饮食后状态稳定下来的。",
@@ -489,6 +547,8 @@ public class SeedDataRunner implements CommandLineRunner {
         record.setVeterinarian(template.veterinarian());
         if (template.type() == HealthRecord.RecordType.VACCINATION) {
             record.setNextDueDate(template.recordDate().plusYears(1));
+        } else {
+            record.setNextDueDate(null);
         }
     }
 

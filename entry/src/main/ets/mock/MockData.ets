@@ -483,28 +483,25 @@ export class MockData {
   }
 
   static decoratePet(pet: Pet): Pet {
-    const templates = MockData.petsAll();
-    const base = templates[Math.abs((pet.id ?? 1) - 1) % templates.length];
-    const name = pet.name ?? '';
-    const description = pet.description ?? '';
-    const genericName = !name || name.indexOf('宠物') >= 0 || name.indexOf('test') >= 0;
-    const genericDescription = !description || description.length < 8;
-    const result: Pet = {
-      id: pet.id ?? base.id,
-      name: genericName ? base.name : pet.name,
-      species: pet.species ?? base.species,
-      breed: pet.breed ?? base.breed,
-      gender: pet.gender ?? base.gender,
-      age: pet.age ?? base.age,
-      description: genericDescription ? base.description : pet.description,
+    return {
+      id: pet.id,
+      name: pet.name,
+      species: pet.species,
+      breed: pet.breed,
+      color: pet.color,
+      age: pet.age,
+      gender: pet.gender,
+      size: pet.size,
+      description: pet.description,
       image: pet.image ?? MockData.petImageKey(pet.id, pet.species),
-      adoptionStatus: pet.adoptionStatus ?? base.adoptionStatus,
-      adoptionCity: pet.adoptionCity ?? base.adoptionCity,
-      adoptionNote: pet.adoptionNote ?? base.adoptionNote,
-      ownerId: pet.ownerId ?? base.ownerId,
-      createdAt: pet.createdAt ?? base.createdAt
+      adoptionStatus: pet.adoptionStatus,
+      adoptionCity: pet.adoptionCity,
+      adoptionNote: pet.adoptionNote,
+      birthDate: pet.birthDate,
+      ownerId: pet.ownerId,
+      createdAt: pet.createdAt,
+      updatedAt: pet.updatedAt
     };
-    return result;
   }
 
   static decorateProducts(products: Product[]): Product[] {

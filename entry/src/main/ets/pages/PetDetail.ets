@@ -1,12 +1,11 @@
 import { AppPrompt } from '../common/AppPrompt';
 import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
-import { Pet, PetMessage } from '../model/Models';
+import { AdoptionRequest, Pet, PetMessage } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
 import { MediaAssets } from '../assets/MediaAssets';
 import { adoptionStatusLabel, petGenderLabel, relativeTime } from '../common/Formatters';
 import { Theme } from '../common/Theme';
-import { MockData } from '../mock/MockData';
 
 interface IdParams {
   id?: number;
@@ -47,13 +46,31 @@ struct PetDetail {
     this.errorText = '';
     try {
       this.pet = await Api.getPet(this.petId);
-      this.messages = MockData.petMessagesByPet(this.petId);
+      this.messages = [];
+      const user = SessionStore.getUser();
+      if (user?.id && this.pet?.ownerId === user.id) {
+        const requests = await Api.getAdoptionRequestsByPet(this.petId);
+        this.messages = requests
+          .filter((request: AdoptionRequest) => !!request.message)
+          .map((request: AdoptionRequest) => this.toPetMessage(request));
+      }
     } catch (e) {
       this.errorText = (e as Error).message || '加载失败';
-      this.messages = MockData.petMessagesByPet(this.petId);
+      this.messages = [];
     } finally {
       this.loading = false;
     }
+  }
+
+  private toPetMessage(request: AdoptionRequest): PetMessage {
+    const message: PetMessage = {
+      id: request.id,
+      petId: this.petId,
+      authorName: request.contactName || `申请人 #${request.requesterId}`,
+      content: request.message || '',
+      createdAt: request.createdAt
+    };
+    return message;
   }
 
   private ownedByMe(): boolean {
@@ -206,32 +223,45 @@ struct PetDetail {
             .borderRadius(24)
 
             Column({ space: 12 }) {
-              Text('用户留言')
+              Text(this.ownedByMe() ? '申请留言' : '咨询说明')
                 .fontSize(15)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Theme.textPrimary)
-              ForEach(this.messages, (message: PetMessage) => {
-                Column({ space: 6 }) {
-                  Row() {
-                    Text(message.authorName)
-                      .fontSize(13)
-                      .fontWeight(FontWeight.Medium)
-                      .fontColor(Theme.textPrimary)
-                    Blank()
-                    Text(relativeTime(message.createdAt))
-                      .fontSize(11)
-                      .fontColor(Theme.textMuted)
-                  }
-                  .width('100%')
-                  Text(message.content)
+              if (this.ownedByMe()) {
+                if (this.messages.length === 0) {
+                  Text('目前还没有新的申请留言。')
                     .fontSize(13)
-                    .lineHeight(20)
                     .fontColor(Theme.textSecondary)
+                } else {
+                  ForEach(this.messages, (message: PetMessage) => {
+                    Column({ space: 6 }) {
+                      Row() {
+                        Text(message.authorName)
+                          .fontSize(13)
+                          .fontWeight(FontWeight.Medium)
+                          .fontColor(Theme.textPrimary)
+                        Blank()
+                        Text(relativeTime(message.createdAt))
+                          .fontSize(11)
+                          .fontColor(Theme.textMuted)
+                      }
+                      .width('100%')
+                      Text(message.content)
+                        .fontSize(13)
+                        .lineHeight(20)
+                        .fontColor(Theme.textSecondary)
+                    }
+                    .padding(14)
+                    .backgroundColor(Theme.surfaceMuted)
+                    .borderRadius(16)
+                  }, (message: PetMessage) => String(message.id))
                 }
-                .padding(14)
-                .backgroundColor(Theme.surfaceMuted)
-                .borderRadius(16)
-              }, (message: PetMessage) => String(message.id))
+              } else {
+                Text('公开留言暂未开放。提交领养申请后，你的申请说明会发送给宠物当前主人。')
+                  .fontSize(13)
+                  .lineHeight(20)
+                  .fontColor(Theme.textSecondary)
+              }
             }
             .padding(18)
             .backgroundColor(Color.White)
