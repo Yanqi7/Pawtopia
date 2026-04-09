@@ -7,12 +7,13 @@ import { AppRouter } from '../common/AppRouter';
 import { Theme } from '../common/Theme';
 import { Post } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
+import { AppStatus } from '../app/AppStatus';
 
 interface PostDetailParams {
   id?: number;
 }
 
-type CommunityMode = 'RECOMMEND' | 'MINE' | 'FEED';
+type CommunityMode = 'RECOMMEND' | 'MINE' | 'CARE' | 'SHOP' | 'LIFE';
 
 @Component
 export struct CommunityTab {
@@ -59,7 +60,7 @@ export struct CommunityTab {
   }
 
   private async loadMore(): Promise<void> {
-    if (this.loading || this.last || this.mode !== 'RECOMMEND') {
+    if (this.loading || this.last || this.mode === 'MINE') {
       return;
     }
     this.page += 1;
@@ -87,37 +88,48 @@ export struct CommunityTab {
   }
 
   private async switchMode(mode: CommunityMode): Promise<void> {
-    if (this.mode === mode && mode !== 'FEED') {
-      return;
-    }
     this.mode = mode;
-    if (mode === 'FEED') {
-      if (this.allPosts.length === 0) {
-        await this.refresh();
-      }
-      this.applyFilters();
-      return;
-    }
     await this.refresh();
+  }
+
+  private inferCategory(post: Post): CommunityMode {
+    const text = normalizeKeyword(`${post.title} ${post.content}`);
+    if (text.indexOf('疫苗') >= 0 || text.indexOf('过敏') >= 0 || text.indexOf('体检') >= 0 || text.indexOf('医院') >= 0) {
+      return 'CARE';
+    }
+    if (text.indexOf('特价') >= 0 || text.indexOf('新品') >= 0 || text.indexOf('喂食器') >= 0 || text.indexOf('套餐') >= 0 || text.indexOf('冻干') >= 0) {
+      return 'SHOP';
+    }
+    if (text.indexOf('日常') >= 0 || text.indexOf('领养') >= 0 || text.indexOf('故事') >= 0 || text.indexOf('猫咪') >= 0 || text.indexOf('金毛') >= 0) {
+      return 'LIFE';
+    }
+    return 'RECOMMEND';
+  }
+
+  private categoryLabel(post: Post): string {
+    const category = this.inferCategory(post);
+    if (category === 'CARE') {
+      return '健康科普';
+    }
+    if (category === 'SHOP') {
+      return '用品测评';
+    }
+    if (category === 'LIFE') {
+      return '宠物日常';
+    }
+    return '精选推荐';
   }
 
   private applyFilters(): void {
     const keyword = normalizeKeyword(this.keyword);
     let result = [...this.allPosts];
-    if (this.mode === 'FEED') {
-      result = result.filter((post: Post) => this.containsText(post, '喂养') || this.containsText(post, '狗粮') || this.containsText(post, '猫粮'));
+    if (this.mode !== 'RECOMMEND' && this.mode !== 'MINE') {
+      result = result.filter((post: Post) => this.inferCategory(post) === this.mode);
     }
     if (keyword) {
-      result = result.filter((post: Post) => {
-        return normalizeKeyword(post.title).indexOf(keyword) >= 0 || normalizeKeyword(post.content).indexOf(keyword) >= 0;
-      });
+      result = result.filter((post: Post) => normalizeKeyword(`${post.title} ${post.content}`).indexOf(keyword) >= 0);
     }
     this.visiblePosts = result;
-  }
-
-  private containsText(post: Post, keyword: string): boolean {
-    const text = `${post.title} ${post.content}`.toLowerCase();
-    return text.indexOf(keyword.toLowerCase()) >= 0;
   }
 
   private openPost(post: Post): void {
@@ -131,35 +143,32 @@ export struct CommunityTab {
       Stack({ alignContent: Alignment.BottomStart }) {
         Image(MediaAssets.heroDog())
           .width('100%')
-          .height(220)
+          .height(168)
           .objectFit(ImageFit.Cover)
         Column()
           .width('100%')
-          .height(220)
-          .linearGradient({
-            angle: 180,
-            colors: [['#0F172A10', 0], ['#0F172A40', 0.45], ['#F3F7FF', 1]]
-          })
+          .height(168)
+          .linearGradient({ angle: 180, colors: [['#0F172A10', 0], ['#0F172A36', 0.45], ['#F3F7FF', 1]] })
 
-        Column({ space: 14 }) {
+        Column({ space: 12 }) {
           Row({ space: 12 }) {
             Image(MediaAssets.avatar())
-              .width(42)
-              .height(42)
-              .borderRadius(21)
+              .width(38)
+              .height(38)
+              .borderRadius(19)
             Column({ space: 4 }) {
               Text('Pawtopia 社区')
-                .fontSize(20)
+                .fontSize(18)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Color.White)
-              Text('分享日常、学习喂养知识、记录宠物故事')
-                .fontSize(12)
+              Text('围绕健康科普、用品测评和宠物日常展开')
+                .fontSize(11)
                 .fontColor('#F8FAFC')
             }
             .layoutWeight(1)
             Image($r('app.media.hero_bell'))
-              .width(26)
-              .height(26)
+              .width(22)
+              .height(22)
           }
           .width('100%')
 
@@ -168,9 +177,9 @@ export struct CommunityTab {
               Image($r('app.media.hero_search'))
                 .width(18)
                 .height(18)
-              TextInput({ placeholder: '搜索帖子、标题或关键字', text: this.keyword })
+              TextInput({ placeholder: '搜索帖子、医院经验、用品关键词', text: this.keyword })
                 .layoutWeight(1)
-                .height(42)
+                .height(40)
                 .backgroundColor('transparent')
                 .fontSize(14)
                 .fontColor(Theme.textPrimary)
@@ -181,218 +190,169 @@ export struct CommunityTab {
                 })
             }
             .layoutWeight(1)
-            .height(42)
+            .height(40)
             .padding({ left: 12, right: 12 })
             .backgroundColor('#FFFFFFF0')
-            .borderRadius(21)
+            .borderRadius(20)
 
-            Button()
-              .width(42)
-              .height(42)
-              .borderRadius(21)
+            Button('发帖')
+              .height(40)
+              .padding({ left: 14, right: 14 })
               .backgroundColor('#FFFFFFF0')
+              .fontColor(Theme.primary)
+              .borderRadius(20)
+              .fontSize(12)
               .onClick(() => AppRouter.push('pages/NewPost'))
-            Image($r('app.media.hero_compose'))
-              .width(22)
-              .height(22)
           }
           .width('100%')
         }
-        .padding({ left: 16, right: 16, bottom: 12 })
+        .padding({ left: 16, right: 16, bottom: 10 })
         .width('100%')
       }
 
-      Row({ space: 12 }) {
-        this.ActionCard('发帖', '开始分享', $r('app.media.hero_compose'), '#FFEAF2', () => AppRouter.push('pages/NewPost'))
-        this.ActionCard('我的帖子', '查看你的内容', $r('app.media.hero_follow'), '#FFF5EC', () => this.switchMode('MINE'))
-        this.ActionCard('喂养知识', '筛选教程', $r('app.media.hero_feed'), '#EEFFF3', () => this.switchMode('FEED'))
+      Scroll() {
+        Row({ space: 8 }) {
+          this.ModeChip('推荐', 'RECOMMEND')
+          this.ModeChip('我的', 'MINE')
+          this.ModeChip('健康科普', 'CARE')
+          this.ModeChip('用品测评', 'SHOP')
+          this.ModeChip('宠物日常', 'LIFE')
+        }
+        .padding({ left: 16, right: 16, top: 10, bottom: 8 })
       }
-      .padding({ left: 16, right: 16, top: 12 })
-      .width('100%')
+      .scrollable(ScrollDirection.Horizontal)
+      .scrollBar(BarState.Off)
 
-      Row({ space: 8 }) {
-        this.ModeChip('推荐', 'RECOMMEND')
-        this.ModeChip('我的', 'MINE')
-        this.ModeChip('喂养', 'FEED')
-        Blank()
-        Button('刷新')
-          .height(30)
-          .backgroundColor('#E8F1FF')
-          .fontColor(Theme.primary)
-          .borderRadius(15)
-          .fontSize(12)
-          .onClick(() => this.refresh())
+      if (!AppStatus.isBackendOnline()) {
+        OfflineBanner({ text: '当前为离线社区数据，分类与详情仍可完整浏览', action: () => this.refresh() })
+          .padding({ left: 16, right: 16, bottom: 8 })
       }
-      .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-      .width('100%')
+
+      if (this.errorText) {
+        Text(this.errorText)
+          .fontSize(13)
+          .fontColor('#D14343')
+          .padding({ left: 16, right: 16, bottom: 8 })
+      }
 
       if (!this.errorText && !this.loading && this.visiblePosts.length === 0) {
         EmptyState({
-          title: this.mode === 'MINE' ? '你还没有发布内容' : '暂时没有匹配内容',
-          description: this.mode === 'FEED' ? '试试切换回推荐页，或者发布你的第一条宠物日记。' : '换个关键词再试，或者发布新的宠物动态。',
+          title: '没有匹配的帖子',
+          description: '切换分类或者发布一条新的宠物帖子。',
           actionText: '去发帖',
           action: () => AppRouter.push('pages/NewPost')
         })
       } else {
-        if (!this.errorText && this.loading && this.visiblePosts.length === 0) {
-          Column({ space: 10 }) {
-            LoadingProgress()
-              .width(24)
-              .height(24)
-              .color(Theme.primary)
-            Text('正在加载社区内容…')
-              .fontSize(13)
-              .fontColor(Theme.textSecondary)
-          }
-          .width('100%')
-          .padding(24)
-          .alignItems(HorizontalAlign.Center)
-        }
-
-        if (!this.errorText && this.visiblePosts.length > 0) {
-          List() {
-            ForEach(this.visiblePosts, (post: Post) => {
-              ListItem() {
-                Column({ space: 12 }) {
-                  Row({ space: 10 }) {
-                    Image(MediaAssets.avatar())
-                      .width(42)
-                      .height(42)
-                      .borderRadius(21)
-                    Column({ space: 4 }) {
-                      Text(postAuthorLabel(post.userId))
-                        .fontSize(14)
-                        .fontWeight(FontWeight.Medium)
-                        .fontColor(Theme.textPrimary)
-                      Text(relativeTime(post.createdAt))
-                        .fontSize(11)
-                        .fontColor(Theme.textMuted)
-                    }
-                    .layoutWeight(1)
-                    Text(post.id ? `#${post.id}` : '#')
-                      .fontSize(12)
-                      .fontColor(Theme.primary)
-                      .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-                      .backgroundColor('#E8F1FF')
-                      .borderRadius(14)
-                  }
-
-                  Text(post.title)
-                    .fontSize(18)
-                    .fontWeight(FontWeight.Bold)
-                    .fontColor(Theme.textPrimary)
-                    .maxLines(2)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    .width('100%')
-
-                  Text(post.content)
-                    .fontSize(13)
-                    .fontColor(Theme.textSecondary)
-                    .lineHeight(22)
-                    .maxLines(3)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    .width('100%')
-
-                  Image(MediaAssets.postImage(post.imageUrls, post.id ?? 0))
-                    .width('100%')
-                    .height(190)
-                    .borderRadius(20)
-                    .objectFit(ImageFit.Cover)
-
-                  Row({ space: 18 }) {
-                    Row({ space: 6 }) {
-                      Image($r('app.media.heart'))
-                        .width(16)
-                        .height(16)
-                      Text(String(post.likeCount ?? 0))
-                        .fontSize(12)
-                        .fontColor(Theme.textSecondary)
-                    }
-                    Row({ space: 6 }) {
-                      Image($r('app.media.tiezi'))
-                        .width(16)
-                        .height(16)
-                      Text(String(post.commentCount ?? 0))
-                        .fontSize(12)
-                        .fontColor(Theme.textSecondary)
-                    }
-                    Row({ space: 6 }) {
-                      Image($r('app.media.view'))
-                        .width(16)
-                        .height(16)
-                      Text(String(post.viewCount ?? 0))
-                        .fontSize(12)
-                        .fontColor(Theme.textSecondary)
-                    }
-                    Blank()
-                    Button('查看详情')
-                      .height(32)
-                      .padding({ left: 14, right: 14 })
-                      .fontSize(12)
-                      .backgroundColor('#E8F1FF')
-                      .fontColor(Theme.primary)
-                      .borderRadius(16)
-                      .onClick(() => this.openPost(post))
-                  }
-                  .width('100%')
-                }
-                .padding(16)
-                .backgroundColor('#FFFFFF')
-                .borderRadius(24)
-              }
-              .padding({ left: 16, right: 16, bottom: 14 })
-              .onClick(() => this.openPost(post))
-            }, (post: Post) => String(post.id))
-
+        List() {
+          ForEach(this.visiblePosts, (post: Post) => {
             ListItem() {
-              Column({ space: 8 }) {
-                if (this.errorText) {
-                  Text(this.errorText)
-                    .fontSize(12)
-                    .fontColor('#D14343')
-                } else {
-                  Text(this.last || this.mode !== 'RECOMMEND' ? '已经到底啦' : (this.loading ? '加载中…' : '上拉加载更多'))
-                    .fontSize(12)
-                    .fontColor(Theme.textMuted)
+              Column({ space: 12 }) {
+                Row({ space: 10 }) {
+                  Image(MediaAssets.avatar())
+                    .width(42)
+                    .height(42)
+                    .borderRadius(21)
+                  Column({ space: 4 }) {
+                    Text(postAuthorLabel(post.userId))
+                      .fontSize(14)
+                      .fontWeight(FontWeight.Medium)
+                      .fontColor(Theme.textPrimary)
+                    Text(relativeTime(post.createdAt))
+                      .fontSize(11)
+                      .fontColor(Theme.textMuted)
+                  }
+                  .layoutWeight(1)
+                  Text(this.categoryLabel(post))
+                    .fontSize(11)
+                    .fontColor(Theme.primary)
+                    .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                    .backgroundColor('#E8F1FF')
+                    .borderRadius(14)
                 }
-                if (!this.last && this.mode === 'RECOMMEND' && !this.loading) {
-                  OfflineBanner({ text: '继续浏览更多宠物故事', action: () => this.loadMore() })
+
+                Text(post.title)
+                  .fontSize(18)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(Theme.textPrimary)
+                  .maxLines(2)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .width('100%')
+
+                Text(post.content)
+                  .fontSize(13)
+                  .fontColor(Theme.textSecondary)
+                  .lineHeight(22)
+                  .maxLines(3)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .width('100%')
+
+                Image(MediaAssets.postImage(post.imageUrls, post.id ?? 0))
+                  .width('100%')
+                  .height(176)
+                  .borderRadius(20)
+                  .objectFit(ImageFit.Cover)
+
+                Row({ space: 18 }) {
+                  Row({ space: 6 }) {
+                    Image($r('app.media.heart')).width(16).height(16)
+                    Text(String(post.likeCount ?? 0)).fontSize(12).fontColor(Theme.textSecondary)
+                  }
+                  Row({ space: 6 }) {
+                    Image($r('app.media.tiezi')).width(16).height(16)
+                    Text(String(post.commentCount ?? 0)).fontSize(12).fontColor(Theme.textSecondary)
+                  }
+                  Row({ space: 6 }) {
+                    Image($r('app.media.view')).width(16).height(16)
+                    Text(String(post.viewCount ?? 0)).fontSize(12).fontColor(Theme.textSecondary)
+                  }
+                  Blank()
+                  Button('查看详情')
+                    .height(32)
+                    .padding({ left: 14, right: 14 })
+                    .fontSize(12)
+                    .backgroundColor('#E8F1FF')
+                    .fontColor(Theme.primary)
+                    .borderRadius(16)
+                    .onClick(() => this.openPost(post))
                 }
+                .width('100%')
               }
-              .width('100%')
-              .padding({ left: 16, right: 16, bottom: 20 })
+              .padding(16)
+              .backgroundColor(Color.White)
+              .borderRadius(24)
             }
+            .padding({ left: 16, right: 16, bottom: 14 })
+            .onClick(() => this.openPost(post))
+          }, (post: Post) => String(post.id))
+
+          ListItem() {
+            Column({ space: 8 }) {
+              if (!this.last && this.mode !== 'MINE' && !this.loading) {
+                Button('加载更多')
+                  .height(34)
+                  .padding({ left: 18, right: 18 })
+                  .backgroundColor('#E8F1FF')
+                  .fontColor(Theme.primary)
+                  .borderRadius(17)
+                  .fontSize(12)
+                  .onClick(() => this.loadMore())
+              } else {
+                Text(this.loading ? '加载中…' : '已经到底啦')
+                  .fontSize(12)
+                  .fontColor(Theme.textMuted)
+              }
+            }
+            .width('100%')
+            .padding({ left: 16, right: 16, bottom: 20 })
+            .alignItems(HorizontalAlign.Center)
           }
-          .onReachEnd(() => this.loadMore())
-          .layoutWeight(1)
         }
+        .layoutWeight(1)
       }
     }
     .height('100%')
     .width('100%')
     .backgroundColor(Theme.background)
-  }
-
-  @Builder private ActionCard(title: string, subTitle: string, icon: Resource, bgColor: string, action: () => void) {
-    Column({ space: 8 }) {
-      Image(icon)
-        .width(28)
-        .height(28)
-      Text(title)
-        .fontSize(14)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(Theme.textPrimary)
-      Text(subTitle)
-        .fontSize(11)
-        .fontColor(Theme.textSecondary)
-    }
-    .width('33%')
-    .height(108)
-    .padding(12)
-    .backgroundColor(bgColor)
-    .borderRadius(20)
-    .alignItems(HorizontalAlign.Start)
-    .onClick(() => action())
   }
 
   @Builder private ModeChip(label: string, mode: CommunityMode) {

@@ -71,6 +71,36 @@ export function productCategoryLabel(category?: string): string {
   }
 }
 
+export function adoptionRequestStatusLabel(status?: string): string {
+  switch (status) {
+    case 'APPROVED':
+      return '已通过';
+    case 'REJECTED':
+      return '已拒绝';
+    case 'CANCELLED':
+      return '已撤回';
+    default:
+      return '待处理';
+  }
+}
+
+export function healthRecordTypeLabel(type?: string): string {
+  switch (type) {
+    case 'VACCINATION':
+      return '疫苗';
+    case 'EXAMINATION':
+      return '体检';
+    case 'TREATMENT':
+      return '治疗';
+    case 'MEDICATION':
+      return '用药';
+    case 'GROOMING':
+      return '护理';
+    default:
+      return '记录';
+  }
+}
+
 export function shortDate(value?: string): string {
   if (!value) {
     return '最近更新';

@@ -19,6 +19,7 @@ struct ProductDetail {
   @State private errorText: string = '';
   @State private product: Product | undefined = undefined;
   @State private qty: number = 1;
+  @State private activeImageIndex: number = 0;
 
   aboutToAppear(): void {
     const params = AppRouter.params<IdParams>();
@@ -35,11 +36,19 @@ struct ProductDetail {
     this.errorText = '';
     try {
       this.product = await Api.getProduct(this.productId);
+      this.activeImageIndex = 0;
     } catch (e) {
       this.errorText = (e as Error).message || '加载失败';
     } finally {
       this.loading = false;
     }
+  }
+
+  private gallery(): Resource[] {
+    if (!this.product) {
+      return [];
+    }
+    return MediaAssets.productGallery(this.product.name, this.product.id ?? 0, this.product.category);
   }
 
   private async addToCart(goCart: boolean): Promise<void> {
@@ -74,29 +83,43 @@ struct ProductDetail {
       }
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .width('100%')
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(Color.White)
 
       Scroll() {
         Column({ space: 16 }) {
           if (this.errorText) {
             Text(this.errorText)
               .fontSize(13)
-              .fontColor(Color.Red)
+              .fontColor('#D14343')
               .padding(16)
           }
 
           if (this.product) {
-            Image(MediaAssets.productImage(this.product.image, this.product.id ?? 0, this.product.category))
+            Image(this.gallery()[this.activeImageIndex])
               .width('100%')
-              .height(260)
-              .borderRadius(18)
+              .height(280)
+              .borderRadius(28)
               .objectFit(ImageFit.Cover)
+
+            Row({ space: 10 }) {
+              ForEach(this.gallery(), (image: Resource, index: number) => {
+                Image(image)
+                  .width(74)
+                  .height(74)
+                  .borderRadius(18)
+                  .objectFit(ImageFit.Cover)
+                  .border({ width: this.activeImageIndex === index ? 2 : 0, color: Theme.primary })
+                  .onClick(() => this.activeImageIndex = index)
+              }, (_: Resource, index: number) => String(index))
+            }
+            .width('100%')
 
             Column({ space: 12 }) {
               Row({ space: 8 }) {
                 Text(this.product.name)
-                  .fontSize(20)
+                  .fontSize(22)
                   .fontWeight(FontWeight.Bold)
+                  .fontColor(Theme.textPrimary)
                   .layoutWeight(1)
                 Text(productCategoryLabel(this.product.category))
                   .fontSize(11)
@@ -105,62 +128,92 @@ struct ProductDetail {
                   .backgroundColor('#FFF1E8')
                   .borderRadius(12)
               }
+
               Text(this.product.description ?? '暂无描述')
                 .fontSize(14)
-                .fontColor('#333')
+                .fontColor(Theme.textPrimary)
                 .lineHeight(22)
-              Row({ space: 10 }) {
+
+              Row({ space: 12 }) {
                 Text(`￥${this.product.price}`)
-                  .fontSize(24)
-                  .fontColor(Color.Red)
+                  .fontSize(26)
                   .fontWeight(FontWeight.Bold)
-                Text(`库存：${this.product.stockQuantity}`)
+                  .fontColor('#FF5A5F')
+                Text(`库存 ${this.product.stockQuantity}`)
                   .fontSize(12)
-                  .fontColor('#999')
-                Text(`上架：${shortDate(this.product.createdAt)}`)
+                  .fontColor(Theme.textMuted)
+                Text(`上架 ${shortDate(this.product.createdAt)}`)
                   .fontSize(12)
-                  .fontColor('#999')
+                  .fontColor(Theme.textMuted)
               }
             }
-            .padding(16)
+            .padding(18)
             .backgroundColor(Color.White)
-            .borderRadius(12)
+            .borderRadius(24)
+
+            Column({ space: 12 }) {
+              Text('适用说明')
+                .fontSize(15)
+                .fontWeight(FontWeight.Bold)
+                .fontColor(Theme.textPrimary)
+              Text('· 购买数量与库存联动，结算时以后端校验为准。')
+                .fontSize(13)
+                .fontColor(Theme.textSecondary)
+              Text('· 页面图片已按商品名称与分类匹配，更接近真实商品展示。')
+                .fontSize(13)
+                .fontColor(Theme.textSecondary)
+              Text('· 适合宠物日常喂养、护理或互动场景。')
+                .fontSize(13)
+                .fontColor(Theme.textSecondary)
+            }
+            .padding(18)
+            .backgroundColor(Color.White)
+            .borderRadius(24)
 
             Column({ space: 12 }) {
               Text('购买数量')
-                .fontSize(14)
+                .fontSize(15)
                 .fontWeight(FontWeight.Bold)
+                .fontColor(Theme.textPrimary)
               Row({ space: 12 }) {
                 Button('-')
-                  .height(36)
-                  .width(40)
-                  .borderRadius(8)
-                  .backgroundColor('#F0F2F5')
+                  .height(38)
+                  .width(42)
+                  .borderRadius(12)
+                  .backgroundColor('#F3F6FB')
+                  .fontColor(Theme.textSecondary)
                   .onClick(() => this.qty = Math.max(1, this.qty - 1))
                 Text(String(this.qty))
-                  .fontSize(16)
+                  .fontSize(18)
                   .fontWeight(FontWeight.Bold)
                   .layoutWeight(1)
                   .textAlign(TextAlign.Center)
                 Button('+')
-                  .height(36)
-                  .width(40)
-                  .borderRadius(8)
-                  .backgroundColor('#F0F2F5')
+                  .height(38)
+                  .width(42)
+                  .borderRadius(12)
+                  .backgroundColor('#F3F6FB')
+                  .fontColor(Theme.textSecondary)
                   .onClick(() => this.qty = Math.min(Math.max(1, this.product?.stockQuantity ?? 1), this.qty + 1))
               }
               .width('100%')
             }
-            .padding(16)
+            .padding(18)
             .backgroundColor(Color.White)
-            .borderRadius(12)
+            .borderRadius(24)
           } else if (this.loading) {
-            Text('��载中…')
-              .fontSize(14)
-              .fontColor('#999')
-              .width('100%')
-              .textAlign(TextAlign.Center)
-              .padding(40)
+            Column({ space: 10 }) {
+              LoadingProgress()
+                .width(24)
+                .height(24)
+                .color(Theme.primary)
+              Text('正在加载商品详情…')
+                .fontSize(13)
+                .fontColor(Theme.textMuted)
+            }
+            .width('100%')
+            .padding(30)
+            .alignItems(HorizontalAlign.Center)
           }
 
           Blank().height(16)
@@ -172,20 +225,20 @@ struct ProductDetail {
       if (this.product) {
         Row({ space: 12 }) {
           Button('加入购物车')
-            .height(44)
+            .height(46)
             .layoutWeight(1)
             .backgroundColor('#E8F1FF')
             .fontColor(Theme.primary)
-            .borderRadius(12)
+            .borderRadius(18)
             .fontSize(14)
             .onClick(() => this.addToCart(false))
 
           Button('去结算')
-            .height(44)
+            .height(46)
             .layoutWeight(1)
             .backgroundColor(Theme.primary)
             .fontColor(Color.White)
-            .borderRadius(12)
+            .borderRadius(18)
             .fontSize(14)
             .fontWeight(FontWeight.Bold)
             .onClick(() => this.addToCart(true))
@@ -196,6 +249,6 @@ struct ProductDetail {
     }
     .height('100%')
     .width('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Theme.background)
   }
 }

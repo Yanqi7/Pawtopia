@@ -2,7 +2,10 @@ import { AppPrompt } from '../common/AppPrompt';
 import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { AdoptionRequest, AdoptionRequestStatus, Pet } from '../model/Models';
-import { ErrorText, SectionTitle } from '../components/Ui';
+import { EmptyState, ErrorText, SectionTitle } from '../components/Ui';
+import { MediaAssets } from '../assets/MediaAssets';
+import { Theme } from '../common/Theme';
+import { adoptionRequestStatusLabel, relativeTime } from '../common/Formatters';
 
 interface Params {
   petId?: number;
@@ -43,7 +46,7 @@ struct AdoptionRequests {
   private async setStatus(id: number, status: AdoptionRequestStatus): Promise<void> {
     try {
       await Api.updateAdoptionRequestStatus(id, status);
-      AppPrompt.toast('已更新');
+      AppPrompt.toast('已更新申请状态');
       await this.load();
     } catch (e) {
       this.errorText = (e as Error).message || '更新失败';
@@ -53,9 +56,9 @@ struct AdoptionRequests {
   build() {
     Column() {
       Row() {
-        Text('领养申请').fontSize(18).fontWeight(FontWeight.Bold)
+        Text('领养审批').fontSize(18).fontWeight(FontWeight.Bold)
         Blank()
-        Text('返回').fontSize(14).fontColor('#2B7FFF').onClick(() => AppRouter.back())
+        Text('返回').fontSize(14).fontColor(Theme.primary).onClick(() => AppRouter.back())
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 
@@ -63,77 +66,106 @@ struct AdoptionRequests {
         ErrorText({ text: this.errorText })
       }
 
-      Scroll() {
-        Column({ space: 12 }) {
-          if (this.pet) {
-            Column({ space: 6 }) {
-              Text(`${this.pet!.name}（${this.pet!.species}）`).fontSize(16).fontWeight(FontWeight.Medium)
-              Text(`状态：${this.pet!.adoptionStatus ?? 'AVAILABLE'}  城市：${this.pet!.adoptionCity ?? '-'}`)
-                .fontSize(12)
-                .fontColor('#666')
-            }
-            .padding(12)
-            .backgroundColor('#F6F7F9')
-            .borderRadius(12)
-          }
-
-          SectionTitle({ title: `申请列表（${this.requests.length}）` })
-
-          ForEach(this.requests, (r: AdoptionRequest) => {
-            Column({ space: 8 }) {
-              Row() {
-                Text(`申请 #${r.id ?? '-'}`).fontSize(14).fontWeight(FontWeight.Medium)
-                Blank()
-                Text(r.status).fontSize(12).fontColor(r.status === 'PENDING' ? '#B26A00' : '#666')
-              }
-              if (r.message) {
-                Text(r.message!).fontSize(13).fontColor('#333')
-              }
-              Text(`联系人：${r.contactName ?? '-'}  电话：${r.contactPhone ?? '-'}`)
-                .fontSize(12)
-                .fontColor('#999')
-
-              if (r.status === 'PENDING') {
-                Row({ space: 10 }) {
-                  Button('拒绝')
-                    .height(32)
-                    .borderRadius(16)
-                    .backgroundColor('#F0F2F5')
-                    .onClick(() => {
-                      if (r.id) {
-                        this.setStatus(r.id, 'REJECTED');
-                      }
-                    })
-                  Button('同意')
-                    .height(32)
-                    .borderRadius(16)
-                    .backgroundColor('#2B7FFF')
+      if (!this.loading && this.requests.length === 0 && !this.errorText) {
+        EmptyState({
+          title: '还没有收到申请',
+          description: '继续等待合适的申请人留言，或者完善宠物介绍提高匹配度。',
+          actionText: '返回详情',
+          action: () => AppRouter.back()
+        })
+      } else {
+        Scroll() {
+          Column({ space: 14 }) {
+            if (this.pet) {
+              Stack({ alignContent: Alignment.BottomStart }) {
+                Image(MediaAssets.petImage(this.pet.image, this.pet.id ?? 0, this.pet.species))
+                  .width('100%')
+                  .height(180)
+                  .borderRadius(24)
+                  .objectFit(ImageFit.Cover)
+                Column({ space: 6 }) {
+                  Text(`${this.pet.name} 的申请列表`)
+                    .fontSize(20)
+                    .fontWeight(FontWeight.Bold)
                     .fontColor(Color.White)
-                    .onClick(() => {
-                      if (r.id) {
-                        this.setStatus(r.id, 'APPROVED');
-                      }
-                    })
+                  Text(`${this.pet.species} · ${this.pet.breed ?? '待补充'} · ${this.pet.adoptionCity ?? '同城优先'}`)
+                    .fontSize(12)
+                    .fontColor('#F8FAFC')
+                }
+                .width('100%')
+                .padding(16)
+                .linearGradient({ angle: 180, colors: [['#11182700', 0], ['#111827B8', 1]] })
+                .borderRadius(24)
+              }
+            }
+
+            SectionTitle({ title: `申请列表（${this.requests.length}）` })
+            ForEach(this.requests, (request: AdoptionRequest) => {
+              Column({ space: 10 }) {
+                Row() {
+                  Text(request.contactName ?? `申请人 #${request.requesterId}`)
+                    .fontSize(15)
+                    .fontWeight(FontWeight.Bold)
+                    .fontColor(Theme.textPrimary)
+                  Blank()
+                  Text(adoptionRequestStatusLabel(request.status))
+                    .fontSize(11)
+                    .fontColor(request.status === 'PENDING' ? '#B26A00' : Theme.primary)
+                    .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                    .backgroundColor(request.status === 'PENDING' ? '#FFF3E0' : '#E8F1FF')
+                    .borderRadius(12)
+                }
+                Text(`联系电话：${request.contactPhone ?? '-'} · ${relativeTime(request.createdAt)}`)
+                  .fontSize(12)
+                  .fontColor(Theme.textSecondary)
+                if (request.message) {
+                  Text(request.message)
+                    .fontSize(13)
+                    .fontColor(Theme.textPrimary)
+                    .lineHeight(20)
+                }
+                if (request.status === 'PENDING' && request.id) {
+                  Row({ space: 10 }) {
+                    Button('拒绝')
+                      .height(34)
+                      .padding({ left: 16, right: 16 })
+                      .borderRadius(17)
+                      .backgroundColor('#FFF1F0')
+                      .fontColor('#D14343')
+                      .onClick(() => this.setStatus(request.id!, 'REJECTED'))
+                    Button('同意')
+                      .height(34)
+                      .padding({ left: 16, right: 16 })
+                      .borderRadius(17)
+                      .backgroundColor(Theme.primary)
+                      .fontColor(Color.White)
+                      .onClick(() => this.setStatus(request.id!, 'APPROVED'))
+                  }
                 }
               }
-            }
-            .padding(12)
-            .backgroundColor('#FFFFFF')
-            .borderRadius(12)
-            .border({ width: 1, color: '#EEE' })
-          }, (r: AdoptionRequest) => String(r.id))
+              .padding(16)
+              .backgroundColor(Color.White)
+              .borderRadius(24)
+            }, (request: AdoptionRequest) => String(request.id))
 
-          if (!this.loading && this.requests.length === 0) {
-            Text('暂无申请').fontSize(13).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(24)
+            if (this.loading) {
+              Row({ space: 8 }) {
+                LoadingProgress().width(20).height(20).color(Theme.primary)
+                Text('正在同步申请列表…').fontSize(12).fontColor(Theme.textMuted)
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.Center)
+              .padding(12)
+            }
           }
+          .padding({ left: 16, right: 16, bottom: 24 })
+          .width('100%')
         }
-        .padding({ left: 16, right: 16, bottom: 24 })
-        .width('100%')
+        .layoutWeight(1)
       }
-      .height('100%')
     }
     .height('100%')
     .width('100%')
+    .backgroundColor(Theme.background)
   }
 }
-

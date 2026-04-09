@@ -83,57 +83,56 @@ export class MediaAssets {
     return MediaAssets.postCover(seed);
   }
 
+  static productGallery(name?: string, seed: number = 0, category?: string): Resource[] {
+    const keyword = (name ?? '').toLowerCase();
+    if (keyword.indexOf('冻干') >= 0 || keyword.indexOf('鸭肉') >= 0 || keyword.indexOf('粮') >= 0 || category === 'FOOD') {
+      return [
+        $r('app.media.shop_banner_real_1'),
+        $r('app.media.pet_dog_real_2'),
+        $r('app.media.pet_cat_real_2')
+      ];
+    }
+    if (keyword.indexOf('喂食器') >= 0 || keyword.indexOf('便携包') >= 0) {
+      return [
+        $r('app.media.pet_dog_real_1'),
+        $r('app.media.shop_banner_real_1'),
+        $r('app.media.pet_dog_real_3')
+      ];
+    }
+    if (keyword.indexOf('益生菌') >= 0 || category === 'MEDICINE') {
+      return [
+        $r('app.media.pet_cat_real_1'),
+        $r('app.media.shop_banner_real_2'),
+        $r('app.media.pet_dog_real_1')
+      ];
+    }
+    if (keyword.indexOf('逗猫棒') >= 0 || keyword.indexOf('玩具') >= 0 || category === 'TOY') {
+      return [
+        $r('app.media.pet_cat_real_3'),
+        $r('app.media.adopt_cat_real_2'),
+        $r('app.media.pet_dog_real_3')
+      ];
+    }
+    if (keyword.indexOf('护理') >= 0 || keyword.indexOf('洗') >= 0 || keyword.indexOf('梳毛') >= 0 || keyword.indexOf('手套') >= 0 || category === 'ACCESSORY') {
+      return [
+        $r('app.media.shop_banner_real_2'),
+        $r('app.media.pet_cat_real_1'),
+        $r('app.media.pet_dog_real_1')
+      ];
+    }
+    return [
+      $r('app.media.shop_banner_real_1'),
+      $r('app.media.shop_banner_real_2'),
+      MediaAssets.petCover(seed)
+    ];
+  }
+
   static productImage(name?: string, seed: number = 0, category?: string): Resource {
     const mapped = MediaAssets.named(name);
     if (mapped) {
       return mapped;
     }
-    const keyword = name ?? '';
-    if (keyword.indexOf('冻干') >= 0 || keyword.indexOf('鸭肉') >= 0 || keyword.indexOf('粮') >= 0) {
-      return $r('app.media.shop_banner_real_1');
-    }
-    if (keyword.indexOf('护理') >= 0 || keyword.indexOf('洗') >= 0 || keyword.indexOf('梳毛') >= 0 || keyword.indexOf('手套') >= 0) {
-      return $r('app.media.shop_banner_real_2');
-    }
-    if (keyword.indexOf('喂食器') >= 0 || keyword.indexOf('便携包') >= 0) {
-      return $r('app.media.pet_dog_real_1');
-    }
-    if (keyword.indexOf('逗猫棒') >= 0 || keyword.indexOf('玩具') >= 0) {
-      return $r('app.media.pet_cat_real_3');
-    }
-    if (keyword.indexOf('益生菌') >= 0) {
-      return $r('app.media.pet_cat_real_1');
-    }
-    const common: Resource[] = [
-      $r('app.media.shop_banner_real_1'),
-      $r('app.media.shop_banner_real_2'),
-      $r('app.media.pet_dog_real_1'),
-      $r('app.media.pet_cat_real_1')
-    ];
-    const food: Resource[] = [
-      $r('app.media.shop_banner_real_1'),
-      $r('app.media.pet_dog_real_2'),
-      $r('app.media.pet_cat_real_2')
-    ];
-    const toy: Resource[] = [
-      $r('app.media.pet_cat_real_3'),
-      $r('app.media.pet_dog_real_3'),
-      $r('app.media.adopt_cat_real_2')
-    ];
-    const care: Resource[] = [
-      $r('app.media.shop_banner_real_2'),
-      $r('app.media.pet_cat_real_1'),
-      $r('app.media.pet_dog_real_1')
-    ];
-    let pool = common;
-    if (category === 'FOOD') {
-      pool = food;
-    } else if (category === 'TOY') {
-      pool = toy;
-    } else if (category === 'MEDICINE' || category === 'ACCESSORY') {
-      pool = care;
-    }
-    return pool[Math.abs(seed) % pool.length];
+    return MediaAssets.productGallery(name, seed, category)[0];
   }
 
   private static named(name?: string): Resource | undefined {

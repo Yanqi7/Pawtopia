@@ -1,10 +1,11 @@
 import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { AdoptionRequest, Pet } from '../model/Models';
-import { ErrorText, SectionTitle } from '../components/Ui';
+import { EmptyState, ErrorText, OfflineBanner, SectionTitle } from '../components/Ui';
 import { SessionStore } from '../store/SessionStore';
 import { MediaAssets } from '../assets/MediaAssets';
 import { Theme } from '../common/Theme';
+import { adoptionRequestStatusLabel, relativeTime } from '../common/Formatters';
 
 interface AdoptionLine {
   request: AdoptionRequest;
@@ -34,7 +35,10 @@ struct MyAdoptions {
       const requests = await Api.getMyAdoptionRequests();
       const pets = await Promise.all(requests.map((request: AdoptionRequest) => Api.getPet(request.petId).catch(() => undefined)));
       this.lines = requests.map((request: AdoptionRequest, index: number) => {
-        const line: AdoptionLine = { request: request, pet: pets[index] };
+        const line: AdoptionLine = {
+          request: request,
+          pet: pets[index]
+        };
         return line;
       });
     } catch (e) {
@@ -56,9 +60,14 @@ struct MyAdoptions {
   build() {
     Column() {
       Row() {
-        Text('我的领养申请').fontSize(18).fontWeight(FontWeight.Bold)
+        Text('我的领养申请')
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
         Blank()
-        Text('返回').fontSize(14).fontColor(Theme.primary).onClick(() => AppRouter.back())
+        Text('返回')
+          .fontSize(14)
+          .fontColor(Theme.primary)
+          .onClick(() => AppRouter.back())
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 
@@ -66,56 +75,97 @@ struct MyAdoptions {
         ErrorText({ text: this.errorText })
       }
 
-      Scroll() {
-        Column({ space: 12 }) {
-          SectionTitle({ title: `记录（${this.lines.length}）` })
+      if (!this.loading && this.lines.length === 0) {
+        EmptyState({
+          title: '你还没有领养申请',
+          description: '去领养页看看合适的毛孩子，提交申请后会在这里跟进状态。',
+          actionText: '去领养页',
+          action: () => AppRouter.replace('pages/MainTabs')
+        })
+      } else {
+        Scroll() {
+          Column({ space: 14 }) {
+            SectionTitle({ title: `申请记录（${this.lines.length}）` })
+            OfflineBanner({ text: '如果服务端拒绝访问，这里会自动回退到本地申请记录', action: () => this.load() })
 
-          ForEach(this.lines, (line: AdoptionLine) => {
-            Row({ space: 12 }) {
-              Image(MediaAssets.petImage(line.pet?.image, line.pet?.id ?? line.request.petId, line.pet?.species))
-                .width(88)
-                .height(88)
-                .borderRadius(20)
-                .objectFit(ImageFit.Cover)
+            ForEach(this.lines, (line: AdoptionLine) => {
+              Column({ space: 12 }) {
+                Stack({ alignContent: Alignment.BottomStart }) {
+                  Image(MediaAssets.petImage(line.pet?.image, line.pet?.id ?? line.request.petId, line.pet?.species))
+                    .width('100%')
+                    .height(190)
+                    .borderRadius(24)
+                    .objectFit(ImageFit.Cover)
+                  Column({ space: 6 }) {
+                    Row({ space: 8 }) {
+                      Text(line.pet?.name ?? `宠物 #${line.request.petId}`)
+                        .fontSize(20)
+                        .fontWeight(FontWeight.Bold)
+                        .fontColor(Color.White)
+                        .layoutWeight(1)
+                      Text(adoptionRequestStatusLabel(line.request.status))
+                        .fontSize(11)
+                        .fontColor(Theme.primary)
+                        .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                        .backgroundColor('#FFFFFFEE')
+                        .borderRadius(12)
+                    }
+                    Text(`${line.pet?.species ?? '宠物'} · ${line.pet?.breed ?? '待补充'} · 提交于 ${relativeTime(line.request.createdAt)}`)
+                      .fontSize(12)
+                      .fontColor('#F8FAFC')
+                  }
+                  .width('100%')
+                  .padding(16)
+                  .linearGradient({ angle: 180, colors: [['#11182700', 0], ['#111827B8', 1]] })
+                  .borderRadius(24)
+                }
 
-              Column({ space: 8 }) {
-                Row() {
-                  Text(line.pet?.name ?? `宠物 #${line.request.petId}`).fontSize(16).fontWeight(FontWeight.Medium)
-                  Blank()
-                  Text(line.request.status).fontSize(12).fontColor(line.request.status === 'PENDING' ? '#B26A00' : '#666')
+                Column({ space: 8 }) {
+                  if (line.request.message) {
+                    Text(line.request.message)
+                      .fontSize(13)
+                      .fontColor(Theme.textPrimary)
+                      .lineHeight(20)
+                  }
+                  Row() {
+                    Text(`联系人：${line.request.contactName ?? '-'} · ${line.request.contactPhone ?? '-'}`)
+                      .fontSize(12)
+                      .fontColor(Theme.textSecondary)
+                    Blank()
+                    if (line.request.status === 'PENDING' && line.request.id) {
+                      Button('撤回申请')
+                        .height(32)
+                        .padding({ left: 14, right: 14 })
+                        .backgroundColor('#FFF1F0')
+                        .fontColor('#D14343')
+                        .borderRadius(16)
+                        .fontSize(12)
+                        .onClick(() => this.cancel(line.request.id!))
+                    }
+                  }
                 }
-                Text(`${line.pet?.species ?? '宠物'} · ${line.pet?.breed ?? '等待资料补充'}`).fontSize(12).fontColor('#666')
-                if (line.request.message) {
-                  Text(line.request.message!).fontSize(13).fontColor('#333').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
-                }
-                Text(`联系人：${line.request.contactName ?? '-'} · ${line.request.contactPhone ?? '-'}`).fontSize(12).fontColor('#999')
-                if (line.request.status === 'PENDING' && line.request.id) {
-                  Button('撤回申请')
-                    .height(32)
-                    .padding({ left: 14, right: 14 })
-                    .backgroundColor('#F3F6FB')
-                    .fontColor('#FF5A5F')
-                    .borderRadius(16)
-                    .fontSize(12)
-                    .onClick(() => this.cancel(line.request.id!))
-                }
+                .padding({ left: 2, right: 2, bottom: 2 })
               }
-              .layoutWeight(1)
-              .alignItems(HorizontalAlign.Start)
-            }
-            .padding(16)
-            .backgroundColor(Color.White)
-            .borderRadius(24)
-          }, (line: AdoptionLine) => String(line.request.id))
+              .padding(14)
+              .backgroundColor(Color.White)
+              .borderRadius(28)
+            }, (line: AdoptionLine) => String(line.request.id))
 
-          if (!this.loading && this.lines.length === 0) {
-            Text('暂无申请记录').fontSize(13).fontColor('#999').width('100%').textAlign(TextAlign.Center).padding(24)
+            if (this.loading) {
+              Row({ space: 8 }) {
+                LoadingProgress().width(20).height(20).color(Theme.primary)
+                Text('正在同步申请状态…').fontSize(12).fontColor(Theme.textMuted)
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.Center)
+              .padding(12)
+            }
           }
+          .padding({ left: 16, right: 16, bottom: 24 })
+          .width('100%')
         }
-        .padding({ left: 16, right: 16, bottom: 24 })
-        .width('100%')
+        .layoutWeight(1)
       }
-      .height('100%')
     }
     .height('100%')
     .width('100%')
