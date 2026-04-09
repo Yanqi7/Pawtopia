@@ -119,6 +119,14 @@ export interface AdoptionRequest {
   updatedAt?: string;
 }
 
+export interface PetMessage {
+  id?: number;
+  petId: number;
+  authorName: string;
+  content: string;
+  createdAt?: string;
+}
+
 export interface Page<T> {
   content: T[];
   totalElements: number;

@@ -1,4 +1,4 @@
-import { Comment, Page, Pet, Post, Product, ProductCategory, HealthRecord, Order, AdoptionRequest, User } from '../model/Models';
+import { Comment, Page, Pet, Post, Product, ProductCategory, HealthRecord, Order, AdoptionRequest, PetMessage, User } from '../model/Models';
 
 export class MockData {
   // ============ 用户数据 ============
@@ -397,6 +397,33 @@ export class MockData {
         recordDate: '2026-03-15',
         veterinarian: '快乐宠物店 - 美容师小王',
         createdAt: '2026-03-15'
+      }
+    ];
+  }
+
+  static petMessagesByPet(petId: number): PetMessage[] {
+    const pet = MockData.petById(petId);
+    return [
+      {
+        id: petId * 1000 + 1,
+        petId,
+        authorName: '南瓜麻麻',
+        content: `${pet.name}看起来状态很好，想了解它现在的作息和是否适应与小朋友同住。`,
+        createdAt: '2026-03-26'
+      },
+      {
+        id: petId * 1000 + 2,
+        petId,
+        authorName: '海边遛狗人',
+        content: '我家已经有一只性格温和的原住民，如果可以的话希望安排一次线下见面。',
+        createdAt: '2026-03-24'
+      },
+      {
+        id: petId * 1000 + 3,
+        petId,
+        authorName: '猫窝计划',
+        content: '已准备好封窗和独立休息区，也能接受回访。若有特殊饮食习惯请告诉我。',
+        createdAt: '2026-03-21'
       }
     ];
   }
