@@ -94,7 +94,7 @@ export class Api {
       AppStatus.setBackendOnline(true);
       return MockData.decoratePets(res);
     } catch (e) {
-      const localPets = MockData.decoratePets(MockData.petsAll().slice(0, 2).map((pet: Pet) => {
+      const localPets = MockData.decoratePets(MockData.petsAll().map((pet: Pet) => {
         const item: Pet = {
           id: pet.id,
           name: pet.name,

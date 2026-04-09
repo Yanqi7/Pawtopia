@@ -157,7 +157,7 @@ export struct CommunityTab {
               .height(38)
               .borderRadius(19)
             Column({ space: 4 }) {
-              Text('Pawtopia 社区')
+              Text('城宠社区')
                 .fontSize(18)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Color.White)

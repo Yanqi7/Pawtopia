@@ -77,7 +77,7 @@ struct Register {
               .height(24)
               .onClick(() => AppRouter.back())
             Column({ space: 4 }) {
-              Text('创建你的 Pawtopia 账号')
+              Text('创建你的城宠社区账号')
                 .fontSize(24)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Theme.textPrimary)

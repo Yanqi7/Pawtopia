@@ -10,3 +10,7 @@
 /.clang-tidy
 **/.test
 /.appanalyzer
+/data
+/PawtopiaBackend/data
+*.mv.db
+*.trace.db

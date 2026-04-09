@@ -32,7 +32,7 @@ struct Index {
       this.statusText = '正在检查服务状态…';
       this.online = await Api.probeBackend();
       AppStatus.setBackendOnline(this.online);
-      this.statusText = this.online ? '正在进入 Pawtopia…' : '离线模式已开启';
+      this.statusText = this.online ? '正在进入城宠社区…' : '离线模式已开启';
       this.ready = true;
       if (SessionStore.isLoggedIn() && SessionStore.getToken()) {
         AppRouter.replace('pages/MainTabs');
@@ -64,7 +64,7 @@ struct Index {
           Image($r('app.media.hero_compose'))
             .width(68)
             .height(68)
-          Text('Pawtopia')
+          Text('城宠社区')
             .fontSize(30)
             .fontWeight(FontWeight.Bold)
             .fontColor(Theme.textPrimary)
@@ -89,7 +89,7 @@ struct Index {
               .fontSize(14)
               .fontColor(Theme.textSecondary)
               .textAlign(TextAlign.Center)
-            Text(this.online ? '服务连接正常' : '当前将使用离线占位数据')
+            Text(this.online ? '服务连接正常' : '当前将使用本地缓存数据')
               .fontSize(12)
               .fontColor(this.online ? Theme.success : Theme.secondary)
           }

@@ -276,7 +276,7 @@ export class MockData {
         gender: 'MALE',
         age: 2,
         description: '性格活泼，已做驱虫，适合喜欢运动的家庭',
-        image: 'dog_small',
+        image: 'pet_dog_real_1',
         adoptionStatus: 'AVAILABLE',
         adoptionCity: '北京',
         adoptionNote: '希望住在独立房屋或大公寓，可接受定期回访',
@@ -291,7 +291,7 @@ export class MockData {
         gender: 'FEMALE',
         age: 3,
         description: '温顺懂事，已打齐疫苗，非常亲人',
-        image: 'dog_small_1',
+        image: 'pet_dog_real_2',
         adoptionStatus: 'AVAILABLE',
         adoptionCity: '北京',
         adoptionNote: '优先考虑有饲养经验的家庭',
@@ -306,7 +306,7 @@ export class MockData {
         gender: 'MALE',
         age: 1,
         description: '调皮捣蛋，粘人，幼猫一枚，需要耐心教养',
-        image: 'cat_small',
+        image: 'pet_cat_real_1',
         adoptionStatus: 'AVAILABLE',
         adoptionCity: '上海',
         adoptionNote: '需要有人在家照顾，接受回访',
@@ -321,7 +321,7 @@ export class MockData {
         gender: 'FEMALE',
         age: 2,
         description: '独立安静，不爱闹，是上班族的好伴侣',
-        image: 'cat_small_1',
+        image: 'pet_cat_real_2',
         adoptionStatus: 'AVAILABLE',
         adoptionCity: '北京',
         adoptionNote: '环境要求不高，但需要定期陪伴',
@@ -468,7 +468,7 @@ export class MockData {
     const title = post.title ?? '';
     const content = post.content ?? '';
     const genericTitle = !title || title.indexOf('帖子标题') >= 0 || title.indexOf('测试') >= 0 || title.indexOf('post') >= 0;
-    const genericContent = !content || content.indexOf('内容') >= 0 || content.indexOf('示例') >= 0 || content.length < 12;
+    const genericContent = !content || content.indexOf('示例') >= 0 || content.indexOf('自动生成') >= 0 || content.indexOf('演示') >= 0 || content.length < 12;
     const result: Post = {
       id: post.id ?? base.id,
       title: genericTitle ? base.title : post.title,

@@ -14,6 +14,10 @@ interface CartLine {
   product?: Product;
 }
 
+interface MainTabParams {
+  tab?: number;
+}
+
 @Entry
 @Component
 struct Cart {
@@ -38,10 +42,11 @@ struct Cart {
     try {
       const items = CartStore.list();
       const products = await Promise.all(items.map((it: CartItem) => Api.getProduct(it.productId).catch(() => undefined)));
-      this.lines = items.map((item: CartItem, index: number) => {
-        const line: CartLine = { item: item, product: products[index] };
-        return line;
+      const nextLines: CartLine[] = [];
+      items.forEach((item: CartItem, index: number) => {
+        nextLines.push({ item: item, product: products[index] });
       });
+      this.lines = nextLines;
     } catch (e) {
       this.errorText = (e as Error).message || '加载失败';
     } finally {
@@ -56,21 +61,39 @@ struct Cart {
     }, 0);
   }
 
+  private updateLineQuantity(productId: number, quantity: number): void {
+    const nextLines: CartLine[] = [];
+    this.lines.forEach((line: CartLine) => {
+      if (line.item.productId !== productId) {
+        nextLines.push(line);
+        return;
+      }
+      if (quantity <= 0) {
+        return;
+      }
+      nextLines.push({
+        item: { productId: line.item.productId, quantity: quantity },
+        product: line.product
+      });
+    });
+    this.lines = nextLines;
+  }
+
   private async adjustQuantity(line: CartLine, delta: number): Promise<void> {
     const stock = Math.max(1, line.product?.stockQuantity ?? 99);
     const next = Math.max(0, Math.min(stock, line.item.quantity + delta));
+    this.updateLineQuantity(line.item.productId, next);
     await CartStore.setQuantity(line.item.productId, next);
-    await this.reload();
   }
 
   private async remove(productId: number): Promise<void> {
+    this.updateLineQuantity(productId, 0);
     await CartStore.setQuantity(productId, 0);
-    await this.reload();
   }
 
   private async clearCart(): Promise<void> {
+    this.lines = [];
     await CartStore.clear();
-    await this.reload();
     AppPrompt.toast('购物车已清空');
   }
 
@@ -102,6 +125,7 @@ struct Cart {
         contactPhone: this.contactPhone.trim()
       });
       await CartStore.clear();
+      this.lines = [];
       AppRouter.replace('pages/Orders');
     } catch (e) {
       this.errorText = (e as Error).message || '下单失败';
@@ -117,11 +141,12 @@ struct Cart {
           Text('购物车')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
+            .fontColor('#18191C')
           Blank()
           if (this.lines.length > 0) {
             Text('清空')
               .fontSize(13)
-              .fontColor('#FF5A5F')
+              .fontColor('#FB7299')
               .margin({ right: 12 })
               .onClick(() => this.clearCart())
           }
@@ -143,17 +168,17 @@ struct Cart {
                 Text('购物车还是空的')
                   .fontSize(16)
                   .fontWeight(FontWeight.Medium)
-                  .fontColor(Theme.textPrimary)
-                Text('去商城选一些粮食、玩具或护理用品吧。')
+                  .fontColor('#18191C')
+                Text('去商城挑一些主粮、玩具和护理用品吧。')
                   .fontSize(13)
-                  .fontColor(Theme.textSecondary)
+                  .fontColor('#61666D')
                 Button('去商城逛逛')
                   .height(40)
                   .padding({ left: 18, right: 18 })
                   .backgroundColor('#E8F1FF')
                   .fontColor(Theme.primary)
                   .borderRadius(20)
-                  .onClick(() => AppRouter.replace('pages/MainTabs'))
+                  .onClick(() => AppRouter.replace('pages/MainTabs', { tab: 3 } as MainTabParams))
               }
               .padding(20)
               .backgroundColor(Color.White)
@@ -172,7 +197,7 @@ struct Cart {
                     Text(line.product?.name ?? `商品 #${line.item.productId}`)
                       .fontSize(15)
                       .fontWeight(FontWeight.Medium)
-                      .fontColor(Theme.textPrimary)
+                      .fontColor('#18191C')
                       .maxLines(2)
                       .textOverflow({ overflow: TextOverflow.Ellipsis })
                     Text(productCategoryLabel(line.product?.category))
@@ -185,10 +210,10 @@ struct Cart {
                       Text(`￥${line.product?.price ?? '-'}`)
                         .fontSize(18)
                         .fontWeight(FontWeight.Bold)
-                        .fontColor('#FF5A5F')
+                        .fontColor('#FB7299')
                       Text(`库存 ${line.product?.stockQuantity ?? '-'}`)
                         .fontSize(11)
-                        .fontColor(Theme.textMuted)
+                        .fontColor('#9499A0')
                     }
                   }
                   .layoutWeight(1)
@@ -198,7 +223,7 @@ struct Cart {
                 Row() {
                   Text('移除')
                     .fontSize(12)
-                    .fontColor('#FF5A5F')
+                    .fontColor('#FB7299')
                     .onClick(() => this.remove(line.item.productId))
                   Blank()
                   Row({ space: 0 }) {
@@ -207,7 +232,7 @@ struct Cart {
                       .height(30)
                       .backgroundColor('#F1F3F7')
                       .borderRadius({ topLeft: 12, bottomLeft: 12, topRight: 0, bottomRight: 0 })
-                      .fontColor(Theme.textPrimary)
+                      .fontColor('#18191C')
                       .onClick(() => this.adjustQuantity(line, -1))
                     Text(String(line.item.quantity))
                       .width(44)
@@ -221,7 +246,7 @@ struct Cart {
                       .height(30)
                       .backgroundColor('#F1F3F7')
                       .borderRadius({ topLeft: 0, bottomLeft: 0, topRight: 12, bottomRight: 12 })
-                      .fontColor(Theme.textPrimary)
+                      .fontColor('#18191C')
                       .onClick(() => this.adjustQuantity(line, 1))
                   }
                 }
@@ -237,7 +262,7 @@ struct Cart {
                 Text('收货信息')
                   .fontSize(15)
                   .fontWeight(FontWeight.Bold)
-                  .fontColor(Theme.textPrimary)
+                  .fontColor('#18191C')
                 Field({ label: '地址', placeholder: '请输入收货地址', value: this.address, onChange: (v: string) => this.address = v })
                 Field({ label: '联系人', placeholder: '姓名', value: this.contactName, onChange: (v: string) => this.contactName = v })
                 Field({ label: '电话', placeholder: '手机号', value: this.contactPhone, onChange: (v: string) => this.contactPhone = v, type: InputType.PhoneNumber })
@@ -256,24 +281,24 @@ struct Cart {
       }
       .height('100%')
       .width('100%')
-      .backgroundColor(Theme.background)
+      .backgroundColor('#F6F7F8')
 
       if (this.lines.length > 0) {
         Row({ space: 12 }) {
           Column({ space: 4 }) {
             Text('合计')
               .fontSize(12)
-              .fontColor(Theme.textSecondary)
+              .fontColor('#61666D')
             Text(`￥${this.totalAmount().toFixed(2)}`)
               .fontSize(22)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#FF5A5F')
+              .fontColor('#FB7299')
           }
           .layoutWeight(1)
           Button(this.submitting ? '提交中…' : '结算')
             .width(132)
             .height(44)
-            .backgroundColor(Theme.primary)
+            .backgroundColor('#FB7299')
             .fontColor(Color.White)
             .fontWeight(FontWeight.Bold)
             .borderRadius(22)

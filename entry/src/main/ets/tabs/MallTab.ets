@@ -165,7 +165,7 @@ export struct MallTab {
       .scrollBar(BarState.Off)
 
       if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ text: '当前为离线商品库，仍可浏览和下单演示', action: () => this.refresh() })
+        OfflineBanner({ text: '当前为本地商品库，仍可浏览和下单', action: () => this.refresh() })
           .padding({ left: 16, right: 16, bottom: 8 })
       }
 

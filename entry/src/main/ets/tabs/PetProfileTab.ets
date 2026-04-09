@@ -3,10 +3,21 @@ import { Api } from '../api/Api';
 import { Pet } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
 import { AppStatus } from '../app/AppStatus';
-import { OfflineBanner } from '../components/Ui';
+import { EmptyState, OfflineBanner } from '../components/Ui';
+import { Theme } from '../common/Theme';
+import { MediaAssets } from '../assets/MediaAssets';
+import { petGenderLabel, shortDate } from '../common/Formatters';
 
 interface NewPetParams {
   mode?: string;
+}
+
+interface PetDetailParams {
+  id?: number;
+}
+
+interface PetRouteParams {
+  petId?: number;
 }
 
 @Component
@@ -24,13 +35,13 @@ export struct PetProfileTab {
   private async reload(): Promise<void> {
     const user = SessionStore.getUser();
     if (!user || !user.id) {
+      this.pets = [];
       return;
     }
-    const userId = user.id;
     this.loading = true;
     this.errorText = '';
     try {
-      this.pets = await Api.getMyPets(userId);
+      this.pets = await Api.getMyPets(user.id);
     } catch (e) {
       this.errorText = (e as Error).message || '加载失败';
     } finally {
@@ -39,139 +50,145 @@ export struct PetProfileTab {
   }
 
   build() {
-    Stack() {
+    Stack({ alignContent: Alignment.BottomEnd }) {
       Column() {
-        // 浅粉红顶部区域
-        Column({ space: 8 }) {
-          // 顶部操作栏
-          Row({ space: 12 }) {
-            // 用户头像
-            Image($r('app.media.people'))
-              .width(40)
-              .height(40)
-              .borderRadius(20)
-
-            // 搜索栏
-            Row() {
-              Image($r('app.media.fangdajing'))
-                .width(16)
-                .height(16)
-                .fillColor('#666')
-                .margin({ left: 12 })
-              TextInput({ placeholder: '搜索宠物档案' })
-                .layoutWeight(1)
-                .height(36)
-                .backgroundColor('transparent')
-                .fontSize(14)
-                .border({ width: 0 })
-            }
-            .layoutWeight(1)
-            .height(36)
-            .padding({ right: 12 })
-            .backgroundColor(Color.White)
-            .borderRadius(18)
-
-            // 更多按钮
-            Image($r('app.media.more'))
-              .width(24)
-              .height(24)
-              .fillColor('#666')
+        Stack({ alignContent: Alignment.BottomStart }) {
+          Image(MediaAssets.profileHero())
+            .width('100%')
+            .height(178)
+            .objectFit(ImageFit.Cover)
+          Column()
+            .width('100%')
+            .height(178)
+            .linearGradient({ angle: 180, colors: [['#0F172A08', 0], ['#0F172A48', 0.45], ['#F6F7F8', 1]] })
+          Column({ space: 6 }) {
+            Text('宠物档案')
+              .fontSize(22)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(Color.White)
+            Text('点击标签卡可快速查看生理情况、详细资料和健康档案')
+              .fontSize(11)
+              .fontColor('#F8FAFC')
           }
-          .padding({ left: 16, right: 16 })
+          .padding({ left: 16, right: 16, bottom: 12 })
+          .width('100%')
         }
-        .width('100%')
-        .backgroundColor('#F5E6F0')
-        .padding({ top: 12, bottom: 8 })
 
         if (!AppStatus.isBackendOnline()) {
-          OfflineBanner({ action: () => AppRouter.push('pages/Login') })
-            .padding({ left: 16, right: 16, bottom: 10 })
+          OfflineBanner({ text: '当前使用本地缓存档案数据，仍可继续查看详情。', action: () => this.reload() })
+            .padding({ left: 16, right: 16, top: 10 })
         }
 
         if (this.errorText) {
           Text(this.errorText)
             .fontSize(13)
-            .fontColor('#ff4d4f')
-            .padding(16)
+            .fontColor('#D14343')
+            .padding({ left: 16, right: 16, top: 10 })
         }
 
-        // Grid layout
-        Grid() {
-          ForEach(this.pets, (pet: Pet) => {
-            GridItem() {
-              Column({ space: 6 }) {
-                Stack() {
-                  Image(pet.image ? $r(`app.media.${pet.image}`) : $r('app.media.dog'))
-                    .width('100%')
-                    .height(100)
-                    .borderRadius(8)
-                    .objectFit(ImageFit.Cover)
-                  Row() {
-                    Blank()
-                    Image($r('app.media.work'))
-                      .width(24)
-                      .height(24)
-                      .fillColor('#FF69B4')
-                      .padding(6)
+        if (!this.loading && this.pets.length === 0) {
+          EmptyState({
+            title: '还没有宠物档案',
+            description: '先添加一只宠物，后续可以维护详细资料与健康档案。',
+            actionText: '添加宠物',
+            action: () => AppRouter.push('pages/NewPet', { mode: 'MEDICAL' } as NewPetParams)
+          })
+        } else {
+          List({ space: 14 }) {
+            ForEach(this.pets, (pet: Pet) => {
+              ListItem() {
+                Column({ space: 14 }) {
+                  Row({ space: 12 }) {
+                    Image(MediaAssets.petImage(pet.image, pet.id ?? 0, pet.species))
+                      .width(108)
+                      .height(108)
+                      .borderRadius(20)
+                      .objectFit(ImageFit.Cover)
+                    Column({ space: 8 }) {
+                      Text(pet.name)
+                        .fontSize(18)
+                        .fontWeight(FontWeight.Bold)
+                        .fontColor('#18191C')
+                      Text(`${pet.species} · ${pet.breed ?? '品种待补充'} · ${petGenderLabel(pet.gender)} · ${pet.age ?? '-'} 岁`)
+                        .fontSize(12)
+                        .fontColor('#61666D')
+                      Text(pet.description ?? '暂无描述')
+                        .fontSize(12)
+                        .fontColor('#18191C')
+                        .lineHeight(18)
+                        .maxLines(2)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+                      Text(`最近更新：${shortDate(pet.updatedAt ?? pet.createdAt)}`)
+                        .fontSize(11)
+                        .fontColor('#9499A0')
+                    }
+                    .layoutWeight(1)
+                    .alignItems(HorizontalAlign.Start)
                   }
-                  .width('100%')
+
+                  Row({ space: 10 }) {
+                    Button('生理情况')
+                      .layoutWeight(1)
+                      .height(34)
+                      .backgroundColor('#F6F7F8')
+                      .fontColor(Theme.primary)
+                      .borderRadius(17)
+                      .fontSize(12)
+                      .onClick(() => AppRouter.push('pages/PetDetail', { id: pet.id } as PetDetailParams))
+                    Button('详细信息')
+                      .layoutWeight(1)
+                      .height(34)
+                      .backgroundColor('#F6F7F8')
+                      .fontColor('#18191C')
+                      .borderRadius(17)
+                      .fontSize(12)
+                      .onClick(() => AppRouter.push('pages/PetDetail', { id: pet.id } as PetDetailParams))
+                    Button('健康档案')
+                      .layoutWeight(1)
+                      .height(34)
+                      .backgroundColor('#E8F1FF')
+                      .fontColor(Theme.primary)
+                      .borderRadius(17)
+                      .fontSize(12)
+                      .onClick(() => AppRouter.push('pages/HealthRecords', { petId: pet.id } as PetRouteParams))
+                  }
                 }
-
-                Text(pet.name ?? '宠物名称')
-                  .fontSize(12)
-                  .fontWeight(FontWeight.Medium)
-                  .maxLines(1)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
-                Text(`年龄: ${pet.age ?? '-'}岁`)
-                  .fontSize(11)
-                  .fontColor('#666666')
-                Text('病史: 无')
-                  .fontSize(11)
-                  .fontColor('#666666')
+                .padding(16)
+                .backgroundColor(Color.White)
+                .borderRadius(24)
               }
-              .padding(8)
-              .backgroundColor('#FFF0F6')
-              .borderRadius(8)
-              .border({ width: 1, color: '#FFD4E5' })
-            }
-          }, (pet: Pet) => String(pet.id))
-        }
-        .columnsTemplate('1fr 1fr 1fr')
-        .rowsGap(12)
-        .columnsGap(12)
-        .padding({ left: 12, right: 12 })
-        .layoutWeight(1)
-      }
-      .height('100%')
-      .width('100%')
-      .backgroundColor('#F9F0F6')
+              .padding({ left: 16, right: 16, bottom: 14 })
+            }, (pet: Pet) => String(pet.id))
 
-      // FAB button
-      Column() {
-        Blank()
-        Row() {
-          Blank()
-          Stack() {
-            Button()
-              .width(56)
-              .height(56)
-              .borderRadius(28)
-              .backgroundColor('#2B7FFF')
-              .onClick(() => AppRouter.push('pages/NewPet', { mode: 'MEDICAL' } as NewPetParams))
-            Text('+')
-              .fontSize(28)
-              .fontColor(Color.White)
-              .fontWeight(FontWeight.Bold)
-              .align(Alignment.Center)
+            ListItem() {
+              if (this.loading) {
+                Row({ space: 8 }) {
+                  LoadingProgress().width(20).height(20).color(Theme.primary)
+                  Text('正在同步宠物档案…').fontSize(12).fontColor(Theme.textMuted)
+                }
+                .width('100%')
+                .justifyContent(FlexAlign.Center)
+                .padding(16)
+              }
+            }
           }
-          .width(56)
-          .height(56)
+          .layoutWeight(1)
         }
-        .padding({ right: 16, bottom: 80 })
-        .width('100%')
       }
       .height('100%')
       .width('100%')
+      .backgroundColor('#F6F7F8')
+
+      Button('+')
+        .width(56)
+        .height(56)
+        .margin({ right: 18, bottom: 18 })
+        .borderRadius(28)
+        .backgroundColor(Theme.primary)
+        .fontColor(Color.White)
+        .fontSize(28)
+        .fontWeight(FontWeight.Bold)
+        .onClick(() => AppRouter.push('pages/NewPet', { mode: 'MEDICAL' } as NewPetParams))
     }
     .height('100%')
     .width('100%')

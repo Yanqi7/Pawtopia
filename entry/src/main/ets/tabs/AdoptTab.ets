@@ -83,7 +83,7 @@ export struct AdoptTab {
         .width('100%')
 
         if (!AppStatus.isBackendOnline()) {
-          OfflineBanner({ text: '当前为离线演示数据，依然可以查看宠物卡片详情', action: () => this.reload() })
+          OfflineBanner({ text: '当前为本地缓存数据，依然可以查看宠物卡片详情', action: () => this.reload() })
             .padding({ left: 16, right: 16, bottom: 8 })
         }
 

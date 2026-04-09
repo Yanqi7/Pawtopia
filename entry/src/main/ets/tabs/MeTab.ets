@@ -31,8 +31,8 @@ export struct MeTab {
   }
 
   private async loadSummary(): Promise<void> {
-    const user = SessionStore.getUser();
-    if (!user || !user.id) {
+    const currentUser = SessionStore.getUser();
+    if (!currentUser || !currentUser.id) {
       this.postCount = 0;
       this.petCount = 0;
       this.orderCount = 0;
@@ -41,7 +41,7 @@ export struct MeTab {
     }
     this.loading = true;
     try {
-      const userId = user.id;
+      const userId = currentUser.id;
       const result = await Promise.all([
         Api.getUserPosts(userId),
         Api.getMyPets(userId),
@@ -86,97 +86,138 @@ export struct MeTab {
           action: () => AppRouter.push('pages/Login')
         })
       } else {
-        Column({ space: 14 }) {
-          Column({ space: 14 }) {
-            Row({ space: 14 }) {
-              Image($r('app.media.people'))
-                .width(68)
-                .height(68)
-                .borderRadius(34)
-              Column({ space: 6 }) {
-                Text(this.user?.nickname || this.user?.username || '')
-                  .fontSize(22)
-                  .fontWeight(FontWeight.Bold)
-                  .fontColor(Theme.textPrimary)
-                Row({ space: 8 }) {
-                  Text(roleLabel(this.user?.role ?? 'USER'))
-                    .fontSize(11)
-                    .fontColor(Theme.primary)
-                    .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-                    .backgroundColor('#E8F1FF')
-                    .borderRadius(12)
-                  Text(AppStatus.isBackendOnline() ? '云端已连接' : '离线模式')
-                    .fontSize(11)
-                    .fontColor('#5B6B7F')
-                    .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-                    .backgroundColor('#F3F6FB')
-                    .borderRadius(12)
+        Scroll() {
+          Column({ space: 16 }) {
+            Column({ space: 14 }) {
+              Row({ space: 14 }) {
+                Image($r('app.media.people'))
+                  .width(72)
+                  .height(72)
+                  .borderRadius(36)
+                Column({ space: 6 }) {
+                  Text(this.user?.nickname || this.user?.username || '')
+                    .fontSize(22)
+                    .fontWeight(FontWeight.Bold)
+                    .fontColor('#18191C')
+                  Row({ space: 8 }) {
+                    Text(roleLabel(this.user?.role ?? 'USER'))
+                      .fontSize(11)
+                      .fontColor(Theme.primary)
+                      .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                      .backgroundColor('#EAF3FF')
+                      .borderRadius(12)
+                    Text(AppStatus.isBackendOnline() ? '云端已连接' : '本地缓存模式')
+                      .fontSize(11)
+                      .fontColor('#6B7280')
+                      .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                      .backgroundColor('#F4F6F8')
+                      .borderRadius(12)
+                  }
+                  Text(this.user?.email || '')
+                    .fontSize(12)
+                    .fontColor('#61666D')
                 }
-                Text(this.user?.email || '')
-                  .fontSize(12)
-                  .fontColor(Theme.textSecondary)
+                .layoutWeight(1)
+                Column({ space: 8 }) {
+                  Button('消息')
+                    .height(34)
+                    .padding({ left: 14, right: 14 })
+                    .backgroundColor('#F6F7F8')
+                    .fontColor('#18191C')
+                    .borderRadius(17)
+                    .fontSize(12)
+                    .onClick(() => AppPrompt.toast('消息中心开发中'))
+                }
               }
-              .layoutWeight(1)
+              .width('100%')
+
+              Row({ space: 10 }) {
+                this.StatCard('动态', this.postCount, () => this.navigateTab(0))
+                this.StatCard('宠物', this.petCount, () => this.navigateTab(2))
+                this.StatCard('订单', this.orderCount, () => AppRouter.push('pages/Orders'))
+                this.StatCard('领养', this.adoptionCount, () => AppRouter.push('pages/MyAdoptions'))
+              }
+              .width('100%')
             }
-            .width('100%')
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(24)
 
-            Row({ space: 10 }) {
-              this.StatCard('社区', this.postCount, () => this.navigateTab(0))
-              this.StatCard('档案', this.petCount, () => this.navigateTab(2))
-              this.StatCard('订单', this.orderCount, () => AppRouter.push('pages/Orders'))
-              this.StatCard('领养', this.adoptionCount, () => AppRouter.push('pages/MyAdoptions'))
+            if (!AppStatus.isBackendOnline()) {
+              OfflineBanner({ text: '当前使用本地缓存数据，你仍然可以浏览核心页面。', action: () => this.loadSummary() })
             }
-            .width('100%')
-          }
-          .padding(16)
-          .width('100%')
-          .backgroundColor(Color.White)
-          .borderRadius(24)
 
-          if (!AppStatus.isBackendOnline()) {
-            OfflineBanner({ text: '当前使用离线演示数据，你仍然可以浏览核心页面。', action: () => this.loadSummary() })
-          }
-
-          Scroll() {
             Column({ space: 12 }) {
-              this.MenuItem('我的发布', '查看你发过的讨论与经验分享', () => this.navigateTab(0))
-              this.MenuItem('我的宠物', '进入宠物档案与健康记录', () => this.navigateTab(2))
-              this.MenuItem('我的订单', '查看支付、发货与收货状态', () => AppRouter.push('pages/Orders'))
-              this.MenuItem('我的领养申请', '查看申请进度、用户留言和联系信息', () => AppRouter.push('pages/MyAdoptions'))
+              Text('常用服务')
+                .fontSize(16)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#18191C')
+                .width('100%')
+              Row({ space: 12 }) {
+                this.QuickEntry('我的发布', '查看动态', () => this.navigateTab(0))
+                this.QuickEntry('我的宠物', '档案管理', () => this.navigateTab(2))
+                this.QuickEntry('商城订单', '购买记录', () => AppRouter.push('pages/Orders'))
+                this.QuickEntry('领养申请', '进度跟踪', () => AppRouter.push('pages/MyAdoptions'))
+              }
+            }
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(24)
+
+            Column({ space: 12 }) {
               this.MenuItem('继续逛商城', '去选购主粮、玩具和护理用品', () => this.navigateTab(3))
               this.MenuItem('切换账号', '返回登录页重新登录', () => AppRouter.push('pages/Login'))
               this.MenuItem('清理购物车缓存', '清空本地购物车商品', () => this.clearCache())
-              this.MenuItem('版本信息', this.loading ? '统计同步中…' : 'HarmonyOS 6.0.2 · dev', () => AppPrompt.toast('当前为 dev 分支构建'))
+              this.MenuItem('版本信息', this.loading ? '统计同步中…' : '城宠社区 · HarmonyOS 6.0.2 · dev', () => AppPrompt.toast('当前为 dev 分支构建'))
               this.MenuItem('退出登录', '退出当前账号', () => this.logout(), true)
             }
-            .width('100%')
-            .padding({ bottom: 16 })
+            .padding(16)
+            .backgroundColor(Color.White)
+            .borderRadius(24)
           }
-          .layoutWeight(1)
+          .padding(16)
+          .width('100%')
         }
-        .padding(16)
+        .layoutWeight(1)
       }
     }
     .height('100%')
     .width('100%')
-    .backgroundColor(Theme.background)
+    .backgroundColor('#F6F7F8')
   }
 
   @Builder private StatCard(label: string, value: number, action: () => void) {
     Column({ space: 4 }) {
       Text(String(value))
-        .fontSize(18)
+        .fontSize(20)
         .fontWeight(FontWeight.Bold)
-        .fontColor(Theme.textPrimary)
+        .fontColor('#18191C')
       Text(label)
         .fontSize(11)
-        .fontColor(Theme.textSecondary)
-        .textAlign(TextAlign.Center)
+        .fontColor('#61666D')
     }
     .layoutWeight(1)
     .height(72)
-    .padding({ left: 6, right: 6 })
-    .backgroundColor('#F6F8FC')
+    .backgroundColor('#F6F7F8')
+    .borderRadius(18)
+    .alignItems(HorizontalAlign.Center)
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => action())
+  }
+
+  @Builder private QuickEntry(title: string, desc: string, action: () => void) {
+    Column({ space: 6 }) {
+      Text(title)
+        .fontSize(14)
+        .fontWeight(FontWeight.Medium)
+        .fontColor('#18191C')
+      Text(desc)
+        .fontSize(11)
+        .fontColor('#9499A0')
+    }
+    .layoutWeight(1)
+    .height(78)
+    .backgroundColor('#F6F7F8')
     .borderRadius(18)
     .alignItems(HorizontalAlign.Center)
     .justifyContent(FlexAlign.Center)
@@ -189,25 +230,25 @@ export struct MeTab {
         .width(8)
         .height(36)
         .borderRadius(4)
-        .backgroundColor(danger ? '#FF6B6B' : '#CFE2FF')
+        .backgroundColor(danger ? '#FB7299' : '#CFE2FF')
       Column({ space: 4 }) {
         Text(title)
           .fontSize(15)
           .fontWeight(FontWeight.Medium)
-          .fontColor(danger ? '#C53D3D' : Theme.textPrimary)
+          .fontColor(danger ? '#B03060' : '#18191C')
         Text(desc)
           .fontSize(12)
-          .fontColor(Theme.textSecondary)
+          .fontColor('#61666D')
       }
       .layoutWeight(1)
       Text('›')
         .fontSize(22)
-        .fontColor(danger ? '#C53D3D' : Theme.textMuted)
+        .fontColor(danger ? '#B03060' : '#9499A0')
     }
     .padding(16)
     .width('100%')
-    .backgroundColor(Color.White)
-    .borderRadius(22)
+    .backgroundColor('#FBFBFC')
+    .borderRadius(20)
     .onClick(() => action())
   }
 }

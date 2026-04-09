@@ -100,7 +100,7 @@ struct Login {
                   .fontSize(12)
                   .fontColor(this.online ? Theme.success : Theme.secondary)
               }
-              Text('和毛孩子一起，过更好的每一天')
+              Text('和毛孩子一起，认真记录每一天')
                 .fontSize(26)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Color.White)
@@ -199,7 +199,7 @@ struct Login {
                 .width('100%')
             }
 
-            Button(this.loading ? '登录中…' : '登录 Pawtopia')
+            Button(this.loading ? '登录中…' : '登录城宠社区')
               .width('100%')
               .height(50)
               .fontSize(16)

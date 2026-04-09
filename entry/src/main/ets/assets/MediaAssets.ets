@@ -34,9 +34,12 @@ export class MediaAssets {
       $r('app.media.pet_dog_real_1'),
       $r('app.media.pet_dog_real_2'),
       $r('app.media.pet_dog_real_3'),
+      $r('app.media.pet_dog_real_4'),
+      $r('app.media.pet_dog_real_5'),
       $r('app.media.pet_cat_real_1'),
       $r('app.media.pet_cat_real_2'),
-      $r('app.media.pet_cat_real_3')
+      $r('app.media.pet_cat_real_3'),
+      $r('app.media.pet_cat_real_4')
     ];
     return covers[Math.abs(seed) % covers.length];
   }
@@ -47,7 +50,8 @@ export class MediaAssets {
       $r('app.media.pet_dog_real_1'),
       $r('app.media.adopt_cat_real_1'),
       $r('app.media.adopt_dog_real_2'),
-      $r('app.media.pet_dog_real_3')
+      $r('app.media.pet_dog_real_3'),
+      $r('app.media.pet_cat_real_4')
     ];
     return covers[Math.abs(seed) % covers.length];
   }
@@ -61,6 +65,7 @@ export class MediaAssets {
       $r('app.media.pet_cat_real_1'),
       $r('app.media.pet_cat_real_2'),
       $r('app.media.pet_cat_real_3'),
+      $r('app.media.pet_cat_real_4'),
       $r('app.media.adopt_cat_real_1'),
       $r('app.media.adopt_cat_real_2')
     ];
@@ -68,6 +73,8 @@ export class MediaAssets {
       $r('app.media.pet_dog_real_1'),
       $r('app.media.pet_dog_real_2'),
       $r('app.media.pet_dog_real_3'),
+      $r('app.media.pet_dog_real_4'),
+      $r('app.media.pet_dog_real_5'),
       $r('app.media.adopt_dog_real_1'),
       $r('app.media.adopt_dog_real_2')
     ];
@@ -88,36 +95,36 @@ export class MediaAssets {
     if (keyword.indexOf('冻干') >= 0 || keyword.indexOf('鸭肉') >= 0 || keyword.indexOf('粮') >= 0 || category === 'FOOD') {
       return [
         $r('app.media.shop_banner_real_1'),
-        $r('app.media.pet_dog_real_2'),
-        $r('app.media.pet_cat_real_2')
+        $r('app.media.shop_real_3'),
+        $r('app.media.shop_real_4')
       ];
     }
     if (keyword.indexOf('喂食器') >= 0 || keyword.indexOf('便携包') >= 0) {
       return [
         $r('app.media.pet_dog_real_1'),
-        $r('app.media.shop_banner_real_1'),
-        $r('app.media.pet_dog_real_3')
+        $r('app.media.shop_real_4'),
+        $r('app.media.pet_dog_real_4')
       ];
     }
     if (keyword.indexOf('益生菌') >= 0 || category === 'MEDICINE') {
       return [
         $r('app.media.pet_cat_real_1'),
         $r('app.media.shop_banner_real_2'),
-        $r('app.media.pet_dog_real_1')
+        $r('app.media.pet_dog_real_5')
       ];
     }
     if (keyword.indexOf('逗猫棒') >= 0 || keyword.indexOf('玩具') >= 0 || category === 'TOY') {
       return [
         $r('app.media.pet_cat_real_3'),
         $r('app.media.adopt_cat_real_2'),
-        $r('app.media.pet_dog_real_3')
+        $r('app.media.pet_cat_real_4')
       ];
     }
     if (keyword.indexOf('护理') >= 0 || keyword.indexOf('洗') >= 0 || keyword.indexOf('梳毛') >= 0 || keyword.indexOf('手套') >= 0 || category === 'ACCESSORY') {
       return [
         $r('app.media.shop_banner_real_2'),
-        $r('app.media.pet_cat_real_1'),
-        $r('app.media.pet_dog_real_1')
+        $r('app.media.shop_real_5'),
+        $r('app.media.pet_dog_real_3')
       ];
     }
     return [
@@ -161,12 +168,18 @@ export class MediaAssets {
         return $r('app.media.pet_cat_real_2');
       case 'pet_cat_real_3':
         return $r('app.media.pet_cat_real_3');
+      case 'pet_cat_real_4':
+        return $r('app.media.pet_cat_real_4');
       case 'pet_dog_real_1':
         return $r('app.media.pet_dog_real_1');
       case 'pet_dog_real_2':
         return $r('app.media.pet_dog_real_2');
       case 'pet_dog_real_3':
         return $r('app.media.pet_dog_real_3');
+      case 'pet_dog_real_4':
+        return $r('app.media.pet_dog_real_4');
+      case 'pet_dog_real_5':
+        return $r('app.media.pet_dog_real_5');
       case 'adopt_cat_real_1':
         return $r('app.media.adopt_cat_real_1');
       case 'adopt_cat_real_2':
@@ -179,6 +192,12 @@ export class MediaAssets {
         return $r('app.media.shop_banner_real_1');
       case 'shop_banner_real_2':
         return $r('app.media.shop_banner_real_2');
+      case 'shop_real_3':
+        return $r('app.media.shop_real_3');
+      case 'shop_real_4':
+        return $r('app.media.shop_real_4');
+      case 'shop_real_5':
+        return $r('app.media.shop_real_5');
       default:
         return undefined;
     }
