@@ -86,8 +86,8 @@ export struct MeTab {
           action: () => AppRouter.push('pages/Login')
         })
       } else {
-        Column({ space: 12 }) {
-          Column({ space: 12 }) {
+        Column({ space: 14 }) {
+          Column({ space: 14 }) {
             Row({ space: 14 }) {
               Image($r('app.media.people'))
                 .width(68)
@@ -97,48 +97,53 @@ export struct MeTab {
                 Text(this.user?.nickname || this.user?.username || '')
                   .fontSize(22)
                   .fontWeight(FontWeight.Bold)
-                  .fontColor(Color.White)
-                Text(roleLabel(this.user?.role ?? 'USER'))
-                  .fontSize(12)
-                  .fontColor('#EEF5FF')
+                  .fontColor(Theme.textPrimary)
+                Row({ space: 8 }) {
+                  Text(roleLabel(this.user?.role ?? 'USER'))
+                    .fontSize(11)
+                    .fontColor(Theme.primary)
+                    .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                    .backgroundColor('#E8F1FF')
+                    .borderRadius(12)
+                  Text(AppStatus.isBackendOnline() ? '云端已连接' : '离线模式')
+                    .fontSize(11)
+                    .fontColor('#5B6B7F')
+                    .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+                    .backgroundColor('#F3F6FB')
+                    .borderRadius(12)
+                }
                 Text(this.user?.email || '')
                   .fontSize(12)
-                  .fontColor('#EEF5FF')
+                  .fontColor(Theme.textSecondary)
               }
               .layoutWeight(1)
-              Text(AppStatus.isBackendOnline() ? '在线' : '离线')
-                .fontSize(11)
-                .fontColor(Color.White)
-                .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-                .backgroundColor('#FFFFFF22')
-                .borderRadius(14)
             }
             .width('100%')
 
             Row({ space: 10 }) {
-              this.StatCard('我的帖子', this.postCount, () => this.navigateTab(0))
-              this.StatCard('宠物档案', this.petCount, () => this.navigateTab(2))
+              this.StatCard('社区', this.postCount, () => this.navigateTab(0))
+              this.StatCard('档案', this.petCount, () => this.navigateTab(2))
               this.StatCard('订单', this.orderCount, () => AppRouter.push('pages/Orders'))
-              this.StatCard('领养申请', this.adoptionCount, () => AppRouter.push('pages/MyAdoptions'))
+              this.StatCard('领养', this.adoptionCount, () => AppRouter.push('pages/MyAdoptions'))
             }
             .width('100%')
           }
           .padding(16)
           .width('100%')
-          .linearGradient({ angle: 135, colors: [['#4AA3FF', 0], ['#2B7FFF', 1]] })
-          .borderRadius(28)
+          .backgroundColor(Color.White)
+          .borderRadius(24)
 
           if (!AppStatus.isBackendOnline()) {
-            OfflineBanner({ text: '当前处于离线模式，统计和列表使用本地演示数据', action: () => this.loadSummary() })
+            OfflineBanner({ text: '当前使用离线演示数据，你仍然可以浏览核心页面。', action: () => this.loadSummary() })
           }
 
           Scroll() {
             Column({ space: 12 }) {
-              this.MenuItem('我的发布', '查看你发过的宠物讨论与笔记', () => this.navigateTab(0))
-              this.MenuItem('我的宠物', '进入宠物档案和健康记录', () => this.navigateTab(2))
-              this.MenuItem('我的订单', '查看购买与支付状态', () => AppRouter.push('pages/Orders'))
-              this.MenuItem('我的领养申请', '查看申请进度与留言', () => AppRouter.push('pages/MyAdoptions'))
-              this.MenuItem('继续逛商城', '挑选粮食、玩具和护理用品', () => this.navigateTab(3))
+              this.MenuItem('我的发布', '查看你发过的讨论与经验分享', () => this.navigateTab(0))
+              this.MenuItem('我的宠物', '进入宠物档案与健康记录', () => this.navigateTab(2))
+              this.MenuItem('我的订单', '查看支付、发货与收货状态', () => AppRouter.push('pages/Orders'))
+              this.MenuItem('我的领养申请', '查看申请进度、用户留言和联系信息', () => AppRouter.push('pages/MyAdoptions'))
+              this.MenuItem('继续逛商城', '去选购主粮、玩具和护理用品', () => this.navigateTab(3))
               this.MenuItem('切换账号', '返回登录页重新登录', () => AppRouter.push('pages/Login'))
               this.MenuItem('清理购物车缓存', '清空本地购物车商品', () => this.clearCache())
               this.MenuItem('版本信息', this.loading ? '统计同步中…' : 'HarmonyOS 6.0.2 · dev', () => AppPrompt.toast('当前为 dev 分支构建'))
@@ -162,16 +167,16 @@ export struct MeTab {
       Text(String(value))
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor(Color.White)
+        .fontColor(Theme.textPrimary)
       Text(label)
         .fontSize(11)
-        .fontColor('#EEF5FF')
+        .fontColor(Theme.textSecondary)
         .textAlign(TextAlign.Center)
     }
     .layoutWeight(1)
     .height(72)
     .padding({ left: 6, right: 6 })
-    .backgroundColor('#FFFFFF1A')
+    .backgroundColor('#F6F8FC')
     .borderRadius(18)
     .alignItems(HorizontalAlign.Center)
     .justifyContent(FlexAlign.Center)
@@ -184,7 +189,7 @@ export struct MeTab {
         .width(8)
         .height(36)
         .borderRadius(4)
-        .backgroundColor(danger ? '#FF6B6B' : Theme.primary)
+        .backgroundColor(danger ? '#FF6B6B' : '#CFE2FF')
       Column({ space: 4 }) {
         Text(title)
           .fontSize(15)

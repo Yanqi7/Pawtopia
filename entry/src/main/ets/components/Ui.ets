@@ -98,11 +98,11 @@ export struct OfflineBanner {
   build() {
     Row({ space: 8 }) {
       Image($r('app.media.hero_bell'))
-        .width(20)
-        .height(20)
+        .width(18)
+        .height(18)
       Text(this.text)
         .fontSize(12)
-        .fontColor('#8A4B00')
+        .fontColor('#415A77')
         .layoutWeight(1)
       Text('重试')
         .fontSize(12)
@@ -111,8 +111,9 @@ export struct OfflineBanner {
         .onClick(() => this.action())
     }
     .padding({ left: 12, right: 12, top: 10, bottom: 10 })
-    .backgroundColor('#FFF3D6')
-    .borderRadius(10)
+    .backgroundColor('#EEF5FF')
+    .borderRadius(12)
+    .border({ width: 1, color: '#D9E8FF' })
     .width('100%')
     .alignItems(VerticalAlign.Center)
   }
