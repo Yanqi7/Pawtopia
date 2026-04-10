@@ -20,6 +20,14 @@ struct HealthRecords {
   @State private records: HealthRecord[] = [];
   @State private pet?: Pet = undefined;
 
+  private canEdit(): boolean {
+    const user = SessionStore.getUser();
+    if (!user || !this.pet) {
+      return false;
+    }
+    return user.role === 'ADMIN' || user.role === 'PET_HOSPITAL' || this.pet.ownerId === user.id;
+  }
+
   aboutToAppear(): void {
     const params = AppRouter.params<PetIdParams>();
     this.petId = Number(params?.petId ?? 0);
@@ -51,8 +59,9 @@ struct HealthRecords {
         Button('新增')
           .height(32)
           .borderRadius(16)
-          .backgroundColor(Theme.primary)
+          .backgroundColor(this.canEdit() ? Theme.primary : '#D7DDE7')
           .fontColor(Color.White)
+          .enabled(this.canEdit())
           .onClick(() => AppRouter.push('pages/NewHealthRecord', { petId: this.petId } as PetIdParams))
         Text('返回')
           .fontSize(14)
@@ -71,9 +80,11 @@ struct HealthRecords {
           Image($r('app.media.hero_bell'))
             .width(18)
             .height(18)
-          Text(SessionStore.getUser()?.role === 'PET_HOSPITAL'
-            ? '宠物医院账号可维护健康记录；如遇权限限制，请确认当前宠物是否属于可服务范围。'
-            : '普通用户只能查看自己宠物的健康档案；如提示无权限，请先确认登录账号。')
+          Text(this.canEdit()
+            ? (SessionStore.getUser()?.role === 'PET_HOSPITAL'
+              ? '宠物医院账号可维护健康记录；请确保记录与实际就诊情况一致。'
+              : '你可以维护这只宠物的健康档案与护理记录。')
+            : '当前账号只能查看该宠物的健康档案，若需维护记录请切换到宠物主人、医院或管理员账号。')
             .fontSize(12)
             .fontColor(Theme.textSecondary)
             .layoutWeight(1)

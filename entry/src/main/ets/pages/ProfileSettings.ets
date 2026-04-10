@@ -6,6 +6,10 @@ import { Theme } from '../common/Theme';
 import { ErrorText, Field, PrimaryButton, SectionTitle } from '../components/Ui';
 import { SessionStore } from '../store/SessionStore';
 
+function roleLabel(role: string): string {
+  return role === 'PET_SHOP' ? '宠物店' : role === 'PET_HOSPITAL' ? '宠物医院' : role === 'SELLER' ? '卖家' : role === 'ADMIN' ? '管理员' : '普通用户';
+}
+
 @Entry
 @Component
 struct ProfileSettings {
@@ -21,7 +25,7 @@ struct ProfileSettings {
     this.nickname = user?.nickname ?? '';
     this.phone = user?.phone ?? '';
     this.baseUrl = await SessionStore.getBaseUrl();
-    this.roleLabel = user?.role ?? 'USER';
+    this.roleLabel = roleLabel(user?.role ?? 'USER');
   }
 
   private async save(): Promise<void> {
