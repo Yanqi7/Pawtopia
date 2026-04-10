@@ -201,6 +201,9 @@ export struct MeTab {
             }
 
             Column({ space: 12 }) {
+              if (this.user?.role !== 'USER') {
+                this.MenuItem('进入角色工作台', '查看当前身份的核心管理入口', () => AppRouter.push('pages/RoleWorkbench'))
+              }
               this.MenuItem('资料编辑', '修改昵称、手机号和当前服务地址', () => AppRouter.push('pages/ProfileSettings'))
               this.MenuItem('继续逛商城', '去选购主粮、玩具和护理用品', () => this.navigateTab(3))
               this.MenuItem('切换账号', '清除当前会话并重新登录', () => this.switchAccount())
