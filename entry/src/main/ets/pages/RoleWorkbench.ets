@@ -18,8 +18,11 @@ struct RoleWorkbench {
     AppRouter.replace('pages/MainTabs', { tab: tab } as MainTabParams);
   }
 
+  private currentUser() {
+    return SessionStore.getUser();
+  }
+
   build() {
-    const user = SessionStore.getUser();
     Column() {
       Row() {
         Text('角色工作台')
@@ -33,7 +36,7 @@ struct RoleWorkbench {
       }
       .padding({ left: 16, right: 16, top: 14, bottom: 10 })
 
-      if (!user) {
+      if (!this.currentUser()) {
         EmptyState({
           title: '请先登录',
           description: '登录后即可查看对应角色的工作台能力。',
@@ -44,7 +47,7 @@ struct RoleWorkbench {
         Scroll() {
           Column({ space: 14 }) {
             Column({ space: 8 }) {
-              Text(roleLabel(user.role ?? 'USER'))
+              Text(roleLabel(this.currentUser()?.role ?? 'USER'))
                 .fontSize(22)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Theme.textPrimary)
@@ -57,16 +60,16 @@ struct RoleWorkbench {
             .backgroundColor(Color.White)
             .borderRadius(24)
 
-            if (user.role === 'PET_HOSPITAL') {
+            if (this.currentUser()?.role === 'PET_HOSPITAL') {
               this.ActionCard('健康档案维护', '查看宠物档案并新增医疗记录', () => this.openTab(2))
               this.ActionCard('订单与就诊记录', '查看商城订单与后续服务记录', () => AppRouter.push('pages/Orders'))
-            } else if (user.role === 'SELLER') {
+            } else if (this.currentUser()?.role === 'SELLER') {
               this.ActionCard('商品与上新', '查看商品详情与商城列表', () => this.openTab(3))
               this.ActionCard('订单履约', '查看当前商城订单并跟进状态', () => AppRouter.push('pages/Orders'))
-            } else if (user.role === 'PET_SHOP') {
+            } else if (this.currentUser()?.role === 'PET_SHOP') {
               this.ActionCard('领养发布管理', '查看领养信息与宠物详情', () => this.openTab(1))
               this.ActionCard('宠物档案管理', '查看发布宠物与健康档案', () => this.openTab(2))
-            } else if (user.role === 'ADMIN') {
+            } else if (this.currentUser()?.role === 'ADMIN') {
               this.ActionCard('社区内容巡检', '检查社区帖子与互动内容', () => this.openTab(0))
               this.ActionCard('系统订单巡检', '查看订单列表并进行核对', () => AppRouter.push('pages/Orders'))
             } else {

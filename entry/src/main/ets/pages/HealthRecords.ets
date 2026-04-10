@@ -99,9 +99,9 @@ struct HealthRecords {
       if (!this.loading && this.records.length === 0) {
         EmptyState({
           title: '还没有健康档案',
-          description: '先添加一条体检、疫苗或护理记录，后续可以在这里持续维护。',
-          actionText: '新增记录',
-          action: () => AppRouter.push('pages/NewHealthRecord', { petId: this.petId } as PetIdParams)
+          description: this.canEdit() ? '先添加一条体检、疫苗或护理记录，后续可以在这里持续维护。' : '当前账号只能查看该宠物档案，暂无可显示的健康记录。',
+          actionText: this.canEdit() ? '新增记录' : '',
+          action: () => this.canEdit() ? AppRouter.push('pages/NewHealthRecord', { petId: this.petId } as PetIdParams) : undefined
         })
       } else {
         Scroll() {
