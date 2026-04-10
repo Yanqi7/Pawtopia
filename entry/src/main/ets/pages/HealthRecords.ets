@@ -67,12 +67,22 @@ struct HealthRecords {
       }
 
       if (!this.loading && this.pet) {
-        OfflineBanner({
-          text: SessionStore.getUser()?.role === 'PET_HOSPITAL'
+        Row({ space: 8 }) {
+          Image($r('app.media.hero_bell'))
+            .width(18)
+            .height(18)
+          Text(SessionStore.getUser()?.role === 'PET_HOSPITAL'
             ? '宠物医院账号可维护健康记录；如遇权限限制，请确认当前宠物是否属于可服务范围。'
-            : '普通用户只能查看自己宠物的健康档案；如提示无权限，请先确认登录账号。',
-          action: () => this.load()
-        })
+            : '普通用户只能查看自己宠物的健康档案；如提示无权限，请先确认登录账号。')
+            .fontSize(12)
+            .fontColor(Theme.textSecondary)
+            .layoutWeight(1)
+        }
+        .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+        .backgroundColor('#EEF5FF')
+        .borderRadius(12)
+        .border({ width: 1, color: '#D9E8FF' })
+        .margin({ left: 16, right: 16, bottom: 8 })
       }
 
       if (!this.loading && this.records.length === 0) {

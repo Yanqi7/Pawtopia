@@ -71,7 +71,10 @@ public class AdoptionController {
         if (pet == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        if (!SecurityUtil.isAdmin() && (pet.getOwnerId() == null || !pet.getOwnerId().equals(currentUserId))) {
+        boolean canView = SecurityUtil.isAdmin()
+                || (pet.getOwnerId() != null && pet.getOwnerId().equals(currentUserId))
+                || adoptionRequestRepository.existsByPetIdAndOwnerId(petId, currentUserId);
+        if (!canView) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         return new ResponseEntity<>(adoptionService.getRequestsByPetId(petId), HttpStatus.OK);

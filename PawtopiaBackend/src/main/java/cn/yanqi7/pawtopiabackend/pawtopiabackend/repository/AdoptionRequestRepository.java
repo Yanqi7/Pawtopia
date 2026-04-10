@@ -11,6 +11,7 @@ public interface AdoptionRequestRepository extends JpaRepository<AdoptionRequest
     List<AdoptionRequest> findByPetIdOrderByCreatedAtDesc(Long petId);
     List<AdoptionRequest> findByRequesterIdOrderByCreatedAtDesc(Long requesterId);
     List<AdoptionRequest> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
+    boolean existsByPetIdAndOwnerId(Long petId, Long ownerId);
     boolean existsByPetIdAndRequesterIdAndStatus(Long petId, Long requesterId, AdoptionRequest.Status status);
 }
 
