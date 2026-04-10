@@ -385,8 +385,27 @@ export class Api {
   }
 
   static async createOrder(order: Order): Promise<Order> {
-    const c = await Api.client();
-    return await c.postJson<Order>('/api/orders', JSON.stringify(order));
+    try {
+      const c = await Api.client();
+      const res = await c.postJson<Order>('/api/orders', JSON.stringify(order));
+      AppStatus.setBackendOnline(true);
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 400) {
+          throw new Error('订单信息不完整，请检查商品数量与收货信息');
+        }
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后再提交订单');
+        }
+        if (e.statusCode === 409) {
+          throw new Error('部分商品库存或状态已变化，请返回购物车后重试');
+        }
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      throw new Error('当前无法连接服务，暂时不能提交订单');
+    }
   }
 
   static async getMyOrders(userId: number): Promise<Order[]> {
@@ -432,8 +451,27 @@ export class Api {
   }
 
   static async updateOrderStatus(orderId: number, status: OrderStatus): Promise<Order> {
-    const c = await Api.client();
-    return await c.put<Order>(`/api/orders/${orderId}/status/${status}`);
+    try {
+      const c = await Api.client();
+      const res = await c.put<Order>(`/api/orders/${orderId}/status/${status}`);
+      AppStatus.setBackendOnline(true);
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后再操作订单');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限操作该订单');
+        }
+        if (e.statusCode === 409) {
+          throw new Error('订单状态已变化，请刷新后重试');
+        }
+        throw new Error(e.message);
+      }
+      AppStatus.setBackendOnline(false);
+      throw new Error('当前无法连接服务，暂时不能更新订单');
+    }
   }
 
   static async probeBackend(): Promise<boolean> {

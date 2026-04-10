@@ -5,9 +5,15 @@ import { SessionStore } from '../store/SessionStore';
 import { ErrorText } from '../components/Ui';
 import { Theme } from '../common/Theme';
 
+interface OrderProductLine {
+  productId: number;
+  quantity: number;
+  product?: Product;
+}
+
 interface OrderLine {
   order: Order;
-  products: Product[];
+  products: OrderProductLine[];
   missingCount: number;
 }
 
@@ -40,12 +46,20 @@ struct Orders {
       const sorted = [...orders].sort((a: Order, b: Order) => (b.id ?? 0) - (a.id ?? 0));
       const lines = await Promise.all(sorted.map(async (order: Order) => {
         const ids = order.productIds.split(',').map((id: string) => Number(id)).filter((id: number) => id > 0);
+        const quantities = order.quantities.split(',').map((qty: string) => Number(qty)).filter((qty: number) => qty > 0);
         const products = await Promise.all(ids.map((id: number) => Api.getProduct(id).catch(() => undefined)));
-        const validProducts = products.filter((item) => !!item) as Product[];
+        const productLines: OrderProductLine[] = ids.map((id: number, index: number) => {
+          const item: OrderProductLine = {
+            productId: id,
+            quantity: quantities[index] ?? 1,
+            product: products[index]
+          };
+          return item;
+        });
         const line: OrderLine = {
           order: order,
-          products: validProducts,
-          missingCount: ids.length - validProducts.length
+          products: productLines,
+          missingCount: productLines.filter((item: OrderProductLine) => !item.product).length
         };
         return line;
       }));
@@ -132,9 +146,9 @@ struct Orders {
               if (line.order.shippingAddress) {
                 Text(`地址：${line.order.shippingAddress}`).fontSize(12).fontColor('#999')
               }
-              Text(`商品：${line.products.map((product: Product) => product.name).join(' / ') || line.order.productIds}`).fontSize(12).fontColor('#666')
+              Text(`商品：${line.products.map((item: OrderProductLine) => `${item.product?.name ?? `商品#${item.productId}(已失效)`} × ${item.quantity}`).join(' / ') || line.order.productIds}`).fontSize(12).fontColor('#666')
               if (line.missingCount > 0) {
-                Text(`其中有 ${line.missingCount} 件商品当前无法加载详情`).fontSize(12).fontColor('#D14343')
+                Text(`其中有 ${line.missingCount} 件商品当前无法加载详情，以下单时记录为准`).fontSize(12).fontColor('#D14343')
               }
 
               if (line.order.status === 'PENDING' && line.order.id) {

@@ -14,10 +14,6 @@ interface CartLine {
   product?: Product;
 }
 
-interface MainTabParams {
-  tab?: number;
-}
-
 @Entry
 @Component
 struct Cart {
@@ -44,15 +40,42 @@ struct Cart {
       const products = await Promise.all(items.map((it: CartItem) => Api.getProduct(it.productId).catch(() => undefined)));
       const nextLines: CartLine[] = [];
       let missingCount = 0;
+      let changed = false;
+      const removedIds: number[] = [];
       items.forEach((item: CartItem, index: number) => {
-        if (!products[index]) {
+        const product = products[index];
+        if (!product) {
           missingCount += 1;
+          nextLines.push({ item: item, product: undefined });
+          return;
         }
-        nextLines.push({ item: item, product: products[index] });
+        const stock = Math.max(0, product.stockQuantity ?? 0);
+        const nextQty = Math.max(0, Math.min(item.quantity, stock));
+        if (nextQty !== item.quantity) {
+          changed = true;
+        }
+        if (nextQty <= 0) {
+          removedIds.push(item.productId);
+          return;
+        }
+        nextLines.push({ item: { productId: item.productId, quantity: nextQty }, product: product });
       });
+      if (changed) {
+        for (let i = 0; i < nextLines.length; i++) {
+          const line = nextLines[i];
+          if (line.product) {
+            await CartStore.setQuantity(line.item.productId, line.item.quantity);
+          }
+        }
+        for (let i = 0; i < removedIds.length; i++) {
+          await CartStore.setQuantity(removedIds[i], 0);
+        }
+      }
       this.lines = nextLines;
       if (missingCount > 0) {
-        this.errorText = `购物车中有 ${missingCount} 件商品已失效，请先移除再结算`;
+        this.errorText = `购物车中有 ${missingCount} 件商品已失效，请先移除后再结算`;
+      } else if (changed) {
+        this.errorText = '部分商品数量已按最新库存自动调整';
       }
     } catch (e) {
       this.errorText = (e as Error).message || '加载失败';
@@ -84,10 +107,15 @@ struct Cart {
       this.errorText = '该商品已失效，请先移除';
       return;
     }
-    const stock = Math.max(1, line.product.stockQuantity ?? 99);
+    const stock = Math.max(0, line.product.stockQuantity ?? 0);
+    if (stock <= 0) {
+      this.errorText = '该商品当前无库存，请先移除';
+      return;
+    }
     const next = Math.max(0, Math.min(stock, line.item.quantity + delta));
     try {
       await CartStore.setQuantity(line.item.productId, next);
+      this.errorText = next < line.item.quantity && delta > 0 ? '已达到当前库存上限' : '';
       await this.reload();
     } catch (e) {
       this.errorText = (e as Error).message || '更新数量失败';
@@ -201,7 +229,7 @@ struct Cart {
                   .backgroundColor('#E8F1FF')
                   .fontColor(Theme.primary)
                   .borderRadius(20)
-                  .onClick(() => AppRouter.replace('pages/MainTabs', { tab: 3 } as MainTabParams))
+                  .onClick(() => AppRouter.replace('pages/MainTabs'))
               }
               .padding(20)
               .backgroundColor(Color.White)
@@ -234,9 +262,9 @@ struct Cart {
                         .fontSize(18)
                         .fontWeight(FontWeight.Bold)
                         .fontColor('#FB7299')
-                      Text(line.product ? `库存 ${line.product.stockQuantity ?? '-'}` : '请先移除失效商品')
+                      Text(line.product ? ((line.product.stockQuantity ?? 0) > 0 ? `库存 ${line.product.stockQuantity}` : '当前缺货') : '请先移除失效商品')
                         .fontSize(11)
-                        .fontColor(line.product ? '#9499A0' : '#D14343')
+                        .fontColor(line.product ? ((line.product.stockQuantity ?? 0) > 0 ? '#9499A0' : '#D14343') : '#D14343')
                     }
                   }
                   .layoutWeight(1)
@@ -256,6 +284,7 @@ struct Cart {
                       .backgroundColor('#F1F3F7')
                       .borderRadius({ topLeft: 12, bottomLeft: 12, topRight: 0, bottomRight: 0 })
                       .fontColor('#18191C')
+                      .enabled(!!line.product)
                       .onClick(() => this.adjustQuantity(line, -1))
                     Text(String(line.item.quantity))
                       .width(44)
@@ -270,6 +299,7 @@ struct Cart {
                       .backgroundColor('#F1F3F7')
                       .borderRadius({ topLeft: 0, bottomLeft: 0, topRight: 12, bottomRight: 12 })
                       .fontColor('#18191C')
+                      .enabled(!!line.product && (line.product.stockQuantity ?? 0) > 0)
                       .onClick(() => this.adjustQuantity(line, 1))
                   }
                 }

@@ -92,7 +92,7 @@ export struct OptionGroup {
 
 @Component
 export struct OfflineBanner {
-  text: string = '当前无法连接后端，展示离线占位信息。';
+  text: string = '当前无法连接服务，请稍后重试。';
   action: () => void = () => {};
 
   build() {

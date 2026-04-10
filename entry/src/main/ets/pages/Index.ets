@@ -32,7 +32,7 @@ struct Index {
       this.statusText = '正在检查服务状态…';
       this.online = await Api.probeBackend();
       AppStatus.setBackendOnline(this.online);
-      this.statusText = this.online ? '正在进入城宠社区…' : '离线模式已开启';
+      this.statusText = this.online ? '正在进入城宠社区…' : '当前服务不可用';
       this.ready = true;
       if (SessionStore.isLoggedIn() && SessionStore.getToken()) {
         AppRouter.replace('pages/MainTabs');
@@ -98,7 +98,7 @@ struct Index {
               .fontSize(14)
               .fontColor(Theme.textSecondary)
               .textAlign(TextAlign.Center)
-            Text(this.online ? '服务连接正常' : '当前将使用本地缓存数据')
+            Text(this.online ? '服务连接正常' : '当前服务不可用，请稍后重试')
               .fontSize(12)
               .fontColor(this.online ? Theme.success : Theme.secondary)
           }

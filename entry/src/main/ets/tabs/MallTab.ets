@@ -1,7 +1,7 @@
 import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { Product, ProductCategory } from '../model/Models';
-import { CartStore } from '../store/CartStore';
+import { CartSnapshot, CartStore } from '../store/CartStore';
 import { AppStatus } from '../app/AppStatus';
 import { EmptyState, OfflineBanner } from '../components/Ui';
 import { MediaAssets } from '../assets/MediaAssets';
@@ -34,8 +34,8 @@ export struct MallTab {
     { label: '健康护理', value: 'MEDICINE' }
   ];
 
-  private readonly cartListener = (count: number): void => {
-    this.cartCount = count;
+  private readonly cartListener = (snapshot: CartSnapshot): void => {
+    this.cartCount = snapshot.count;
   };
 
   aboutToAppear(): void {
@@ -73,10 +73,22 @@ export struct MallTab {
 
   private async addToCart(product: Product): Promise<void> {
     if (!product.id) {
+      this.errorText = '商品信息不完整，暂时无法加入购物车';
       return;
     }
-    await CartStore.add(product.id, 1);
-    this.cartCount = CartStore.getTotalCount();
+    if ((product.stockQuantity ?? 0) <= 0) {
+      this.errorText = '该商品暂时缺货';
+      return;
+    }
+    try {
+      const next = CartStore.getQuantity(product.id) + 1;
+      const stock = Math.max(0, product.stockQuantity ?? 0);
+      await CartStore.setQuantity(product.id, Math.min(stock, next));
+      this.cartCount = CartStore.getTotalCount();
+      this.errorText = '';
+    } catch (e) {
+      this.errorText = (e as Error).message || '加入购物车失败';
+    }
   }
 
   build() {
@@ -115,7 +127,7 @@ export struct MallTab {
                 .height(18)
                 .fillColor(Theme.primary)
               if (this.cartCount > 0) {
-                Text(String(this.cartCount))
+                Text(this.cartCount > 99 ? '99+' : String(this.cartCount))
                   .fontSize(10)
                   .fontColor(Color.White)
                   .backgroundColor('#FF5A5F')
@@ -174,7 +186,7 @@ export struct MallTab {
       .scrollBar(BarState.Off)
 
       if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ text: '当前无法连接服务，商品与下单能力可能受限', action: () => this.refresh() })
+        OfflineBanner({ text: '当前无法连接服务，商品与库存信息暂不可用，请恢复网络后重试', action: () => this.refresh() })
           .padding({ left: 16, right: 16, bottom: 8 })
       }
 
@@ -236,19 +248,20 @@ export struct MallTab {
                       .fontSize(18)
                       .fontWeight(FontWeight.Bold)
                       .fontColor('#FF5A5F')
-                    Text(`库存 ${product.stockQuantity}`)
+                    Text((product.stockQuantity ?? 0) > 0 ? `库存 ${product.stockQuantity}` : '暂时缺货')
                       .fontSize(11)
-                      .fontColor(Theme.textMuted)
+                      .fontColor((product.stockQuantity ?? 0) > 0 ? Theme.textMuted : '#D14343')
                   }
 
                   Row({ space: 10 }) {
-                    Button('加购')
+                    Button((product.stockQuantity ?? 0) > 0 ? '加购' : '已售罄')
                       .height(32)
                       .padding({ left: 14, right: 14 })
-                      .backgroundColor('#E8F1FF')
-                      .fontColor(Theme.primary)
+                      .backgroundColor((product.stockQuantity ?? 0) > 0 ? '#E8F1FF' : '#F1F3F7')
+                      .fontColor((product.stockQuantity ?? 0) > 0 ? Theme.primary : Theme.textMuted)
                       .borderRadius(16)
                       .fontSize(12)
+                      .enabled((product.stockQuantity ?? 0) > 0)
                       .onClick(() => this.addToCart(product))
                     Button('查看详情')
                       .height(32)

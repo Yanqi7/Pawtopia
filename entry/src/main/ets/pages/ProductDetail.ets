@@ -36,8 +36,11 @@ struct ProductDetail {
     this.errorText = '';
     try {
       this.product = await Api.getProduct(this.productId);
+      const stock = Math.max(0, this.product.stockQuantity ?? 0);
+      this.qty = stock > 0 ? Math.min(Math.max(1, this.qty), stock) : 1;
       this.activeImageIndex = 0;
     } catch (e) {
+      this.product = undefined;
       this.errorText = (e as Error).message || '加载失败';
     } finally {
       this.loading = false;
@@ -53,14 +56,31 @@ struct ProductDetail {
 
   private async addToCart(goCart: boolean): Promise<void> {
     if (!this.productId || !this.product) {
+      this.errorText = '商品信息不可用';
       return;
     }
-    await CartStore.add(this.productId, this.qty);
-    if (goCart) {
-      AppRouter.push('pages/Cart');
+    const stock = Math.max(0, this.product.stockQuantity ?? 0);
+    if (stock <= 0) {
+      this.errorText = '该商品暂时缺货';
       return;
     }
-    AppPrompt.toast('已加入购物车');
+    try {
+      const current = CartStore.getQuantity(this.productId);
+      const next = Math.min(stock, current + this.qty);
+      if (next <= current) {
+        this.errorText = '已达到当前库存上限';
+        return;
+      }
+      await CartStore.setQuantity(this.productId, next);
+      this.errorText = '';
+      if (goCart) {
+        AppRouter.push('pages/Cart');
+        return;
+      }
+      AppPrompt.toast('已加入购物车');
+    } catch (e) {
+      this.errorText = (e as Error).message || '加入购物车失败';
+    }
   }
 
   build() {
@@ -139,9 +159,9 @@ struct ProductDetail {
                   .fontSize(26)
                   .fontWeight(FontWeight.Bold)
                   .fontColor('#FF5A5F')
-                Text(`库存 ${this.product.stockQuantity}`)
+                Text((this.product.stockQuantity ?? 0) > 0 ? `库存 ${this.product.stockQuantity}` : '暂时缺货')
                   .fontSize(12)
-                  .fontColor(Theme.textMuted)
+                  .fontColor((this.product.stockQuantity ?? 0) > 0 ? Theme.textMuted : '#D14343')
                 Text(`上架 ${shortDate(this.product.createdAt)}`)
                   .fontSize(12)
                   .fontColor(Theme.textMuted)
@@ -156,10 +176,10 @@ struct ProductDetail {
                 .fontSize(15)
                 .fontWeight(FontWeight.Bold)
                 .fontColor(Theme.textPrimary)
-              Text('· 购买数量与库存联动，结算时以后端校验为准。')
+              Text('· 购买数量会与购物车已选数量一并校验，不会超过当前库存。')
                 .fontSize(13)
                 .fontColor(Theme.textSecondary)
-              Text('· 商品图片以商家上传或平台维护的图片字段为准。')
+              Text('· 商品图片与商城列表、购物车展示保持同一图片源。')
                 .fontSize(13)
                 .fontColor(Theme.textSecondary)
               Text('· 适合宠物日常喂养、护理或互动场景。')
@@ -182,6 +202,7 @@ struct ProductDetail {
                   .borderRadius(12)
                   .backgroundColor('#F3F6FB')
                   .fontColor(Theme.textSecondary)
+                  .enabled((this.product?.stockQuantity ?? 0) > 0)
                   .onClick(() => this.qty = Math.max(1, this.qty - 1))
                 Text(String(this.qty))
                   .fontSize(18)
@@ -194,6 +215,7 @@ struct ProductDetail {
                   .borderRadius(12)
                   .backgroundColor('#F3F6FB')
                   .fontColor(Theme.textSecondary)
+                  .enabled((this.product?.stockQuantity ?? 0) > 0)
                   .onClick(() => this.qty = Math.min(Math.max(1, this.product?.stockQuantity ?? 1), this.qty + 1))
               }
               .width('100%')
@@ -224,23 +246,25 @@ struct ProductDetail {
 
       if (this.product) {
         Row({ space: 12 }) {
-          Button('加入购物车')
+          Button((this.product.stockQuantity ?? 0) > 0 ? '加入购物车' : '暂时缺货')
             .height(46)
             .layoutWeight(1)
-            .backgroundColor('#E8F1FF')
-            .fontColor(Theme.primary)
+            .backgroundColor((this.product.stockQuantity ?? 0) > 0 ? '#E8F1FF' : '#F1F3F7')
+            .fontColor((this.product.stockQuantity ?? 0) > 0 ? Theme.primary : Theme.textMuted)
             .borderRadius(18)
             .fontSize(14)
+            .enabled((this.product.stockQuantity ?? 0) > 0)
             .onClick(() => this.addToCart(false))
 
-          Button('去结算')
+          Button((this.product.stockQuantity ?? 0) > 0 ? '去结算' : '无法购买')
             .height(46)
             .layoutWeight(1)
-            .backgroundColor(Theme.primary)
+            .backgroundColor((this.product.stockQuantity ?? 0) > 0 ? Theme.primary : '#D7DBE3')
             .fontColor(Color.White)
             .borderRadius(18)
             .fontSize(14)
             .fontWeight(FontWeight.Bold)
+            .enabled((this.product.stockQuantity ?? 0) > 0)
             .onClick(() => this.addToCart(true))
         }
         .padding(16)

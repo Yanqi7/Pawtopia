@@ -111,7 +111,7 @@ export struct MeTab {
                       .padding({ left: 10, right: 10, top: 4, bottom: 4 })
                       .backgroundColor('#EAF3FF')
                       .borderRadius(12)
-                    Text(AppStatus.isBackendOnline() ? '云端已连接' : '本地缓存模式')
+                    Text(AppStatus.isBackendOnline() ? '云端已连接' : '服务受限')
                       .fontSize(11)
                       .fontColor('#6B7280')
                       .padding({ left: 10, right: 10, top: 4, bottom: 4 })
@@ -168,6 +168,37 @@ export struct MeTab {
             .padding(16)
             .backgroundColor(Color.White)
             .borderRadius(24)
+
+            if (this.user?.role !== 'USER') {
+              Column({ space: 12 }) {
+                Text('角色工作台')
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor('#18191C')
+                  .width('100%')
+                Row({ space: 12 }) {
+                  if (this.user?.role === 'PET_HOSPITAL') {
+                    this.QuickEntry('医疗档案', '查看健康记录', () => this.navigateTab(2))
+                    this.QuickEntry('就诊订单', '查看用户订单', () => AppRouter.push('pages/Orders'))
+                  }
+                  if (this.user?.role === 'SELLER') {
+                    this.QuickEntry('商品上新', '维护商城商品', () => this.navigateTab(3))
+                    this.QuickEntry('订单履约', '处理商城订单', () => AppRouter.push('pages/Orders'))
+                  }
+                  if (this.user?.role === 'PET_SHOP') {
+                    this.QuickEntry('领养发布', '管理领养信息', () => this.navigateTab(1))
+                    this.QuickEntry('宠物档案', '查看发布宠物', () => this.navigateTab(2))
+                  }
+                  if (this.user?.role === 'ADMIN') {
+                    this.QuickEntry('内容巡检', '检查社区与领养', () => this.navigateTab(0))
+                    this.QuickEntry('系统订单', '查看全部订单', () => AppRouter.push('pages/Orders'))
+                  }
+                }
+              }
+              .padding(16)
+              .backgroundColor(Color.White)
+              .borderRadius(24)
+            }
 
             Column({ space: 12 }) {
               this.MenuItem('资料编辑', '修改昵称、手机号和当前服务地址', () => AppRouter.push('pages/ProfileSettings'))

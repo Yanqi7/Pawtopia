@@ -6,7 +6,12 @@ export interface CartItem {
   quantity: number;
 }
 
-type CartListener = (count: number) => void;
+export interface CartSnapshot {
+  count: number;
+  items: CartItem[];
+}
+
+type CartListener = (snapshot: CartSnapshot) => void;
 
 export class CartStore {
   private static readonly KEY = 'cart_items';
@@ -58,6 +63,7 @@ export class CartStore {
     if (CartStore.listeners.indexOf(listener) < 0) {
       CartStore.listeners.push(listener);
     }
+    listener({ count: CartStore.getTotalCount(), items: CartStore.list() });
   }
 
   static unsubscribe(listener: CartListener): void {
@@ -65,28 +71,58 @@ export class CartStore {
   }
 
   static async add(productId: number, delta: number): Promise<void> {
-    const next = Math.max(0, (CartStore.items.get(productId) ?? 0) + delta);
-    if (next <= 0) {
-      CartStore.items.delete(productId);
-    } else {
-      CartStore.items.set(productId, next);
+    if (productId <= 0 || delta === 0) {
+      return;
     }
-    await CartStore.persist();
+    const backup = new Map<number, number>(CartStore.items);
+    try {
+      const next = Math.max(0, (CartStore.items.get(productId) ?? 0) + delta);
+      if (next <= 0) {
+        CartStore.items.delete(productId);
+      } else {
+        CartStore.items.set(productId, next);
+      }
+      await CartStore.persist();
+    } catch (e) {
+      CartStore.items = backup;
+      CartStore.emit();
+      const message = e instanceof Error ? e.message : '购物车写入失败';
+      throw new Error(message);
+    }
   }
 
   static async setQuantity(productId: number, quantity: number): Promise<void> {
-    const next = Math.max(0, quantity);
-    if (next <= 0) {
-      CartStore.items.delete(productId);
-    } else {
-      CartStore.items.set(productId, next);
+    if (productId <= 0) {
+      return;
     }
-    await CartStore.persist();
+    const backup = new Map<number, number>(CartStore.items);
+    try {
+      const next = Math.max(0, Math.floor(quantity));
+      if (next <= 0) {
+        CartStore.items.delete(productId);
+      } else {
+        CartStore.items.set(productId, next);
+      }
+      await CartStore.persist();
+    } catch (e) {
+      CartStore.items = backup;
+      CartStore.emit();
+      const message = e instanceof Error ? e.message : '购物车写入失败';
+      throw new Error(message);
+    }
   }
 
   static async clear(): Promise<void> {
-    CartStore.items.clear();
-    await CartStore.persist();
+    const backup = new Map<number, number>(CartStore.items);
+    try {
+      CartStore.items.clear();
+      await CartStore.persist();
+    } catch (e) {
+      CartStore.items = backup;
+      CartStore.emit();
+      const message = e instanceof Error ? e.message : '购物车写入失败';
+      throw new Error(message);
+    }
   }
 
   private static async persist(): Promise<void> {
@@ -97,7 +133,10 @@ export class CartStore {
   }
 
   private static emit(): void {
-    const count = CartStore.getTotalCount();
-    CartStore.listeners.forEach((listener: CartListener) => listener(count));
+    const snapshot: CartSnapshot = {
+      count: CartStore.getTotalCount(),
+      items: CartStore.list()
+    };
+    CartStore.listeners.forEach((listener: CartListener) => listener(snapshot));
   }
 }

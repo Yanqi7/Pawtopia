@@ -96,7 +96,7 @@ struct Login {
                 Image($r('app.media.hero_bell'))
                   .width(24)
                   .height(24)
-                Text(this.online ? '服务在线' : '离线模式')
+                Text(this.online ? '服务在线' : '服务离线')
                   .fontSize(12)
                   .fontColor(this.online ? Theme.success : Theme.secondary)
               }

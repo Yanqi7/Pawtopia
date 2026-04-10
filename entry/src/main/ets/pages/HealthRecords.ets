@@ -1,10 +1,11 @@
 import { AppRouter } from '../common/AppRouter';
 import { Api } from '../api/Api';
 import { HealthRecord, Pet } from '../model/Models';
-import { EmptyState, ErrorText, SectionTitle } from '../components/Ui';
+import { EmptyState, ErrorText, OfflineBanner, SectionTitle } from '../components/Ui';
 import { MediaAssets } from '../assets/MediaAssets';
 import { Theme } from '../common/Theme';
 import { healthRecordTypeLabel, shortDate } from '../common/Formatters';
+import { SessionStore } from '../store/SessionStore';
 
 interface PetIdParams {
   petId?: number;
@@ -63,6 +64,15 @@ struct HealthRecords {
 
       if (this.errorText) {
         ErrorText({ text: this.errorText })
+      }
+
+      if (!this.loading && this.pet) {
+        OfflineBanner({
+          text: SessionStore.getUser()?.role === 'PET_HOSPITAL'
+            ? '宠物医院账号可维护健康记录；如遇权限限制，请确认当前宠物是否属于可服务范围。'
+            : '普通用户只能查看自己宠物的健康档案；如提示无权限，请先确认登录账号。',
+          action: () => this.load()
+        })
       }
 
       if (!this.loading && this.records.length === 0) {

@@ -32,7 +32,6 @@ import java.util.Locale;
 public class SeedDataRunner implements CommandLineRunner {
     private static final String ADMIN_USERNAME = "user1";
     private static final String ADMIN_PASSWORD = "user1";
-    private static final String[] NAME_SUFFIXES = {"", "二号", "三号", "四号", "五号"};
     private static final String[] CITIES = {"北京", "上海", "杭州", "成都", "深圳", "广州"};
 
     private final UserRepository userRepository;

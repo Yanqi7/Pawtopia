@@ -32,12 +32,14 @@ export class PreferencesStore {
 
   static async setString(key: string, value: string): Promise<void> {
     if (!PreferencesStore.prefs) {
-      return;
+      throw new Error('偏好存储未初始化');
     }
     try {
       await PreferencesStore.prefs.put(key, value);
       await PreferencesStore.prefs.flush();
     } catch (e) {
+      const message = e instanceof Error ? e.message : '偏好存储写入失败';
+      throw new Error(message);
     }
   }
 }
