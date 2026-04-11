@@ -9,6 +9,7 @@
     "pages/NewHealthRecord",
     "pages/PostDetail",
     "pages/ProductDetail",
+    "pages/NewProduct",
     "pages/Cart",
     "pages/Orders",
     "pages/PetDetail",
@@ -16,6 +17,12 @@
     "pages/AdoptionRequests",
     "pages/MyAdoptions",
     "pages/ProfileSettings",
-    "pages/RoleWorkbench"
+    "pages/RoleWorkbench",
+    "pages/SellerProducts",
+    "pages/AdminUsers",
+    "pages/AdminContent",
+    "pages/PetAuthorization",
+    "pages/AdminPets",
+    "pages/About"
   ]
 }
