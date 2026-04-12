@@ -1,215 +1,163 @@
 # Pawtopia
 
-> HarmonyOS ArkTS 客户端 + Spring Boot 后端的宠物社区、领养、档案、商城一体化平台。
+> HarmonyOS ArkTS 客户端 + Spring Boot 后端 + Spring Boot 内嵌管理后台 的宠物社区 / 领养 / 档案 / 商城综合平台。
 
 更新时间：2026-04-12  
-适用范围：HarmonyOS 客户端、Spring Boot 后端、内嵌 Web 管理后台
+当前主线：业务图片统一迁移到后端 `uploads/`，客户端与后台均读取后端 URL。
 
 ---
 
-## 目录
-- [1. 项目简介](#1-项目简介)
-- [2. 系统组成](#2-系统组成)
-- [3. 技术栈](#3-技术栈)
-- [4. 角色与权限](#4-角色与权限)
-- [5. 功能总览](#5-功能总览)
-- [6. 客户端使用说明](#6-客户端使用说明)
-- [7. Web 管理后台使用说明](#7-web-管理后台使用说明)
-- [8. 后端接口总览](#8-后端接口总览)
-- [9. 媒体资源与图片存储](#9-媒体资源与图片存储)
-- [10. 数据库与核心数据模型](#10-数据库与核心数据模型)
-- [11. 部署与启动](#11-部署与启动)
-- [12. 开发联调与验收建议](#12-开发联调与验收建议)
-- [13. 已知说明](#13-已知说明)
-
----
-
-## 1. 项目简介
-Pawtopia 是一个面向宠物生活场景的综合平台，覆盖：
-- 社区内容发布与互动
-- 宠物领养与申请流转
+## 1. 项目概览
+Pawtopia 是一个面向宠物场景的综合平台，覆盖：
+- 社区内容
+- 宠物领养
 - 宠物档案与健康记录
-- 宠物商城、购物车与订单
-- 管理员后台管理商品、宠物、领养与媒体资源
+- 宠物商城
+- 管理后台
 
-项目由两部分组成：
-- `entry/`：HarmonyOS ArkTS 客户端
-- `PawtopiaBackend/`：Spring Boot 后端与内嵌 Web 管理后台
+当前项目由三部分组成：
+- **HarmonyOS 客户端**：用户使用的移动端应用
+- **Spring Boot 后端**：统一业务 API、鉴权、数据库、文件存储
+- **Spring Boot 内嵌管理后台**：传统管理界面风格网页后台
+
+本项目当前已经明确采用以下资源策略：
+- **宣传图 / 头图 / Tab 图标**：继续使用客户端内置 `app.media`
+- **商品图 / 宠物图 / 帖子图等业务图片**：统一使用后端 `uploads/` 文件目录 + 数据库存储 URL/路径信息
 
 ---
 
 ## 2. 系统组成
+
 ### 2.1 Harmony 客户端
-提供普通用户、卖家、宠物店、宠物医院、管理员在移动端的业务入口。
+目录：`entry/src/main/ets/`
+
+主要职责：
+- 用户登录注册
+- 浏览商品、宠物、帖子
+- 提交订单、领养申请
+- 创建宠物档案
+- 展示后端最新业务数据
 
 ### 2.2 Spring Boot 后端
-负责：
-- 用户鉴权与 JWT
-- 商品、宠物、帖子、订单、领养、健康记录等业务 API
-- 媒体资源上传与远程抓取
-- 后台管理 API
-- 内嵌网页管理后台
+目录：`PawtopiaBackend/`
 
-### 2.3 Web 管理后台
-入口：`http://localhost:8080/admin`  
-用途：
+主要职责：
+- 用户认证与 JWT
+- 商品、宠物、帖子、订单、领养、健康记录 API
+- 管理接口 `/api/admin/**`
+- 文件上传与远程图片抓取
+- 静态资源访问 `/uploads/**`
+
+### 2.3 内嵌管理后台
+目录：`PawtopiaBackend/src/main/resources/static/admin/`
+
+主要职责：
 - 商品管理
 - 宠物档案管理
-- 领养申请管理
-- 媒体资源上传与远程抓取
+- 领养信息管理
+- 媒体图片上传与抓取
+
+访问地址：
+- `http://localhost:8080/`
+- `http://localhost:8080/admin`
 
 ---
 
 ## 3. 技术栈
 - **客户端**：HarmonyOS ArkTS + ArkUI
-- **后端**：Spring Boot 3.x + Spring Security + JWT
-- **数据库**：MySQL 8.x / H2（开发测试）
-- **构建**：Maven、hvigor
-- **管理后台**：Spring Boot 内嵌静态页面（`static/admin`）
+- **后端**：Spring Boot 3.x + Spring Security + JWT + JPA
+- **数据库**：H2 / MySQL
+- **构建**：Maven / hvigor
+- **媒体存储**：本地文件目录 `uploads/`
 
 ---
 
 ## 4. 角色与权限
-### 4.1 系统角色
+系统角色：
 - `USER`：普通用户
 - `ADMIN`：管理员
 - `PET_SHOP`：宠物店
 - `PET_HOSPITAL`：宠物医院
-- `SELLER`：卖家
+- `SELLER`：商品卖家
 
-### 4.2 权限原则
-- 大部分公开读取接口允许匿名访问
-- 写操作默认需要 `Authorization: Bearer <JWT>`
-- 后台管理接口默认要求管理员权限
-- 卖家只能管理自己的商品
-- 宠物主人只能管理自己的宠物与领养申请视图
+权限原则：
+- 公共浏览接口允许匿名访问
+- 写操作与管理接口需要 JWT
+- 管理后台接口统一走 `/api/admin/**`，要求管理员权限
 
-### 4.3 默认管理员
-开发种子数据默认提供管理员：
+默认管理员账号：
 - 用户名：`user1`
 - 密码：`user1`
 
-生产环境请务必修改或关闭默认种子账号。
+说明：
+- 该账号仅用于当前开发/演示环境
+- 实际部署必须修改密码并替换 JWT Secret
 
 ---
 
-## 5. 功能总览
-### 5.1 用户侧功能
-- 登录 / 注册
-- 社区发帖、点赞、评论
-- 浏览领养宠物、提交领养申请、撤回申请
-- 新建宠物档案、查看宠物详情、查看健康记录
-- 浏览商品、加入购物车、下单、查看订单
+## 5. 客户端使用说明
 
-### 5.2 管理侧功能
-- 管理商品信息
-- 管理宠物档案与领养信息
-- 审核和更新领养申请状态
-- 上传图片、抓取远程图片、统一管理媒体资源
-
-### 5.3 图片资产能力
-业务图片不再依赖客户端内置资源：
-- 商品图支持后端 URL
-- 宠物图支持后端 URL
-- 媒体后台支持本地上传和远程抓取
-- 客户端优先显示后端图片 URL，旧资源名仍兼容兜底
-
----
-
-## 6. 客户端使用说明
-
-### 6.1 底部导航
-客户端底部包含 5 个主入口：
+### 5.1 主导航
+底部 5 个入口：
 - 社区
 - 领养
 - 档案
 - 商城
 - 我的
 
-### 6.2 登录与注册
-#### 登录
-- 输入用户名和密码
-- 支持配置服务地址
-- 登录成功后进入主界面
-
-#### 注册
-- 输入用户名、昵称、邮箱、密码、确认密码
-- 成功后自动进入系统
-
-### 6.3 社区模块
-功能：
-- 浏览帖子流
+### 5.2 社区
+可执行操作：
+- 浏览帖子
 - 搜索帖子
-- 切换分类
-- 查看帖子详情
-- 点赞、评论、回复
+- 查看详情
+- 评论 / 点赞
 - 发布帖子
 - 编辑 / 删除自己的帖子
 
-使用流程：
-1. 进入社区页
-2. 输入关键词搜索或切换分类
-3. 点开帖子查看详情
-4. 在“我的帖子”里管理自己的内容
+帖子图片说明：
+- 业务图片优先来自后端 URL
+- 旧资源 key 仅兼容兜底，不建议继续使用
 
-### 6.4 领养模块
-功能：
-- 浏览可领养宠物
-- 搜索城市 / 品种 / 宠物名
-- 查看我发布的宠物
-- 查看我申请的领养
-- 查看收到的申请
-- 提交申请
-
-使用流程：
-1. 进入领养页查看宠物
-2. 打开宠物详情
-3. 填写联系人、电话、申请说明
-4. 提交后在“我的领养申请”查看状态
-
-### 6.5 宠物档案模块
-功能：
-- 新建宠物
-- 编辑宠物基础信息
-- 上传 / 填写图片 URL
+### 5.3 领养
+可执行操作：
+- 浏览领养宠物
 - 查看宠物详情
-- 查看健康档案
-- 医院授权
+- 提交领养申请
+- 查看我申请的领养
+- 查看我收到的申请
 
-使用流程：
-1. 在档案页点击新增宠物
-2. 填写宠物信息和图片
-3. 保存后在列表和详情中查看
+### 5.4 档案
+可执行操作：
+- 新建宠物档案
+- 查看宠物详情
+- 查看健康记录
+- 进行医院授权
 
-### 6.6 商城模块
-功能：
-- 浏览商品列表
+宠物图片说明：
+- 新建宠物时支持填写后端图片 URL
+- 宠物详情与列表页优先读取后端 URL
+
+### 5.5 商城
+可执行操作：
+- 浏览商品
 - 搜索商品
-- 分类筛选
-- 查看商品详情
+- 查看详情
 - 加入购物车
-- 下单
+- 提交订单
 
-当前分类：
-- 全部
-- 主粮零食
-- 玩具互动
-- 宠物服饰
-- 护理用品
-- 健康护理
+商品图片说明：
+- 商品图应来自后端 `uploads/` 或后端记录的远程 URL
+- 不再推荐继续使用客户端本地资源名作为商品图片来源
 
-### 6.7 我的页面
-功能：
-- 资料设置
-- 我的发布
-- 订单中心
-- 领养申请
-- 角色工作台
-- 清理购物车缓存
+### 5.6 我的
+可执行操作：
+- 查看资料
+- 进入资料设置
+- 查看订单
+- 查看领养申请
 - 退出登录
 
-### 6.8 管理员在客户端可见入口
-管理员在“我的”页可以看到：
+管理员额外可见：
 - 用户管理
 - 内容巡检
 - 商品管理
@@ -217,97 +165,58 @@ Pawtopia 是一个面向宠物生活场景的综合平台，覆盖：
 - 领养信息管理
 - 系统订单
 
-说明：客户端管理页适合轻量查看与维护；完整后台管理建议使用 Web 管理后台。
-
 ---
 
-## 7. Web 管理后台使用说明
+## 6. 管理后台使用说明
 
-### 7.1 为什么访问 `localhost` 会 403
-如果你之前直接访问 `http://localhost:8080/` 出现：
-- `HTTP ERROR 403`
-- `您未获授权，无法查看此网页`
-
-原因通常是：
-- 根路径 `/` 没有放行或没有转发到后台页面
-
-当前版本已修复：
-- `GET /` 已允许匿名访问
-- `GET /` 会转发到 `/admin/index.html`
-- `GET /admin` 同样可直接进入后台页面
-
-建议直接访问：
+### 6.1 后台入口
+启动后端后访问：
 - `http://localhost:8080/`
-- 或 `http://localhost:8080/admin`
+- `http://localhost:8080/admin`
 
-### 7.2 后台登录
-后台页面本身是静态管理界面，真正的权限依赖后台 API 的 JWT：
-1. 打开 `/admin`
-2. 在页面中输入管理员账号
-3. 点击“管理员登录”
-4. 登录成功后，Token 会自动写入
-5. 页面可直接操作后台 API
+如果访问根路径出现 403：
+- 请确认你使用的是最新代码版本
+- 最新代码已将 `/`、`/admin`、`/admin/` 转发到后台首页
 
-### 7.3 后台菜单
-左侧菜单包含：
-- 概览
-- 商品管理
-- 宠物管理
-- 领养管理
-- 媒体资源
+### 6.2 登录方式
+后台接口使用同一套 JWT 鉴权。
+推荐流程：
+1. 使用管理员账号在客户端或 API 登录
+2. 获取 token
+3. 管理后台页面调用 `/api/admin/**`
 
-### 7.4 商品管理
-支持：
-- 查看商品列表
-- 查看商品图片
-- 新建商品
-- 编辑商品
-- 删除商品
-- 修改价格、库存、分类、卖家 ID、图片 URL
+### 6.3 管理能力
+当前后台支持：
+- 商品列表 / 新增 / 编辑 / 删除
+- 宠物列表 / 新增 / 编辑 / 删除
+- 领养申请列表 / 详情 / 状态更新
+- 媒体上传 / 远程抓取
 
-### 7.5 宠物管理
-支持：
-- 查看宠物列表
-- 新建宠物
-- 编辑宠物基础档案
-- 修改领养城市、领养说明、领养状态
-- 删除宠物
-- 维护宠物图片 URL
+### 6.4 图片与媒体管理
+推荐做法：
+- 先通过媒体接口上传文件，获得 `/uploads/...` URL
+- 再把该 URL 填入商品 / 宠物 / 帖子图片字段
 
-### 7.6 领养管理
-支持：
-- 查看全部领养申请
-- 查看按宠物聚合的申请
-- 审批申请状态
-- 更新为 `APPROVED` 或 `REJECTED`
-
-### 7.7 媒体资源
 支持两种方式：
-- 本地上传图片文件
-- 输入远程图片 URL，由后端抓取保存
-
-上传成功后：
-- 后台返回 `/uploads/...` URL
-- 可直接填到商品或宠物的图片字段中
-- 客户端会直接读取并展示
+- 本地上传文件
+- 输入远程图片 URL，由后端抓取并保存到 `uploads/`
 
 ---
 
-## 8. 后端接口总览
-> 除明确匿名接口外，其余接口都需要 JWT。
+## 7. 后端接口清单
 
-### 8.1 鉴权
+### 7.1 鉴权
 - `POST /api/auth/login`
 - `POST /api/auth/register`
 
-### 8.2 用户
-- `GET /api/users`
-- `GET /api/users/{id}`
-- `POST /api/users`
-- `PUT /api/users/{id}`
-- `DELETE /api/users/{id}`
+### 7.2 商品
+- `GET /api/products`
+- `GET /api/products/{id}`
+- `POST /api/products`
+- `PUT /api/products/{id}`
+- `DELETE /api/products/{id}`
 
-### 8.3 宠物
+### 7.3 宠物
 - `GET /api/pets`
 - `GET /api/pets/{id}`
 - `GET /api/pets/owner/{ownerId}`
@@ -315,200 +224,140 @@ Pawtopia 是一个面向宠物生活场景的综合平台，覆盖：
 - `PUT /api/pets/{id}`
 - `DELETE /api/pets/{id}`
 
-### 8.4 领养
+### 7.4 领养
 - `GET /api/adoptions/listings`
 - `POST /api/adoptions/pets/{petId}/requests`
 - `GET /api/adoptions/pets/{petId}/requests`
 - `GET /api/adoptions/requests/mine`
+- `GET /api/adoptions/requests/owned`
 - `PUT /api/adoptions/requests/{id}/status/{status}`
 - `PUT /api/adoptions/requests/{id}/cancel`
 
-### 8.5 社区
-- `GET /api/posts`
-- `GET /api/posts/{id}`
-- `POST /api/posts`
-- `PUT /api/posts/{id}`
-- `DELETE /api/posts/{id}`
-- `POST /api/posts/{id}/like`
-
-### 8.6 评论
-- `GET /api/comments/post/{postId}`
-- `POST /api/comments`
-- `PUT /api/comments/{id}`
-- `DELETE /api/comments/{id}`
-
-### 8.7 商品与商城
-- `GET /api/products`
-- `GET /api/products/{id}`
-- `GET /api/products/category/{category}`
-- `GET /api/products/search?name=...`
-- `POST /api/products`
-- `PUT /api/products/{id}`
-- `DELETE /api/products/{id}`
-
-### 8.8 订单
+### 7.5 订单
 - `GET /api/orders/user/{userId}`
 - `GET /api/orders/{id}`
 - `POST /api/orders`
 - `PUT /api/orders/{id}`
+- `PUT /api/orders/{id}/status/{status}`
 - `PATCH /api/orders/{id}/status/{status}`
 - `DELETE /api/orders/{id}`
 
-### 8.9 健康记录
-- `GET /api/health-records/pet/{petId}`
-- `POST /api/health-records`
-- `PUT /api/health-records/{id}`
-- `DELETE /api/health-records/{id}`
-
-### 8.10 后台管理接口
-#### 商品管理
+### 7.6 管理后台接口
 - `GET /api/admin/products`
 - `GET /api/admin/products/{id}`
 - `POST /api/admin/products`
 - `PUT /api/admin/products/{id}`
 - `DELETE /api/admin/products/{id}`
 
-#### 宠物管理
 - `GET /api/admin/pets`
 - `GET /api/admin/pets/{id}`
 - `POST /api/admin/pets`
 - `PUT /api/admin/pets/{id}`
 - `DELETE /api/admin/pets/{id}`
 
-#### 领养管理
 - `GET /api/admin/adoptions/requests`
 - `GET /api/admin/adoptions/requests/{id}`
 - `GET /api/admin/adoptions/pets/{petId}/requests`
 - `PUT /api/admin/adoptions/requests/{id}/status/{status}`
 
-#### 媒体资源
 - `GET /api/admin/media-assets`
 - `GET /api/admin/media-assets/{id}`
 - `POST /api/admin/media-assets/upload`
 - `POST /api/admin/media-assets/fetch`
 
----
+- `DELETE /api/admin/content`
+  - 管理员一键清空平台全部业务内容
+  - 会清空：商品、宠物、帖子、评论、订单、领养申请、健康记录、活动、日记、媒体记录
+  - 不删除用户账号本身
 
-## 9. 媒体资源与图片存储
-### 9.1 存储原则
-业务图片不再依赖客户端内置资源键：
-- 商品图、宠物图、帖子图应优先使用后端 URL
-- 头图、宣传图、应用图标仍可保留客户端静态资源
-
-### 9.2 默认存储配置
-- 默认上传目录：`uploads`
-- 默认公开访问前缀：`/uploads`
-- 默认访问形式：`http://localhost:8080/uploads/xxx.jpg`
-
-### 9.3 支持方式
-- 本地图片上传
-- 远程图片抓取保存
-- 客户端填 URL 后直接显示
-- 旧资源名仍兼容兜底
-
-### 9.4 客户端同步策略
-- 后台保存后立即落库
-- 客户端重新进入页面或触发刷新后会读取数据库最新数据
-- 当前阶段通过“重新拉取接口”实现同步，不依赖 WebSocket
+### 7.7 静态上传资源
+- `GET /uploads/{filename}`
 
 ---
 
-## 10. 数据库与核心数据模型
-### 10.1 主要表
-- `users`
-- `pets`
-- `adoption_requests`
-- `posts`
-- `comments`
-- `products`
-- `orders`
-- `health_records`
-- `activities`
-- `pet_diaries`
-- `media_assets`
+## 8. 图片与媒体存储说明
 
-### 10.2 关键字段
-#### users
-- `id`
-- `username`
-- `password`
-- `email`
-- `nickname`
-- `avatar`
-- `phone`
-- `role`
+### 8.1 正确的业务图片存储方式
+当前项目已明确：
+- **不要把业务图片继续绑定到 Harmony 客户端 `media` 资源里**
+- **不要把图片二进制直接塞数据库字段里**
 
-#### pets
-- `id`
-- `name`
-- `species`
-- `breed`
-- `age`
-- `gender`
-- `description`
-- `image`
-- `adoptionStatus`
-- `adoptionCity`
-- `adoptionNote`
-- `ownerId`
+正确方式是：
+1. 图片文件存后端 `uploads/`
+2. 数据库保存 URL 或路径字段
+3. 客户端与后台统一读取该 URL
 
-#### products
-- `id`
-- `name`
-- `description`
-- `price`
-- `image`
-- `stockQuantity`
-- `sellerId`
-- `category`
+### 8.2 当前目录
+后端上传目录：
+- `PawtopiaBackend/uploads/`
 
-#### adoption_requests
-- `id`
-- `petId`
-- `ownerId`
-- `requesterId`
-- `status`
-- `message`
-- `contactName`
-- `contactPhone`
+访问路径：
+- `/uploads/**`
 
-#### media_assets
-- `id`
-- `name`
-- `originalName`
-- `url`
-- `contentType`
-- `size`
-- `createdAt`
+配置项：
+- `app.storage.upload-dir`
+- `app.storage.public-base-path`
+
+### 8.3 客户端图片读取规则
+当前客户端规则：
+- 先识别 `http/https` URL
+- 支持逗号分隔多图
+- 旧资源 key 仍兼容兜底
+
+但实际运营建议：
+- 后续业务图全部统一使用后端 URL
+- 旧资源 key 只保留兼容，不再继续录入新内容
 
 ---
 
-## 11. 部署与启动
-### 11.1 环境准备
-- JDK 17
-- Maven 3.9+
-- MySQL 8.x
-- DevEco Studio
-- Harmony 构建链（hvigor）
+## 9. 数据库与内容清理说明
 
-### 11.2 数据库初始化
-```sql
-CREATE DATABASE pawtopia DEFAULT CHARACTER SET utf8mb4;
-```
+### 9.1 数据库存储的是什么
+当前数据库里的图片字段通常存的是：
+- 图片 URL
+- 或旧资源 key 字符串
 
-修改：
-- `PawtopiaBackend/src/main/resources/application.properties`
-- 数据库地址、用户名、密码
+不是直接存图片文件二进制。
 
-如果不需要种子数据：
-- `app.seed.enabled=false`
+### 9.2 为什么你会看到很多占位内容
+原因通常有三类：
+- 旧 seed 示例数据仍在数据库里
+- 某些图片字段还是旧资源 key
+- 离线 MockData 在后端不可用时补了示例数据
 
-### 11.3 启动后端
-在 `PawtopiaBackend` 目录执行：
+### 9.3 当前建议
+如果你要后续全部人工手动录入内容，建议：
+1. 关闭自动 seed
+2. 清空平台现有业务内容
+3. 保留账号体系
+4. 后续所有图片全部通过后台上传或远程抓取进入 `uploads/`
+
+### 9.4 清空平台内容
+最新版后端提供：
+- `DELETE /api/admin/content`
+
+作用：
+- 清空全部业务内容
+- 保留用户账号
+- 适合你现在“删掉平台全部内容，后续人工录入”的目标
+
+说明：
+- 上传目录里的旧文件建议一并人工清理或由后台扩展文件清理能力
+- 当前接口删除数据库中的媒体记录，但是否删除磁盘文件取决于运行时清理策略
+
+---
+
+## 10. 从 0 启动项目
+
+### 10.1 启动后端
+在 `PawtopiaBackend` 目录：
+
 ```bash
 mvn spring-boot:run
 ```
-或：
+
+或 Windows：
+
 ```bash
 mvnw.cmd spring-boot:run
 ```
@@ -516,70 +365,75 @@ mvnw.cmd spring-boot:run
 默认端口：
 - `http://localhost:8080`
 
-### 11.4 启动客户端
-1. 用 DevEco Studio 打开项目根目录
-2. 根据需要修改客户端服务地址
-3. 运行到模拟器或真机
+### 10.2 启动客户端
+1. 用 DevEco Studio 打开项目
+2. 确认客户端服务地址指向后端
+3. 使用 hvigor / DevEco 运行到模拟器或真机
 
-### 11.5 管理后台启动方式
-后端启动后，直接访问：
-- `http://localhost:8080/`
-- 或 `http://localhost:8080/admin`
-
-### 11.6 本地上传目录
-如果使用默认配置，运行后端后会自动使用：
-- `PawtopiaBackend/uploads`
-
-生产环境建议改到独立目录，并通过环境变量指定。
+### 10.3 访问后台
+- `http://localhost:8080/admin`
 
 ---
 
-## 12. 开发联调与验收建议
-### 12.1 推荐联调顺序
-1. 登录获取管理员 JWT
-2. 访问 `/admin`
-3. 上传一张媒体图片
-4. 新建商品并引用图片 URL
-5. 新建宠物并引用图片 URL
-6. 在客户端验证商品和宠物是否显示新图
-7. 提交领养申请并在后台审核
-8. 验证客户端页面刷新后状态是否同步
+## 11. 清空旧内容并切到人工录入模式
 
-### 12.2 推荐测试命令
-后端编译：
-```bash
-PawtopiaBackend\mvnw.cmd -f PawtopiaBackend\pom.xml -DskipTests compile
+这是你当前最需要的流程。
+
+### 第一步：关闭自动示例灌数
+当前默认配置已建议关闭：
+- `app.seed.enabled=false`
+- `app.seed.on-h2=false`
+
+### 第二步：启动后端
+确保后端可访问：
+- `http://localhost:8080`
+
+### 第三步：管理员登录
+管理员账号：
+- `user1 / user1`
+
+### 第四步：执行清空
+调用：
+
+```http
+DELETE /api/admin/content
+Authorization: Bearer <token>
 ```
 
-管理后台测试：
-```bash
-PawtopiaBackend\mvnw.cmd -f PawtopiaBackend\pom.xml -Dtest=AdminManagementIntegrationTest test
-```
+### 第五步：清理 uploads 历史文件
+如果你要彻底从零开始，建议把：
+- `PawtopiaBackend/uploads/`
+中的旧文件也清空。
 
-关键业务测试：
-```bash
-PawtopiaBackend\mvnw.cmd -f PawtopiaBackend\pom.xml -Dtest=PostProductOrderIntegrationTest,PetAdoptionHealthIntegrationTest test
-```
+### 第六步：人工录入内容
+后续通过：
+- 管理后台上传媒体
+- 管理后台创建商品 / 宠物 / 领养内容
+- 客户端重新拉取最新接口数据
 
-Harmony 构建：
-```bash
-"D:\ProgramData\DevEco Studio\tools\node\node.exe" "D:\ProgramData\DevEco Studio\tools\hvigor\bin\hvigorw.js" --mode module -p module=entry@default -p product=default -p requiredDeviceType=phone assembleHap --analyze=normal --parallel --incremental --daemon
-```
+---
 
-### 12.3 已验证闭环
-- 商品 CRUD
-- 宠物 CRUD
-- 领养申请与审批流转
-- 订单状态与库存回补
-- 媒体上传后 URL 可访问
-- 后台管理接口可用
+## 12. 验收建议
+
+建议至少验证以下闭环：
+- 上传图片 → 返回 `/uploads/...` → 前端页面正确显示
+- 新建商品 → 商城列表显示真实图
+- 新建宠物 → 档案 / 领养列表显示真实图
+- 修改领养状态 → 客户端重进页面可见最新结果
+- 删除旧内容后 → 列表为空，不再出现旧假数据
 
 ---
 
 ## 13. 已知说明
-- 当前客户端仍保留旧资源名兼容逻辑，便于旧数据过渡
-- 生产环境请不要使用默认管理员口令
-- 后端默认 `ddl-auto=update` 适合开发，不建议生产直接使用
-- 当前同步策略以“重新拉接口”为主，不是 WebSocket 推送
-- 如果仍看到旧图片或旧商品，通常是旧数据库数据未清理，需要重置种子数据或手动修改记录
-- 客户端管理页适合轻量操作，完整管理建议优先使用 `/admin`
+- 旧的客户端本地资源 key 仍有兼容逻辑，但不建议继续作为业务图来源
+- 真实 HTTP 冒烟与全量运行效果，仍以你本机当前运行的后端/客户端为准
+- 如果你希望完全不依赖任何旧资源名，我下一步可以继续把兼容兜底逻辑也删掉，只保留 URL 模式
+
+---
+
+## 14. 下一步建议
+如果你要把平台彻底切成“纯人工运营录入”，下一步建议我继续做：
+- 删除前端对旧资源 key 的兼容兜底
+- 后台增加“清空 uploads 文件夹”按钮
+- 后台增加媒体库页面的缩略图预览、搜索与删除
+- 移除默认管理员弱口令与默认 JWT Secret

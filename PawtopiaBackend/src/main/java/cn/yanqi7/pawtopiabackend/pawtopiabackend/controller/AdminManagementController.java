@@ -3,8 +3,21 @@ package cn.yanqi7.pawtopiabackend.pawtopiabackend.controller;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.AdoptionRequest;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Pet;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.entity.Product;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.ActivityRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.AdoptionRequestRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.CommentLikeRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.CommentRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.HealthRecordRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.MediaAssetRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.OrderRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.PetDiaryRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.PostLikeRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.PostRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.ProductRepository;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.repository.PetRepository;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.security.SecurityUtil;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.service.AdoptionService;
+import cn.yanqi7.pawtopiabackend.pawtopiabackend.service.MediaAssetService;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.service.PetService;
 import cn.yanqi7.pawtopiabackend.pawtopiabackend.service.ProductService;
 import org.springframework.data.domain.Page;
@@ -25,11 +38,52 @@ public class AdminManagementController {
     private final ProductService productService;
     private final PetService petService;
     private final AdoptionService adoptionService;
+    private final ProductRepository productRepository;
+    private final PetRepository petRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final HealthRecordRepository healthRecordRepository;
+    private final OrderRepository orderRepository;
+    private final PetDiaryRepository petDiaryRepository;
+    private final ActivityRepository activityRepository;
+    private final AdoptionRequestRepository adoptionRequestRepository;
+    private final MediaAssetRepository mediaAssetRepository;
+    private final MediaAssetService mediaAssetService;
+    private final PostLikeRepository postLikeRepository;
+    private final CommentLikeRepository commentLikeRepository;
 
-    public AdminManagementController(ProductService productService, PetService petService, AdoptionService adoptionService) {
+    public AdminManagementController(ProductService productService,
+                                     PetService petService,
+                                     AdoptionService adoptionService,
+                                     ProductRepository productRepository,
+                                     PetRepository petRepository,
+                                     PostRepository postRepository,
+                                     CommentRepository commentRepository,
+                                     HealthRecordRepository healthRecordRepository,
+                                     OrderRepository orderRepository,
+                                     PetDiaryRepository petDiaryRepository,
+                                     ActivityRepository activityRepository,
+                                     AdoptionRequestRepository adoptionRequestRepository,
+                                     MediaAssetRepository mediaAssetRepository,
+                                     MediaAssetService mediaAssetService,
+                                     PostLikeRepository postLikeRepository,
+                                     CommentLikeRepository commentLikeRepository) {
         this.productService = productService;
         this.petService = petService;
         this.adoptionService = adoptionService;
+        this.productRepository = productRepository;
+        this.petRepository = petRepository;
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
+        this.healthRecordRepository = healthRecordRepository;
+        this.orderRepository = orderRepository;
+        this.petDiaryRepository = petDiaryRepository;
+        this.activityRepository = activityRepository;
+        this.adoptionRequestRepository = adoptionRequestRepository;
+        this.mediaAssetRepository = mediaAssetRepository;
+        this.mediaAssetService = mediaAssetService;
+        this.postLikeRepository = postLikeRepository;
+        this.commentLikeRepository = commentLikeRepository;
     }
 
     @GetMapping("/products")
@@ -152,6 +206,25 @@ public class AdminManagementController {
         } catch (RuntimeException ex) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    @DeleteMapping("/content")
+    public ResponseEntity<Void> purgeAllContent() {
+        ensureAdmin();
+        commentLikeRepository.deleteAllInBatch();
+        postLikeRepository.deleteAllInBatch();
+        commentRepository.deleteAllInBatch();
+        adoptionRequestRepository.deleteAllInBatch();
+        healthRecordRepository.deleteAllInBatch();
+        petDiaryRepository.deleteAllInBatch();
+        activityRepository.deleteAllInBatch();
+        orderRepository.deleteAllInBatch();
+        postRepository.deleteAllInBatch();
+        petRepository.deleteAllInBatch();
+        productRepository.deleteAllInBatch();
+        mediaAssetRepository.deleteAllInBatch();
+        mediaAssetService.deleteAllFiles();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     private void ensureAdmin() {

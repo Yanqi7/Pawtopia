@@ -54,6 +54,22 @@ public class MediaAssetService {
         return mediaAssetRepository.findById(id);
     }
 
+    public void deleteAllFiles() {
+        Path uploadRoot = Paths.get(storageProperties.getUploadDir()).toAbsolutePath().normalize();
+        try {
+            if (!Files.exists(uploadRoot)) {
+                return;
+            }
+            Files.list(uploadRoot).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException ignored) {
+                }
+            });
+        } catch (IOException ignored) {
+        }
+    }
+
     public MediaAsset saveUpload(MultipartFile file, String name, Long uploadedBy) {
         if (file == null || file.isEmpty()) {
             throw new ResponseStatusException(BAD_REQUEST, "上传文件不能为空");

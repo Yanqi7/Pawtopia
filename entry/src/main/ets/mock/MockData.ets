@@ -474,7 +474,7 @@ export class MockData {
       viewCount: post.viewCount,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
-      imageUrls: post.imageUrls ? post.imageUrls : MockData.postImageKey(post.id)
+      imageUrls: post.imageUrls
     };
   }
 
@@ -493,7 +493,7 @@ export class MockData {
       gender: pet.gender,
       size: pet.size,
       description: pet.description,
-      image: pet.image ?? MockData.petImageKey(pet.id, pet.species),
+      image: pet.image,
       adoptionStatus: pet.adoptionStatus,
       adoptionCity: pet.adoptionCity,
       adoptionNote: pet.adoptionNote,
@@ -513,7 +513,7 @@ export class MockData {
       id: product.id,
       name: product.name,
       description: product.description,
-      image: product.image ?? MockData.productImageKey(product.id, product.category),
+      image: product.image,
       price: product.price,
       stockQuantity: product.stockQuantity,
       category: product.category,

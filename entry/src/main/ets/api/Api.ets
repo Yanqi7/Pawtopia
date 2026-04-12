@@ -1,7 +1,22 @@
 import { HttpClient, HttpError } from './HttpClient';
 import { AppConfig } from '../app/AppConfig';
 import { PreferencesStore } from '../store/PreferencesStore';
-import { Comment, Order, OrderStatus, Page, Pet, Post, Product, User, UserRole, HealthRecord, AdoptionRequest, AdoptionRequestStatus } from '../model/Models';
+import {
+  Comment,
+  Order,
+  OrderStatus,
+  Page,
+  Pet,
+  Post,
+  Product,
+  ProductCategory,
+  User,
+  UserRole,
+  HealthRecord,
+  HealthRecordType,
+  AdoptionRequest,
+  AdoptionRequestStatus
+} from '../model/Models';
 import { AppStatus } from '../app/AppStatus';
 import { SessionStore } from '../store/SessionStore';
 
@@ -16,6 +31,16 @@ interface CreateUserBody {
 interface UpdateUserBody {
   nickname?: string;
   phone?: string;
+  password?: string;
+}
+
+interface ManagedUserBody {
+  username: string;
+  password: string;
+  email: string;
+  nickname?: string;
+  phone?: string;
+  role: UserRole;
 }
 
 interface LoginRequestBody {
@@ -34,6 +59,8 @@ interface CreateAdoptionRequestBody {
   contactPhone?: string;
 }
 
+const ORDER_STATUSES: OrderStatus[] = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
 export class Api {
   static async getBaseUrl(): Promise<string> {
     const baseUrl = await PreferencesStore.getString(AppConfig.PREF_KEY_BASE_URL, AppConfig.DEFAULT_BASE_URL);
@@ -44,14 +71,23 @@ export class Api {
     return new HttpClient(await Api.getBaseUrl(), SessionStore.getToken());
   }
 
+  private static offlineError(message: string = '当前无法连接服务，请稍后重试'): never {
+    AppStatus.setBackendOnline(false);
+    throw new Error(message);
+  }
+
+  private static markOnline(): void {
+    AppStatus.setBackendOnline(true);
+  }
+
   static async login(username: string, password: string): Promise<User> {
     try {
       const c = new HttpClient(await Api.getBaseUrl());
       const body: LoginRequestBody = { username, password };
       const res = await c.postJson<AuthResponseBody>('/api/auth/login', JSON.stringify(body));
-      const role = (res.user.role ?? (res.user.username === 'user1' ? 'ADMIN' : 'USER')) as UserRole;
+      const role = (res.user.role ?? 'USER') as UserRole;
       await SessionStore.login(res.user, role, res.token);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res.user;
     } catch (e) {
       if (e instanceof HttpError && (e.statusCode === 401 || e.statusCode === 403 || e.statusCode === 404)) {
@@ -70,11 +106,16 @@ export class Api {
       const savedRole = (res.user.role ?? role) as UserRole;
       await PreferencesStore.setString(AppConfig.PREF_KEY_SESSION_ROLE, savedRole);
       await SessionStore.login(res.user, savedRole, res.token);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res.user;
     } catch (e) {
-      if (e instanceof HttpError && e.statusCode === 409) {
-        throw new Error('用户名或邮箱已存在');
+      if (e instanceof HttpError) {
+        if (e.statusCode === 409) {
+          throw new Error('用户名或邮箱已存在');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前仅开放普通用户注册，其他角色需走审核流程');
+        }
       }
       const msg = e instanceof Error ? e.message : '注册失败';
       throw new Error(msg || '注册失败');
@@ -82,15 +123,122 @@ export class Api {
   }
 
   static async updateUser(userId: number, patch: UpdateUserBody): Promise<User> {
-    const c = await Api.client();
-    return await c.putJson<User>(`/api/users/${userId}`, JSON.stringify(patch));
+    try {
+      const c = await Api.client();
+      const res = await c.putJson<User>(`/api/users/${userId}`, JSON.stringify(patch));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请重新登录后修改资料');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限修改该资料');
+        }
+        if (e.statusCode === 409) {
+          throw new Error('用户名或邮箱已存在');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async getAllUsers(): Promise<User[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<User[]>('/api/users');
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看用户列表');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async getUsersByRole(role: UserRole): Promise<User[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<User[]>(`/api/users/role/${role}`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后查看用户列表');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看该角色列表');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async createManagedUser(body: ManagedUserBody): Promise<User> {
+    try {
+      const c = await Api.client();
+      const res = await c.postJson<User>('/api/users', JSON.stringify(body));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限创建用户');
+        }
+        if (e.statusCode === 409) {
+          throw new Error('用户名或邮箱已存在');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async deleteUser(userId: number): Promise<void> {
+    try {
+      const c = await Api.client();
+      await c.delete<void>(`/api/users/${userId}`);
+      Api.markOnline();
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限删除该用户');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async purgeAllContent(): Promise<void> {
+    try {
+      const c = await Api.client();
+      await c.delete<void>('/api/admin/content');
+      Api.markOnline();
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限清空平台内容');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
   }
 
   static async getMyPets(ownerId: number): Promise<Pet[]> {
     try {
       const c = await Api.client();
       const res = await c.get<Pet[]>(`/api/pets/owner/${ownerId}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
@@ -102,8 +250,7 @@ export class Api {
         }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
@@ -111,14 +258,61 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<Pet[]>('/api/pets');
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
+    }
+  }
+
+  static async createPet(pet: Pet): Promise<Pet> {
+    try {
+      const c = await Api.client();
+      const res = await c.postJson<Pet>('/api/pets', JSON.stringify(pet));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后再创建宠物');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async updatePet(petId: number, pet: Pet): Promise<Pet> {
+    try {
+      const c = await Api.client();
+      const res = await c.putJson<Pet>(`/api/pets/${petId}`, JSON.stringify(pet));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限修改该宠物');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async getPet(petId: number): Promise<Pet> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<Pet>(`/api/pets/${petId}`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
     }
   }
 
@@ -126,14 +320,13 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<Pet[]>('/api/adoptions/listings');
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
@@ -141,7 +334,7 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.postJson<AdoptionRequest>(`/api/adoptions/pets/${petId}/requests`, JSON.stringify(body));
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
@@ -151,9 +344,9 @@ export class Api {
         if (e.statusCode === 409) {
           throw new Error('你已提交过申请或该宠物暂不可申请');
         }
+        throw new Error(e.message);
       }
-      const msg = e instanceof Error ? e.message : '提交失败';
-      throw new Error(msg);
+      return Api.offlineError();
     }
   }
 
@@ -161,7 +354,7 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<AdoptionRequest[]>(`/api/adoptions/pets/${petId}/requests`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
@@ -173,38 +366,81 @@ export class Api {
         }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
+    }
+  }
+
+  static async getOwnedAdoptionRequests(): Promise<AdoptionRequest[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<AdoptionRequest[]>('/api/adoptions/requests/owned');
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后查看待审申请');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async getMyAdoptionRequests(): Promise<AdoptionRequest[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<AdoptionRequest[]>('/api/adoptions/requests/mine');
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后查看领养申请');
+        }
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看领养申请');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
     }
   }
 
   static async updateAdoptionRequestStatus(id: number, status: AdoptionRequestStatus): Promise<AdoptionRequest> {
-    const c = await Api.client();
-    return await c.put<AdoptionRequest>(`/api/adoptions/requests/${id}/status/${status}`);
-  }
-
-  static async cancelAdoptionRequest(id: number): Promise<AdoptionRequest> {
-    const c = await Api.client();
-    return await c.put<AdoptionRequest>(`/api/adoptions/requests/${id}/cancel`);
-  }
-
-  static async createPet(pet: Pet): Promise<Pet> {
-    const c = await Api.client();
-    return await c.postJson<Pet>('/api/pets', JSON.stringify(pet));
-  }
-
-  static async getPet(petId: number): Promise<Pet> {
     try {
       const c = await Api.client();
-      const res = await c.get<Pet>(`/api/pets/${petId}`);
-      AppStatus.setBackendOnline(true);
+      const res = await c.put<AdoptionRequest>(`/api/adoptions/requests/${id}/status/${status}`);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限审批该申请');
+        }
+        if (e.statusCode === 409) {
+          throw new Error('申请状态已变化，请刷新后重试');
+        }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
+    }
+  }
+
+  static async cancelAdoptionRequest(id: number): Promise<AdoptionRequest> {
+    try {
+      const c = await Api.client();
+      const res = await c.put<AdoptionRequest>(`/api/adoptions/requests/${id}/cancel`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 409) {
+          throw new Error('该申请已处理，无法撤回');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
     }
   }
 
@@ -212,7 +448,7 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<HealthRecord[]>(`/api/health-records/pet/${petId}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
@@ -224,28 +460,80 @@ export class Api {
         }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
+    }
+  }
+
+  static async getHealthRecordsByPetAndType(petId: number, recordType: HealthRecordType): Promise<HealthRecord[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<HealthRecord[]>(`/api/health-records/pet/${petId}/type/${recordType}`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async getHealthRecordsByPetAndDateRange(petId: number, startDate: string, endDate: string): Promise<HealthRecord[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<HealthRecord[]>(`/api/health-records/pet/${petId}/date-range`, `startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async getUpcomingAppointments(startDate: string, endDate: string): Promise<HealthRecord[]> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<HealthRecord[]>('/api/health-records/upcoming-appointments', `startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
     }
   }
 
   static async createHealthRecord(record: HealthRecord): Promise<HealthRecord> {
-    const c = await Api.client();
-    return await c.postJson<HealthRecord>('/api/health-records', JSON.stringify(record));
+    try {
+      const c = await Api.client();
+      const res = await c.postJson<HealthRecord>('/api/health-records', JSON.stringify(record));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限维护该宠物健康记录');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
   }
 
   static async getPosts(page: number, size: number): Promise<Page<Post>> {
     try {
       const c = await Api.client();
       const res = await c.get<Page<Post>>('/api/posts', `page=${page}&size=${size}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
@@ -253,54 +541,105 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<Post>(`/api/posts/${postId}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
   static async createPost(post: Post): Promise<Post> {
-    const c = await Api.client();
-    return await c.postJson<Post>('/api/posts', JSON.stringify(post));
+    try {
+      const c = await Api.client();
+      const res = await c.postJson<Post>('/api/posts', JSON.stringify(post));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 401) {
+          throw new Error('请先登录后发布帖子');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async updatePost(postId: number, post: Post): Promise<Post> {
+    try {
+      const c = await Api.client();
+      const res = await c.putJson<Post>(`/api/posts/${postId}`, JSON.stringify(post));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限修改该帖子');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
   }
 
   static async getUserPosts(userId: number): Promise<Post[]> {
     try {
       const c = await Api.client();
       const res = await c.get<Post[]>(`/api/posts/user/${userId}/all`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
+    }
+  }
+
+  static async deletePost(postId: number): Promise<void> {
+    try {
+      const c = await Api.client();
+      await c.delete<void>(`/api/posts/${postId}`);
+      Api.markOnline();
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限删除该帖子');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
     }
   }
 
   static async likePost(postId: number): Promise<Post> {
-    const c = await Api.client();
-    return await c.post<Post>(`/api/posts/${postId}/like`);
+    try {
+      const c = await Api.client();
+      const res = await c.post<Post>(`/api/posts/${postId}/like`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
   }
 
   static async getComments(postId: number, page: number, size: number): Promise<Page<Comment>> {
     try {
       const c = await Api.client();
       const res = await c.get<Page<Comment>>(`/api/comments/post/${postId}`, `page=${page}&size=${size}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
@@ -308,14 +647,13 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<Comment[]>(`/api/comments/post/${postId}/top`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
@@ -323,34 +661,122 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<Comment[]>(`/api/comments/parent/${parentId}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
   static async createComment(comment: Comment): Promise<Comment> {
-    const c = await Api.client();
-    return await c.postJson<Comment>('/api/comments', JSON.stringify(comment));
+    try {
+      const c = await Api.client();
+      const res = await c.postJson<Comment>('/api/comments', JSON.stringify(comment));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
   }
 
   static async getProducts(page: number, size: number): Promise<Page<Product>> {
     try {
       const c = await Api.client();
       const res = await c.get<Page<Product>>('/api/products', `page=${page}&size=${size}&sortBy=id`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
+    }
+  }
+
+  static async getProductsByCategory(category: ProductCategory, page: number, size: number): Promise<Page<Product>> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<Page<Product>>(`/api/products/category/${category}`, `page=${page}&size=${size}&sortBy=id`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async getProductsBySeller(sellerId: number, page: number = 0, size: number = 40): Promise<Page<Product>> {
+    try {
+      const c = await Api.client();
+      const res = await c.get<Page<Product>>(`/api/products/seller/${sellerId}`, `page=${page}&size=${size}&sortBy=id`);
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看该卖家商品');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async createProduct(product: Product): Promise<Product> {
+    try {
+      const c = await Api.client();
+      const res = await c.postJson<Product>('/api/products', JSON.stringify(product));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限创建商品');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async updateProduct(productId: number, product: Product): Promise<Product> {
+    try {
+      const c = await Api.client();
+      const res = await c.putJson<Product>(`/api/products/${productId}`, JSON.stringify(product));
+      Api.markOnline();
+      return res;
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限修改该商品');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
+    }
+  }
+
+  static async deleteProduct(productId: number): Promise<void> {
+    try {
+      const c = await Api.client();
+      await c.delete<void>(`/api/products/${productId}`);
+      Api.markOnline();
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限删除该商品');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
     }
   }
 
@@ -358,14 +784,13 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<Product>(`/api/products/${productId}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
@@ -373,14 +798,13 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.get<Page<Product>>('/api/products/search', `name=${encodeURIComponent(name)}&page=${page}&size=${size}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
@@ -388,7 +812,7 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.postJson<Order>('/api/orders', JSON.stringify(order));
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
@@ -403,16 +827,16 @@ export class Api {
         }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，暂时不能提交订单');
+      return Api.offlineError('当前无法连接服务，暂时不能提交订单');
     }
   }
 
-  static async getMyOrders(userId: number): Promise<Order[]> {
+  static async getMyOrders(userId: number, status?: OrderStatus | 'ALL'): Promise<Order[]> {
     try {
       const c = await Api.client();
-      const res = await c.get<Order[]>(`/api/orders/user/${userId}`);
-      AppStatus.setBackendOnline(true);
+      const path = status && status !== 'ALL' ? `/api/orders/user/${userId}/status/${status}` : `/api/orders/user/${userId}`;
+      const res = await c.get<Order[]>(path);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
@@ -424,29 +848,55 @@ export class Api {
         }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
     }
   }
 
-  static async getMyAdoptionRequests(): Promise<AdoptionRequest[]> {
+  static async getSellerOrders(sellerId: number, status?: OrderStatus | 'ALL'): Promise<Order[]> {
     try {
       const c = await Api.client();
-      const res = await c.get<AdoptionRequest[]>('/api/adoptions/requests/mine');
-      AppStatus.setBackendOnline(true);
+      const path = status && status !== 'ALL' ? `/api/orders/seller/${sellerId}/status/${status}` : `/api/orders/seller/${sellerId}`;
+      const res = await c.get<Order[]>(path);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
-        if (e.statusCode === 401) {
-          throw new Error('请先登录后查看领养申请');
-        }
         if (e.statusCode === 403) {
-          throw new Error('当前账号无权限查看领养申请');
+          throw new Error('当前账号无权限查看卖家订单');
         }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，请稍后重试');
+      return Api.offlineError();
+    }
+  }
+
+  static async getAdminOrders(status?: OrderStatus | 'ALL'): Promise<Order[]> {
+    try {
+      const c = await Api.client();
+      if (status && status !== 'ALL') {
+        const res = await c.get<Order[]>(`/api/orders/status/${status}`);
+        Api.markOnline();
+        return res;
+      }
+      const groups = await Promise.all(ORDER_STATUSES.map((item: OrderStatus) => c.get<Order[]>(`/api/orders/status/${item}`)));
+      const orderMap = new Map<number, Order>();
+      groups.forEach((items: Order[]) => {
+        items.forEach((order: Order) => {
+          if (order.id) {
+            orderMap.set(order.id, order);
+          }
+        });
+      });
+      Api.markOnline();
+      return Array.from(orderMap.values());
+    } catch (e) {
+      if (e instanceof HttpError) {
+        if (e.statusCode === 403) {
+          throw new Error('当前账号无权限查看系统订单');
+        }
+        throw new Error(e.message);
+      }
+      return Api.offlineError();
     }
   }
 
@@ -454,7 +904,7 @@ export class Api {
     try {
       const c = await Api.client();
       const res = await c.put<Order>(`/api/orders/${orderId}/status/${status}`);
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return res;
     } catch (e) {
       if (e instanceof HttpError) {
@@ -469,8 +919,7 @@ export class Api {
         }
         throw new Error(e.message);
       }
-      AppStatus.setBackendOnline(false);
-      throw new Error('当前无法连接服务，暂时不能更新订单');
+      return Api.offlineError('当前无法连接服务，暂时不能更新订单');
     }
   }
 
@@ -478,7 +927,7 @@ export class Api {
     try {
       const c = new HttpClient(await Api.getBaseUrl());
       await c.get<Page<Post>>('/api/posts', 'page=0&size=1');
-      AppStatus.setBackendOnline(true);
+      Api.markOnline();
       return true;
     } catch (e) {
       AppStatus.setBackendOnline(false);
