@@ -3,7 +3,7 @@ import { Api } from '../api/Api';
 import { Product, ProductCategory, UserRole } from '../model/Models';
 import { CartSnapshot, CartStore } from '../store/CartStore';
 import { AppStatus } from '../app/AppStatus';
-import { EmptyState, OfflineBanner, SectionHeader } from '../components/Ui';
+import { EmptyState, OfflineBanner } from '../components/Ui';
 import { MediaAssets } from '../assets/MediaAssets';
 import { normalizeKeyword, productCategoryLabel, priceLabel } from '../common/Formatters';
 import { Theme } from '../common/Theme';
@@ -127,82 +127,88 @@ export struct MallTab {
 
   build() {
     Column() {
-      // ── 顶部搜索栏（固定，淘宝风格）──
-      Column({ space: 0 }) {
-        Row({ space: 10 }) {
-          // 搜索框
-          Row({ space: 8 }) {
-            Image($r('app.media.hero_search'))
-              .width(16).height(16).fillColor(Theme.textMuted)
-            TextInput({ placeholder: '搜索宠物用品…', text: this.searchInput })
-              .layoutWeight(1).height(36).backgroundColor('transparent')
-              .border({ width: 0 }).fontSize(13).fontColor(Theme.textPrimary)
-              .onChange((v: string) => this.searchInput = v)
-              .onSubmit(() => {
-                this.keyword = this.searchInput;
-                this.viewMode = 'ALL';
-                this.refresh();
-              })
-          }
-          .layoutWeight(1).height(36)
-          .padding({ left: 10, right: 10 })
-          .backgroundColor('#F5F5F5').borderRadius(18)
+      Stack({ alignContent: Alignment.BottomStart }) {
+        Image(MediaAssets.shopHero())
+          .width('100%')
+          .height(156)
+          .objectFit(ImageFit.Cover)
+        Column()
+          .width('100%')
+          .height(156)
+          .linearGradient({ angle: 180, colors: [['#0F172A10', 0], ['#0F172A46', 0.45], ['#F5F5F5', 1]] })
+        Column({ space: 0 }) {
+          Row({ space: 10 }) {
+            Row({ space: 8 }) {
+              Image($r('app.media.hero_search'))
+                .width(16).height(16).fillColor(Theme.textMuted)
+              TextInput({ placeholder: '搜索宠物用品…', text: this.searchInput })
+                .layoutWeight(1).height(36).backgroundColor('transparent')
+                .border({ width: 0 }).fontSize(13).fontColor(Theme.textPrimary)
+                .onChange((v: string) => this.searchInput = v)
+                .onSubmit(() => {
+                  this.keyword = this.searchInput;
+                  this.viewMode = 'ALL';
+                  this.refresh();
+                })
+            }
+            .layoutWeight(1).height(36)
+            .padding({ left: 10, right: 10 })
+            .backgroundColor('#F5F5F5').borderRadius(18)
 
-          // 购物车图标（可点击）
-          Stack({ alignContent: Alignment.TopEnd }) {
-            Image($r('app.media.gouwuche'))
-              .width(24).height(24).fillColor(Theme.textPrimary)
-            if (this.cartCount > 0) {
-              Text(this.cartCount > 99 ? '99+' : String(this.cartCount))
-                .fontSize(9).fontColor(Color.White)
-                .padding({ left: 3, right: 3, top: 1, bottom: 1 })
-                .backgroundColor('#E4393C').borderRadius(8)
-                .position({ top: -6, right: -8 })
+            Stack({ alignContent: Alignment.TopEnd }) {
+              Image($r('app.media.gouwuche'))
+                .width(24).height(24).fillColor(Theme.textPrimary)
+              if (this.cartCount > 0) {
+                Text(this.cartCount > 99 ? '99+' : String(this.cartCount))
+                  .fontSize(9).fontColor(Color.White)
+                  .padding({ left: 3, right: 3, top: 1, bottom: 1 })
+                  .backgroundColor('#E4393C').borderRadius(8)
+                  .position({ top: -6, right: -8 })
+              }
+            }
+            .width(36).height(36)
+            .onClick(() => AppRouter.push('pages/Cart', undefined, this))
+
+            if (this.role() === 'SELLER') {
+              Text('上新')
+                .fontSize(13).fontColor(Theme.primary).fontWeight(FontWeight.Medium)
+                .onClick(() => AppRouter.push('pages/NewProduct', undefined, this))
             }
           }
-          .width(36).height(36)
-          .onClick(() => AppRouter.push('pages/Cart', undefined, this))
+          .width('100%').padding({ left: 12, right: 12, top: 10, bottom: 10 })
+          .backgroundColor(Color.White)
 
-          if (this.role() === 'SELLER') {
-            Text('上新')
-              .fontSize(13).fontColor(Theme.primary).fontWeight(FontWeight.Medium)
-              .onClick(() => AppRouter.push('pages/NewProduct', undefined, this))
+          Scroll() {
+            Row({ space: 0 }) {
+              ForEach(this.categories, (cat: CategoryOption) => {
+                Column({ space: 4 }) {
+                  Text(cat.label)
+                    .fontSize(13)
+                    .fontColor(this.selectedCategory === cat.value ? Theme.primary : Theme.textPrimary)
+                    .fontWeight(this.selectedCategory === cat.value ? FontWeight.Bold : FontWeight.Normal)
+                  Column()
+                    .width(this.selectedCategory === cat.value ? 20 : 0)
+                    .height(2)
+                    .backgroundColor(Theme.primary)
+                    .borderRadius(1)
+                }
+                .padding({ left: 14, right: 14, top: 8, bottom: 8 })
+                .onClick(() => {
+                  this.selectedCategory = cat.value;
+                  this.applyFilter();
+                })
+              }, (cat: CategoryOption) => cat.value)
+            }
           }
-        }
-        .width('100%').padding({ left: 12, right: 12, top: 10, bottom: 10 })
-        .backgroundColor(Color.White)
+          .scrollable(ScrollDirection.Horizontal).scrollBar(BarState.Off)
+          .backgroundColor(Color.White)
+          .border({ width: 0, color: 'transparent' })
 
-        // 分类横滑
-        Scroll() {
-          Row({ space: 0 }) {
-            ForEach(this.categories, (cat: CategoryOption) => {
-              Column({ space: 4 }) {
-                Text(cat.label)
-                  .fontSize(13)
-                  .fontColor(this.selectedCategory === cat.value ? Theme.primary : Theme.textPrimary)
-                  .fontWeight(this.selectedCategory === cat.value ? FontWeight.Bold : FontWeight.Normal)
-                Column()
-                  .width(this.selectedCategory === cat.value ? 20 : 0)
-                  .height(2)
-                  .backgroundColor(Theme.primary)
-                  .borderRadius(1)
-              }
-              .padding({ left: 14, right: 14, top: 8, bottom: 8 })
-              .onClick(() => {
-                this.selectedCategory = cat.value;
-                this.applyFilter();
-              })
-            }, (cat: CategoryOption) => cat.value)
-          }
+          Divider().color('#F0F0F0').strokeWidth(1)
         }
-        .scrollable(ScrollDirection.Horizontal).scrollBar(BarState.Off)
-        .backgroundColor(Color.White)
-        .border({ width: 0, color: 'transparent' })
-
-        Divider().color('#F0F0F0').strokeWidth(1)
+        .width('100%')
       }
 
-      // ── 商品列表区 ──
       Scroll() {
         Column({ space: 0 }) {
           if (!AppStatus.isBackendOnline()) {
@@ -216,7 +222,6 @@ export struct MallTab {
               .padding({ left: 12, right: 12, top: 6 }).width('100%')
           }
 
-          // 卖家视图切换
           if (this.role() === 'SELLER') {
             Row({ space: 8 }) {
               Text(this.viewMode === 'ALL' ? '全部商品' : '我的商品')
@@ -235,20 +240,17 @@ export struct MallTab {
             .padding({ left: 12, right: 12, top: 10, bottom: 6 }).width('100%')
           }
 
-          // 商品列表标题
           Row() {
-            Text(this.viewMode === 'MINE' ? '我的商品' : '精选好物')
-              .fontSize(15).fontWeight(FontWeight.Bold).fontColor(Theme.textPrimary)
-            Blank()
             if (this.loading) {
               LoadingProgress().width(16).height(16).color(Theme.primary)
-            } else {
-              Text('刷新')
-                .fontSize(12).fontColor(Theme.primary)
-                .onClick(() => this.refresh())
             }
+            Blank()
+            Text(this.viewMode === 'MINE' ? '我的商品' : '刷新')
+              .fontSize(12)
+              .fontColor(Theme.primary)
+              .onClick(() => this.refresh())
           }
-          .padding({ left: 12, right: 12, top: 12, bottom: 8 }).width('100%')
+          .padding({ left: 12, right: 12, top: 10, bottom: 6 }).width('100%')
 
           if (!this.loading && this.visibleList.length === 0) {
             EmptyState({
@@ -264,7 +266,6 @@ export struct MallTab {
               }
             })
           } else {
-            // 两列瀑布流（淘宝风格）
             this.ProductGrid()
           }
 
@@ -279,7 +280,6 @@ export struct MallTab {
 
   @Builder private ProductGrid() {
     Column({ space: 8 }) {
-      // 每两个商品一行
       ForEach(this.buildRows(), (row: Product[], rowIdx: number) => {
         Row({ space: 8 }) {
           ForEach(row, (product: Product) => {
@@ -312,7 +312,6 @@ export struct MallTab {
 
   @Builder private ProductCard(product: Product) {
     Column({ space: 8 }) {
-      // 商品图
       Stack({ alignContent: Alignment.TopEnd }) {
         Image(MediaAssets.productImage(product.image, product.id ?? 0, product.category))
           .width('100%').aspectRatio(1).borderRadius(8).objectFit(ImageFit.Cover)

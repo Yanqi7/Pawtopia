@@ -3,12 +3,10 @@ import { Api } from '../api/Api';
 import { Pet } from '../model/Models';
 import { SessionStore } from '../store/SessionStore';
 import { AppStatus } from '../app/AppStatus';
-import { EmptyState, OfflineBanner } from '../components/Ui';
+import { EmptyState, OfflineBanner, PetCard, SearchBar, SectionHeader } from '../components/Ui';
 import { MediaAssets } from '../assets/MediaAssets';
-import { adoptionStatusLabel, petGenderLabel } from '../common/Formatters';
+import { normalizeKeyword } from '../common/Formatters';
 import { Theme } from '../common/Theme';
-
-type AdoptFilter = 'ALL' | 'MINE';
 
 interface NewPetParams {
   mode?: string;
@@ -18,14 +16,29 @@ interface PetDetailParams {
   id?: number;
 }
 
+interface MyAdoptionsParams {
+  mode?: 'MINE' | 'OWNED';
+}
+
+type AdoptFilter = 'ALL' | 'MINE';
+
 @Component
 export struct AdoptTab {
+  initialFilter: AdoptFilter = 'ALL';
   @State private filter: AdoptFilter = 'ALL';
   @State private loading: boolean = false;
   @State private errorText: string = '';
   @State private pets: Pet[] = [];
+  @State private keyword: string = '';
 
   aboutToAppear(): void {
+    AppRouter.bind(this);
+    const filterChanged = this.filter !== this.initialFilter;
+    if (filterChanged) {
+      this.filter = this.initialFilter;
+      this.keyword = '';
+      this.pets = [];
+    }
     this.reload();
   }
 
@@ -41,178 +54,148 @@ export struct AdoptTab {
         this.pets = all;
       }
     } catch (e) {
-      this.errorText = (e as Error).message || '加载失败';
+      this.errorText = e instanceof Error ? e.message : '加载失败';
     } finally {
       this.loading = false;
     }
+  }
+
+  private visiblePets(): Pet[] {
+    const keyword = normalizeKeyword(this.keyword);
+    return this.pets.filter((pet: Pet) => {
+      if (!keyword) {
+        return true;
+      }
+      return normalizeKeyword(`${pet.name} ${pet.species} ${pet.breed ?? ''} ${pet.adoptionCity ?? ''} ${pet.description ?? ''}`).indexOf(keyword) >= 0;
+    });
   }
 
   private openDetail(pet?: Pet): void {
     if (!pet?.id) {
       return;
     }
-    AppRouter.push('pages/PetDetail', { id: pet.id } as PetDetailParams);
+    AppRouter.push('pages/PetDetail', { id: pet.id } as PetDetailParams, this);
   }
 
   build() {
-    Stack({ alignContent: Alignment.BottomEnd }) {
-      Column() {
-        Row({ space: 10 }) {
-          Column({ space: 4 }) {
-            Text('宠物领养')
-              .fontSize(22)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(Theme.textPrimary)
-            Text('点击宠物卡片查看大图、基本信息、主人寄语和申请入口')
-              .fontSize(12)
-              .fontColor(Theme.textSecondary)
-          }
-          .layoutWeight(1)
-          Button(this.filter === 'ALL' ? '查看我发布的' : '查看全部')
-            .height(34)
-            .backgroundColor('#E8F1FF')
-            .fontColor(Theme.primary)
-            .borderRadius(17)
-            .fontSize(12)
-            .onClick(() => {
-              this.filter = this.filter === 'ALL' ? 'MINE' : 'ALL';
-              this.reload();
-            })
-        }
-        .padding({ left: 16, right: 16, top: 12, bottom: 8 })
-        .width('100%')
-
-        if (!AppStatus.isBackendOnline()) {
-          OfflineBanner({ text: '当前无法连接服务，领养信息可能无法及时更新', action: () => this.reload() })
-            .padding({ left: 16, right: 16, bottom: 8 })
-        }
-
-        if (this.errorText) {
-          Text(this.errorText)
-            .fontSize(13)
-            .fontColor(Color.Red)
-            .padding({ left: 16, right: 16, bottom: 8 })
-        }
-
-        if (!this.loading && this.pets.length === 0) {
-          EmptyState({
-            title: this.filter === 'MINE' ? '你还没有发布领养信息' : '暂无可展示的领养宠物',
-            description: this.filter === 'MINE' ? '点击右下角按钮，发布待领养宠物。' : '稍后再来看看，或者切换到“我发布的”。',
-            actionText: this.filter === 'MINE' ? '去发布' : '刷新',
-            action: () => this.filter === 'MINE' ? AppRouter.push('pages/NewPet', { mode: 'ADOPT' } as NewPetParams) : this.reload()
+    Column() {
+      Stack({ alignContent: Alignment.BottomStart }) {
+        Image(MediaAssets.adoptHero())
+          .width('100%')
+          .height(176)
+          .objectFit(ImageFit.Cover)
+        Column()
+          .width('100%')
+          .height(176)
+          .linearGradient({ angle: 180, colors: [['#0F172A10', 0], ['#0F172A55', 0.5], ['#F4F8FF', 1]] })
+        Column({ space: 10 }) {
+          Text('给它一个家')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Color.White)
+          SearchBar({
+            value: this.keyword,
+            placeholder: '搜索城市、品种、年龄或宠物名',
+            actionText: '搜索',
+            onChange: (value: string) => this.keyword = value,
+            onSubmit: () => {}
           })
-        } else {
-          List({ space: 14 }) {
-            ForEach(this.pets, (pet: Pet) => {
-              ListItem() {
-                Column({ space: 12 }) {
-                  Stack({ alignContent: Alignment.BottomStart }) {
-                    Image(MediaAssets.petImage(pet.image, pet.id ?? 0, pet.species))
-                      .width('100%')
-                      .height(220)
-                      .borderRadius(24)
-                      .objectFit(ImageFit.Cover)
-                    Column({ space: 8 }) {
-                      Row({ space: 8 }) {
-                        Text(pet.name)
-                          .fontSize(22)
-                          .fontWeight(FontWeight.Bold)
-                          .fontColor(Color.White)
-                          .layoutWeight(1)
-                        Text(adoptionStatusLabel(pet.adoptionStatus))
-                          .fontSize(11)
-                          .fontColor('#2B7FFF')
-                          .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-                          .backgroundColor('#FFFFFFEE')
-                          .borderRadius(12)
-                      }
-                      Text(`${pet.species} · ${pet.breed ?? '品种待补充'} · ${petGenderLabel(pet.gender)} · ${pet.age ?? '-'} 岁`)
-                        .fontSize(12)
-                        .fontColor('#F8FAFC')
-                    }
-                    .width('100%')
-                    .padding(16)
-                    .linearGradient({ angle: 180, colors: [['#11182700', 0], ['#111827B3', 1]] })
-                    .borderRadius(24)
-                  }
-
-                  Column({ space: 10 }) {
-                    Text(pet.description ?? '暂无描述')
-                      .fontSize(13)
-                      .lineHeight(20)
-                      .fontColor(Theme.textPrimary)
-                      .maxLines(2)
-                      .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-                    Row({ space: 8 }) {
-                      Text(pet.adoptionCity ? `所在城市：${pet.adoptionCity}` : '支持同城优先')
-                        .fontSize(12)
-                        .fontColor(Theme.textSecondary)
-                        .layoutWeight(1)
-                      if (pet.adoptionNote) {
-                        Text('含主人寄语')
-                          .fontSize(11)
-                          .fontColor('#FF8A3D')
-                          .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-                          .backgroundColor('#FFF3E0')
-                          .borderRadius(10)
-                      }
-                    }
-
-                    Row() {
-                      Text('点击卡片查看宠物信息、主人寄语与申请入口')
-                        .fontSize(12)
-                        .fontColor(Theme.primary)
-                      Blank()
-                      Text('查看详情 ›')
-                        .fontSize(12)
-                        .fontColor(Theme.primary)
-                        .fontWeight(FontWeight.Medium)
-                    }
-                    .width('100%')
-                  }
-                  .padding({ left: 2, right: 2 })
-                }
-                .padding(14)
-                .backgroundColor(Color.White)
-                .borderRadius(28)
-              }
-              .padding({ left: 16, right: 16, bottom: 14 })
-              .onClick(() => this.openDetail(pet))
-            }, (pet: Pet) => String(pet.id))
-
-            ListItem() {
-              if (this.loading) {
-                Row({ space: 8 }) {
-                  LoadingProgress().width(20).height(20).color(Theme.primary)
-                  Text('正在加载领养宠物…').fontSize(12).fontColor(Theme.textMuted)
-                }
-                .width('100%')
-                .justifyContent(FlexAlign.Center)
-                .padding(16)
-              }
+          Scroll() {
+            Row({ space: 8 }) {
+              this.FilterChip('全部', 'ALL')
+              this.FilterChip('我发布的', 'MINE')
+              Text('我申请的')
+                .fontSize(12)
+                .fontColor(Theme.textSecondary)
+                .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+                .backgroundColor(Theme.surface)
+                .borderRadius(16)
+                .onClick(() => AppRouter.push('pages/MyAdoptions', { mode: 'MINE' } as MyAdoptionsParams, this))
+              Text('收到的申请')
+                .fontSize(12)
+                .fontColor(Theme.textSecondary)
+                .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+                .backgroundColor(Theme.surface)
+                .borderRadius(16)
+                .onClick(() => AppRouter.push('pages/MyAdoptions', { mode: 'OWNED' } as MyAdoptionsParams, this))
             }
           }
-          .layoutWeight(1)
-          .edgeEffect(EdgeEffect.Spring)
+          .scrollable(ScrollDirection.Horizontal)
+          .scrollBar(BarState.Off)
         }
+        .padding({ left: 16, right: 16, bottom: 14 })
+        .width('100%')
       }
-      .height('100%')
-      .width('100%')
-      .backgroundColor(Theme.background)
 
-      Button('+')
-        .width(56)
-        .height(56)
-        .margin({ right: 18, bottom: 18 })
-        .borderRadius(28)
-        .backgroundColor(Theme.primary)
-        .fontColor(Color.White)
-        .fontSize(28)
-        .fontWeight(FontWeight.Bold)
-        .onClick(() => AppRouter.push('pages/NewPet', { mode: 'ADOPT' } as NewPetParams))
+      Scroll() {
+        Column({ space: 14 }) {
+          if (!AppStatus.isBackendOnline()) {
+            OfflineBanner({ text: '当前无法连接服务，领养信息可能无法及时更新', action: () => this.reload() })
+          }
+
+          if (this.errorText) {
+            Text(this.errorText)
+              .fontSize(13)
+              .fontColor(Theme.danger)
+              .width('100%')
+          }
+
+          SectionHeader({
+            title: this.filter === 'MINE' ? '我的领养宠物' : '领养列表',
+            actionText: this.filter === 'MINE' ? '发布' : '',
+            onAction: () => AppRouter.push('pages/NewPet', { mode: 'ADOPT' } as NewPetParams, this)
+          })
+
+          if (!this.loading && this.visiblePets().length === 0) {
+            EmptyState({
+              title: this.filter === 'MINE' ? '你还没有发布领养信息' : '暂无匹配的领养宠物',
+              description: this.filter === 'MINE' ? '点击右下方入口，发布待领养宠物。' : '换个关键词试试，或者稍后再来看看。',
+              actionText: this.filter === 'MINE' ? '去发布' : '查看我的申请',
+              action: () => this.filter === 'MINE'
+                ? AppRouter.push('pages/NewPet', { mode: 'ADOPT' } as NewPetParams, this)
+                : AppRouter.push('pages/MyAdoptions', { mode: 'MINE' } as MyAdoptionsParams, this)
+            })
+          } else {
+            ForEach(this.visiblePets(), (pet: Pet) => {
+              PetCard({
+                pet: pet,
+                summary: pet.description ?? '暂无描述',
+                actionText: '查看详情',
+                onTap: () => this.openDetail(pet)
+              })
+            }, (pet: Pet) => String(pet.id))
+
+            if (this.loading) {
+              Row({ space: 8 }) {
+                LoadingProgress().width(20).height(20).color(Theme.primary)
+                Text('正在加载领养宠物…').fontSize(12).fontColor(Theme.textMuted)
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.Center)
+              .padding(16)
+            }
+          }
+        }
+        .padding({ left: 16, right: 16, top: 12, bottom: 24 })
+        .width('100%')
+      }
+      .layoutWeight(1)
     }
     .height('100%')
     .width('100%')
+    .backgroundColor(Theme.background)
+  }
+
+  @Builder private FilterChip(label: string, value: AdoptFilter) {
+    Text(label)
+      .fontSize(12)
+      .fontColor(this.filter === value ? Color.White : Theme.textSecondary)
+      .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+      .backgroundColor(this.filter === value ? Theme.primary : Theme.surface)
+      .borderRadius(16)
+      .onClick(() => {
+        this.filter = value;
+        this.reload();
+      })
   }
 }

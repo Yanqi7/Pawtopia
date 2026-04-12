@@ -1,7 +1,13 @@
 import { Api } from '../api/Api';
 import { MediaAssets } from '../assets/MediaAssets';
-import { EmptyState, OfflineBanner } from '../components/Ui';
-import { normalizeKeyword, postAuthorLabel, relativeTime } from '../common/Formatters';
+import {
+  EmptyState,
+  OfflineBanner,
+  PostCard,
+  SearchBar,
+  SectionHeader
+} from '../components/Ui';
+import { normalizeKeyword } from '../common/Formatters';
 import { AppPrompt } from '../common/AppPrompt';
 import { AppRouter } from '../common/AppRouter';
 import { Theme } from '../common/Theme';
@@ -13,10 +19,15 @@ interface PostDetailParams {
   id?: number;
 }
 
+interface EditPostParams {
+  postId?: number;
+}
+
 type CommunityMode = 'RECOMMEND' | 'MINE' | 'CARE' | 'SHOP' | 'LIFE';
 
 @Component
 export struct CommunityTab {
+  initialMode: CommunityMode = 'RECOMMEND';
   @State private loading: boolean = false;
   @State private errorText: string = '';
   @State private allPosts: Post[] = [];
@@ -27,7 +38,17 @@ export struct CommunityTab {
   @State private mode: CommunityMode = 'RECOMMEND';
 
   aboutToAppear(): void {
-    if (this.allPosts.length === 0) {
+    AppRouter.bind(this);
+    const modeChanged = this.mode !== this.initialMode;
+    if (modeChanged) {
+      this.mode = this.initialMode;
+      this.keyword = '';
+      this.allPosts = [];
+      this.visiblePosts = [];
+      this.page = 0;
+      this.last = false;
+    }
+    if (this.allPosts.length === 0 || modeChanged) {
       this.refresh();
     }
   }
@@ -70,8 +91,8 @@ export struct CommunityTab {
   private async loadMinePosts(): Promise<void> {
     const user = SessionStore.getUser();
     if (!user || !user.id) {
-      AppPrompt.toast('请先登录后查看我的帖子');
-      AppRouter.push('pages/Login');
+      AppPrompt.toast('请先登录后查看我的帖子', this);
+      AppRouter.push('pages/Login', undefined, this);
       return;
     }
     this.loading = true;
@@ -134,7 +155,58 @@ export struct CommunityTab {
 
   private openPost(post: Post): void {
     if (post.id) {
-      AppRouter.push('pages/PostDetail', { id: post.id } as PostDetailParams);
+      AppRouter.push('pages/PostDetail', { id: post.id } as PostDetailParams, this);
+    }
+  }
+
+  private async like(post: Post): Promise<void> {
+    if (!post.id) {
+      return;
+    }
+    try {
+      const updated = await Api.likePost(post.id);
+      this.allPosts = this.allPosts.map((item: Post): Post => {
+        if (item.id !== post.id) {
+          return item;
+        }
+        return {
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          userId: item.userId,
+          petId: item.petId,
+          imageUrls: item.imageUrls,
+          viewCount: item.viewCount,
+          likeCount: updated.likeCount ?? item.likeCount,
+          commentCount: item.commentCount,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        } as Post;
+      });
+      this.applyFilters();
+    } catch (e) {
+      this.errorText = e instanceof Error ? e.message : '点赞失败';
+    }
+  }
+
+  private editPost(post: Post): void {
+    if (!post.id) {
+      return;
+    }
+    AppRouter.push('pages/NewPost', { postId: post.id } as EditPostParams, this);
+  }
+
+  private async deletePost(post: Post): Promise<void> {
+    if (!post.id) {
+      return;
+    }
+    try {
+      await Api.deletePost(post.id);
+      this.allPosts = this.allPosts.filter((item: Post) => item.id !== post.id);
+      this.applyFilters();
+      AppPrompt.toast('帖子已删除', this);
+    } catch (e) {
+      this.errorText = e instanceof Error ? e.message : '删除失败';
     }
   }
 
@@ -143,195 +215,90 @@ export struct CommunityTab {
       Stack({ alignContent: Alignment.BottomStart }) {
         Image(MediaAssets.heroDog())
           .width('100%')
-          .height(168)
+          .height(176)
           .objectFit(ImageFit.Cover)
         Column()
           .width('100%')
-          .height(168)
-          .linearGradient({ angle: 180, colors: [['#0F172A10', 0], ['#0F172A36', 0.45], ['#F3F7FF', 1]] })
-
-        Column({ space: 12 }) {
-          Row({ space: 12 }) {
-            Image(MediaAssets.avatar())
-              .width(38)
-              .height(38)
-              .borderRadius(19)
-            Column({ space: 4 }) {
-              Text('城宠社区')
-                .fontSize(18)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(Color.White)
-              Text('围绕健康科普、用品测评和宠物日常展开')
-                .fontSize(11)
-                .fontColor('#F8FAFC')
-            }
-            .layoutWeight(1)
-            Image($r('app.media.hero_bell'))
-              .width(22)
-              .height(22)
-          }
-          .width('100%')
-
-          Row({ space: 10 }) {
-            Row({ space: 8 }) {
-              Image($r('app.media.hero_search'))
-                .width(18)
-                .height(18)
-              TextInput({ placeholder: '搜索帖子、医院经验、用品关键词', text: this.keyword })
-                .layoutWeight(1)
-                .height(40)
-                .backgroundColor('transparent')
-                .fontSize(14)
-                .fontColor(Theme.textPrimary)
-                .border({ width: 0 })
-                .onChange((value: string) => {
-                  this.keyword = value;
-                  this.applyFilters();
-                })
-            }
-            .layoutWeight(1)
-            .height(40)
-            .padding({ left: 12, right: 12 })
-            .backgroundColor('#FFFFFFF0')
-            .borderRadius(20)
-
-            Button('发帖')
-              .height(40)
-              .padding({ left: 14, right: 14 })
-              .backgroundColor('#FFFFFFF0')
-              .fontColor(Theme.primary)
-              .borderRadius(20)
-              .fontSize(12)
-              .onClick(() => AppRouter.push('pages/NewPost'))
-          }
-          .width('100%')
+          .height(176)
+          .linearGradient({ angle: 180, colors: [['#0F172A10', 0], ['#0F172A52', 0.52], ['#F4F8FF', 1]] })
+        Column({ space: 10 }) {
+          Text('Pawtopia 社区')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Color.White)
+          SearchBar({
+            value: this.keyword,
+            placeholder: '搜索帖子、医院经验、用品关键词',
+            actionText: '搜索',
+            onChange: (value: string) => {
+              this.keyword = value;
+              this.applyFilters();
+            },
+            onSubmit: () => this.applyFilters()
+          })
         }
-        .padding({ left: 16, right: 16, bottom: 10 })
+        .padding({ left: 16, right: 16, bottom: 14 })
         .width('100%')
       }
 
       Scroll() {
-        Row({ space: 8 }) {
-          this.ModeChip('推荐', 'RECOMMEND')
-          this.ModeChip('我的', 'MINE')
-          this.ModeChip('健康科普', 'CARE')
-          this.ModeChip('用品测评', 'SHOP')
-          this.ModeChip('宠物日常', 'LIFE')
-        }
-        .padding({ left: 16, right: 16, top: 10, bottom: 8 })
-      }
-      .scrollable(ScrollDirection.Horizontal)
-      .scrollBar(BarState.Off)
-
-      if (!AppStatus.isBackendOnline()) {
-        OfflineBanner({ text: '当前无法连接服务，社区内容可能不是最新状态', action: () => this.refresh() })
-          .padding({ left: 16, right: 16, bottom: 8 })
-      }
-
-      if (this.errorText) {
-        Text(this.errorText)
-          .fontSize(13)
-          .fontColor('#D14343')
-          .padding({ left: 16, right: 16, bottom: 8 })
-      }
-
-      if (!this.errorText && !this.loading && this.visiblePosts.length === 0) {
-        EmptyState({
-          title: '没有匹配的帖子',
-          description: '切换分类或者发布一条新的宠物帖子。',
-          actionText: '去发帖',
-          action: () => AppRouter.push('pages/NewPost')
-        })
-      } else {
-        List() {
-          ForEach(this.visiblePosts, (post: Post) => {
-            ListItem() {
-              Column({ space: 12 }) {
-                Row({ space: 10 }) {
-                  Image(MediaAssets.avatar())
-                    .width(42)
-                    .height(42)
-                    .borderRadius(21)
-                  Column({ space: 4 }) {
-                    Text(postAuthorLabel(post.userId))
-                      .fontSize(14)
-                      .fontWeight(FontWeight.Medium)
-                      .fontColor(Theme.textPrimary)
-                    Text(relativeTime(post.createdAt))
-                      .fontSize(11)
-                      .fontColor(Theme.textMuted)
-                  }
-                  .layoutWeight(1)
-                  Text(this.categoryLabel(post))
-                    .fontSize(11)
-                    .fontColor(Theme.primary)
-                    .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-                    .backgroundColor('#E8F1FF')
-                    .borderRadius(14)
-                }
-
-                Text(post.title)
-                  .fontSize(18)
-                  .fontWeight(FontWeight.Bold)
-                  .fontColor(Theme.textPrimary)
-                  .maxLines(2)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
-                  .width('100%')
-
-                Text(post.content)
-                  .fontSize(13)
-                  .fontColor(Theme.textSecondary)
-                  .lineHeight(22)
-                  .maxLines(3)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
-                  .width('100%')
-
-                Image(MediaAssets.postImage(post.imageUrls, post.id ?? 0))
-                  .width('100%')
-                  .height(176)
-                  .borderRadius(20)
-                  .objectFit(ImageFit.Cover)
-
-                Row({ space: 18 }) {
-                  Row({ space: 6 }) {
-                    Image($r('app.media.heart')).width(16).height(16)
-                    Text(String(post.likeCount ?? 0)).fontSize(12).fontColor(Theme.textSecondary)
-                  }
-                  Row({ space: 6 }) {
-                    Image($r('app.media.tiezi')).width(16).height(16)
-                    Text(String(post.commentCount ?? 0)).fontSize(12).fontColor(Theme.textSecondary)
-                  }
-                  Row({ space: 6 }) {
-                    Image($r('app.media.view')).width(16).height(16)
-                    Text(String(post.viewCount ?? 0)).fontSize(12).fontColor(Theme.textSecondary)
-                  }
-                  Blank()
-                  Button('查看详情')
-                    .height(32)
-                    .padding({ left: 14, right: 14 })
-                    .fontSize(12)
-                    .backgroundColor('#E8F1FF')
-                    .fontColor(Theme.primary)
-                    .borderRadius(16)
-                    .onClick(() => this.openPost(post))
-                }
-                .width('100%')
-              }
-              .padding(16)
-              .backgroundColor(Color.White)
-              .borderRadius(24)
+        Column({ space: 14 }) {
+          Scroll() {
+            Row({ space: 8 }) {
+              this.ModeChip('推荐', 'RECOMMEND')
+              this.ModeChip('我的', 'MINE')
+              this.ModeChip('健康科普', 'CARE')
+              this.ModeChip('用品测评', 'SHOP')
+              this.ModeChip('宠物日常', 'LIFE')
             }
-            .padding({ left: 16, right: 16, bottom: 14 })
-            .onClick(() => this.openPost(post))
-          }, (post: Post) => String(post.id))
+            .padding({ bottom: 6 })
+          }
+          .scrollable(ScrollDirection.Horizontal)
+          .scrollBar(BarState.Off)
 
-          ListItem() {
+          if (!AppStatus.isBackendOnline()) {
+            OfflineBanner({ text: '当前无法连接服务，社区内容可能不是最新状态', action: () => this.refresh() })
+          }
+
+          if (this.errorText) {
+            Text(this.errorText)
+              .fontSize(13)
+              .fontColor(Theme.danger)
+              .width('100%')
+          }
+
+          SectionHeader({
+            title: this.mode === 'MINE' ? '我的帖子' : '帖子列表',
+            actionText: this.mode === 'MINE' ? '发帖' : '刷新',
+            onAction: () => this.mode === 'MINE' ? AppRouter.push('pages/NewPost', undefined, this) : this.refresh()
+          })
+
+          if (!this.errorText && !this.loading && this.visiblePosts.length === 0) {
+            EmptyState({
+              title: '没有匹配的帖子',
+              description: '切换分类或者发布一条新的宠物帖子。',
+              actionText: '去发帖',
+              action: () => AppRouter.push('pages/NewPost', undefined, this)
+            })
+          } else {
+            ForEach(this.visiblePosts, (post: Post) => {
+              PostCard({
+                post: post,
+                categoryLabel: this.categoryLabel(post),
+                showManageActions: this.mode === 'MINE',
+                onTap: () => this.openPost(post),
+                onLike: () => { this.like(post); },
+                onEdit: () => this.editPost(post),
+                onDelete: () => { this.deletePost(post); }
+              })
+            }, (post: Post) => String(post.id))
+
             Column({ space: 8 }) {
               if (!this.last && this.mode !== 'MINE' && !this.loading) {
                 Button('加载更多')
                   .height(34)
                   .padding({ left: 18, right: 18 })
-                  .backgroundColor('#E8F1FF')
+                  .backgroundColor(Theme.primarySoft)
                   .fontColor(Theme.primary)
                   .borderRadius(17)
                   .fontSize(12)
@@ -343,12 +310,14 @@ export struct CommunityTab {
               }
             }
             .width('100%')
-            .padding({ left: 16, right: 16, bottom: 20 })
+            .padding({ top: 4, bottom: 6 })
             .alignItems(HorizontalAlign.Center)
           }
         }
-        .layoutWeight(1)
+        .padding({ left: 16, right: 16, top: 12, bottom: 24 })
+        .width('100%')
       }
+      .layoutWeight(1)
     }
     .height('100%')
     .width('100%')
@@ -360,7 +329,7 @@ export struct CommunityTab {
       .fontSize(12)
       .fontColor(this.mode === mode ? Color.White : Theme.textSecondary)
       .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-      .backgroundColor(this.mode === mode ? Theme.primary : '#FFFFFF')
+      .backgroundColor(this.mode === mode ? Theme.primary : Theme.surface)
       .borderRadius(16)
       .onClick(() => this.switchMode(mode))
   }

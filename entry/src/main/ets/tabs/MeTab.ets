@@ -6,7 +6,7 @@ import { AppStatus } from '../app/AppStatus';
 import { AppPrompt } from '../common/AppPrompt';
 import { Theme } from '../common/Theme';
 import { CartStore } from '../store/CartStore';
-import { EmptyState, OfflineBanner, QuickActionGrid, QuickActionItem, SectionHeader, StatsRow, UserHeader } from '../components/Ui';
+import { EmptyState, OfflineBanner, StatsRow, UserHeader } from '../components/Ui';
 
 type CommunityRouteMode = 'RECOMMEND' | 'MINE' | 'CARE' | 'SHOP' | 'LIFE';
 type AdoptRouteFilter = 'ALL' | 'MINE';
@@ -25,6 +25,11 @@ interface MyAdoptionsParams {
 
 interface AdminPetsParams {
   mode?: 'PROFILE' | 'ADOPT';
+}
+
+interface MenuEntry {
+  title: string;
+  desc: string;
 }
 
 @Component
@@ -106,165 +111,124 @@ export struct MeTab {
     AppRouter.push('pages/MyAdoptions', { mode: mode } as MyAdoptionsParams, this);
   }
 
-  private commonActions(): QuickActionItem[] {
+  private menuEntries(): MenuEntry[] {
     return [
-      {
-        key: 'profile',
-        title: '资料编辑',
-        subtitle: '修改昵称、手机号和服务器地址',
-        icon: $r('app.media.tab_me'),
-        tone: 'blue',
-        action: () => AppRouter.push('pages/ProfileSettings', undefined, this)
-      },
-      {
-        key: 'posts',
-        title: '我的发布',
-        subtitle: '查看社区发帖和互动记录',
-        icon: $r('app.media.tab_community'),
-        tone: 'orange',
-        action: () => this.navigateTab(0, { communityMode: 'MINE' })
-      },
-      {
-        key: 'orders',
-        title: '订单中心',
-        subtitle: '查看下单、履约与状态流转',
-        icon: $r('app.media.tab_mall'),
-        tone: 'pink',
-        action: () => AppRouter.push('pages/Orders', undefined, this)
-      },
-      {
-        key: 'adopt',
-        title: '领养申请',
-        subtitle: '跟踪我的申请或我收到的申请',
-        icon: $r('app.media.tab_adopt'),
-        tone: 'blue',
-        action: () => this.openAdoptionCenter()
-      }
+      { title: '资料设置', desc: '' },
+      { title: '我的发布', desc: '' },
+      { title: '订单中心', desc: '' },
+      { title: '领养申请', desc: '' }
     ];
   }
 
-  private roleActions(): QuickActionItem[] {
+  private roleEntries(): MenuEntry[] {
     if (this.role() === 'SELLER') {
       return [
-        {
-          key: 'seller-products',
-          title: '我的商品',
-          subtitle: '切到商城查看卖家商品视图',
-          icon: $r('app.media.tab_mall'),
-          tone: 'orange',
-          action: () => AppRouter.push('pages/SellerProducts', undefined, this)
-        },
-        {
-          key: 'seller-new-product',
-          title: '上新商品',
-          subtitle: '快速创建新的商城商品',
-          icon: $r('app.media.hero_compose'),
-          tone: 'blue',
-          action: () => AppRouter.push('pages/NewProduct', undefined, this)
-        },
-        {
-          key: 'seller-orders',
-          title: '订单履约',
-          subtitle: '处理待发货与运输中的订单',
-          icon: $r('app.media.hero_feed'),
-          tone: 'pink',
-          action: () => AppRouter.push('pages/Orders', undefined, this)
-        }
+        { title: '我的商品', desc: '管理商品' },
+        { title: '上新商品', desc: '新增商品' },
+        { title: '订单履约', desc: '处理订单' }
       ];
     }
     if (this.role() === 'PET_HOSPITAL') {
       return [
-        {
-          key: 'hospital-records',
-          title: '档案工作台',
-          subtitle: '查看授权宠物与即将到期记录',
-          icon: $r('app.media.tab_health'),
-          tone: 'blue',
-          action: () => this.navigateTab(2)
-        },
-        {
-          key: 'hospital-role',
-          title: '角色入口',
-          subtitle: '查看医院工作台说明与导航',
-          icon: $r('app.media.hero_bell'),
-          tone: 'orange',
-          action: () => AppRouter.push('pages/RoleWorkbench', undefined, this)
-        }
+        { title: '档案工作台', desc: '查看授权宠物' },
+        { title: '角色入口', desc: '查看工作台' }
       ];
     }
     if (this.role() === 'PET_SHOP') {
       return [
-        {
-          key: 'shop-adopt',
-          title: '领养发布',
-          subtitle: '管理我发布的宠物与审批入口',
-          icon: $r('app.media.tab_adopt'),
-          tone: 'pink',
-          action: () => this.navigateTab(1, { adoptFilter: 'MINE' })
-        },
-        {
-          key: 'shop-role',
-          title: '店铺工作台',
-          subtitle: '查看当前角色可用入口',
-          icon: $r('app.media.hero_feed'),
-          tone: 'orange',
-          action: () => AppRouter.push('pages/RoleWorkbench', undefined, this)
-        }
+        { title: '领养发布', desc: '管理领养宠物' },
+        { title: '店铺工作台', desc: '查看当前入口' }
       ];
     }
     if (this.role() === 'ADMIN') {
       return [
-        {
-          key: 'admin-users',
-          title: '用户管理',
-          subtitle: '创建角色账号并清理无效用户',
-          icon: $r('app.media.tab_me'),
-          tone: 'blue',
-          action: () => AppRouter.push('pages/AdminUsers', undefined, this)
-        },
-        {
-          key: 'admin-content',
-          title: '内容巡检',
-          subtitle: '查看帖子详情并清理异常内容',
-          icon: $r('app.media.tab_community'),
-          tone: 'orange',
-          action: () => AppRouter.push('pages/AdminContent', undefined, this)
-        },
-        {
-          key: 'admin-products',
-          title: '商品管理',
-          subtitle: '维护商品信息与分类标签',
-          icon: $r('app.media.tab_mall'),
-          tone: 'blue',
-          action: () => AppRouter.push('pages/SellerProducts', undefined, this)
-        },
-        {
-          key: 'admin-pets',
-          title: '宠物档案管理',
-          subtitle: '编辑全量宠物档案信息',
-          icon: $r('app.media.tab_health'),
-          tone: 'orange',
-          action: () => AppRouter.push('pages/AdminPets', { mode: 'PROFILE' } as AdminPetsParams, this)
-        },
-        {
-          key: 'admin-adoptions',
-          title: '领养信息管理',
-          subtitle: '管理公开领养信息与状态',
-          icon: $r('app.media.tab_adopt'),
-          tone: 'pink',
-          action: () => AppRouter.push('pages/AdminPets', { mode: 'ADOPT' } as AdminPetsParams, this)
-        },
-        {
-          key: 'admin-orders',
-          title: '系统订单',
-          subtitle: '查看全量订单状态',
-          icon: $r('app.media.tab_mall'),
-          tone: 'pink',
-          action: () => AppRouter.push('pages/Orders', undefined, this)
-        }
+        { title: '用户管理', desc: '管理账号' },
+        { title: '内容巡检', desc: '管理帖子' },
+        { title: '商品管理', desc: '维护商品' },
+        { title: '宠物档案管理', desc: '编辑宠物档案' },
+        { title: '领养信息管理', desc: '管理领养信息' },
+        { title: '系统订单', desc: '查看全量订单' }
       ];
     }
     return [];
+  }
+
+  private onMenuClick(title: string): void {
+    if (title === '资料设置') {
+      AppRouter.push('pages/ProfileSettings', undefined, this);
+      return;
+    }
+    if (title === '我的发布') {
+      this.navigateTab(0, { communityMode: 'MINE' });
+      return;
+    }
+    if (title === '订单中心') {
+      AppRouter.push('pages/Orders', undefined, this);
+      return;
+    }
+    if (title === '领养申请') {
+      this.openAdoptionCenter();
+      return;
+    }
+    if (title === '我的商品') {
+      AppRouter.push('pages/SellerProducts', undefined, this);
+      return;
+    }
+    if (title === '上新商品') {
+      AppRouter.push('pages/NewProduct', undefined, this);
+      return;
+    }
+    if (title === '订单履约') {
+      AppRouter.push('pages/Orders', undefined, this);
+      return;
+    }
+    if (title === '档案工作台') {
+      this.navigateTab(2);
+      return;
+    }
+    if (title === '角色入口' || title === '店铺工作台' || title === '切换角色工作台') {
+      AppRouter.push('pages/RoleWorkbench', undefined, this);
+      return;
+    }
+    if (title === '领养发布') {
+      this.navigateTab(1, { adoptFilter: 'MINE' });
+      return;
+    }
+    if (title === '用户管理') {
+      AppRouter.push('pages/AdminUsers', undefined, this);
+      return;
+    }
+    if (title === '内容巡检') {
+      AppRouter.push('pages/AdminContent', undefined, this);
+      return;
+    }
+    if (title === '商品管理') {
+      AppRouter.push('pages/SellerProducts', undefined, this);
+      return;
+    }
+    if (title === '宠物档案管理') {
+      AppRouter.push('pages/AdminPets', { mode: 'PROFILE' } as AdminPetsParams, this);
+      return;
+    }
+    if (title === '领养信息管理') {
+      AppRouter.push('pages/AdminPets', { mode: 'ADOPT' } as AdminPetsParams, this);
+      return;
+    }
+    if (title === '系统订单') {
+      AppRouter.push('pages/Orders', undefined, this);
+      return;
+    }
+    if (title === '清理购物车缓存') {
+      this.clearCache();
+      return;
+    }
+    if (title === '关于应用') {
+      AppRouter.push('pages/About', undefined, this);
+      return;
+    }
+    if (title === '退出登录') {
+      this.logout();
+    }
   }
 
   build() {
@@ -299,19 +263,21 @@ export struct MeTab {
               OfflineBanner({ text: '当前无法连接服务，个人数据与统计可能不是最新状态。', action: () => this.loadSummary() })
             }
 
-            Column({ space: 12 }) {
-              SectionHeader({ title: '常用服务', subtitle: '资料、内容、订单与领养统一收口。' })
-              QuickActionGrid({ items: this.commonActions() })
+            Column({ space: 10 }) {
+              ForEach(this.menuEntries(), (item: MenuEntry) => {
+                this.MenuItem(item.title, item.desc, () => this.onMenuClick(item.title))
+              }, (item: MenuEntry) => item.title)
             }
             .padding(14)
             .backgroundColor(Color.White)
             .border({ width: 1, color: Theme.border })
             .borderRadius(20)
 
-            if (this.roleActions().length > 0) {
-              Column({ space: 12 }) {
-                SectionHeader({ title: '角色工作台', subtitle: '当前身份直接影响可见入口与可操作能力。' })
-                QuickActionGrid({ items: this.roleActions() })
+            if (this.roleEntries().length > 0) {
+              Column({ space: 10 }) {
+                ForEach(this.roleEntries(), (item: MenuEntry) => {
+                  this.MenuItem(item.title, item.desc, () => this.onMenuClick(item.title))
+                }, (item: MenuEntry) => item.title)
               }
               .padding(14)
               .backgroundColor(Color.White)
@@ -319,13 +285,11 @@ export struct MeTab {
               .borderRadius(20)
             }
 
-            Column({ space: 12 }) {
-              SectionHeader({ title: '设置与账号', subtitle: this.loading ? '正在同步统计…' : '可以编辑资料、清理缓存或退出当前账号。' })
-              this.MenuItem('服务器与资料设置', '修改昵称、手机号、服务器地址', () => AppRouter.push('pages/ProfileSettings', undefined, this))
-              this.MenuItem('切换角色工作台', '查看当前身份对应的操作入口', () => AppRouter.push('pages/RoleWorkbench', undefined, this))
-              this.MenuItem('清理购物车缓存', '清空本地购物车商品', () => this.clearCache())
-              this.MenuItem('关于应用', 'Pawtopia · HarmonyOS API 22', () => AppRouter.push('pages/About', undefined, this))
-              this.MenuItem('退出登录', '退出当前账号并回到登录页', () => this.logout(), true)
+            Column({ space: 10 }) {
+              this.MenuItem('切换角色工作台', '', () => this.onMenuClick('切换角色工作台'))
+              this.MenuItem('清理购物车缓存', '', () => this.onMenuClick('清理购物车缓存'))
+              this.MenuItem('关于应用', '', () => this.onMenuClick('关于应用'))
+              this.MenuItem('退出登录', '', () => this.onMenuClick('退出登录'), true)
             }
             .padding(14)
             .backgroundColor(Color.White)
@@ -355,9 +319,11 @@ export struct MeTab {
           .fontSize(15)
           .fontWeight(FontWeight.Medium)
           .fontColor(danger ? '#B03060' : Theme.textPrimary)
-        Text(desc)
-          .fontSize(12)
-          .fontColor(Theme.textSecondary)
+        if (desc) {
+          Text(desc)
+            .fontSize(12)
+            .fontColor(Theme.textSecondary)
+        }
       }
       .layoutWeight(1)
       Text('›')
