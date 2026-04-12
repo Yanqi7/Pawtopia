@@ -55,7 +55,7 @@ public class SecurityConfig {
         http.cors(cors -> {});
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/", "/api/auth/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/admin/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/adoptions/listings").permitAll()
