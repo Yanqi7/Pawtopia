@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pawtopia 管理后台</title>
+  <link rel="stylesheet" href="/admin/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">🐾</div>
+      <div>
+        <div class="brand-title">Pawtopia Admin</div>
+        <div class="brand-sub">宠物内容与商城管理</div>
+      </div>
+    </div>
+    <nav class="menu">
+      <button class="menu-item active" data-view="dashboard">概览</button>
+      <button class="menu-item" data-view="products">商品管理</button>
+      <button class="menu-item" data-view="pets">宠物管理</button>
+      <button class="menu-item" data-view="adoptions">领养管理</button>
+      <button class="menu-item" data-view="media">媒体资源</button>
+    </nav>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">后台概览</h1>
+        <p id="pageDesc">传统管理界面逻辑，实时写入数据库。</p>
+      </div>
+      <div class="top-actions">
+        <input id="baseUrlInput" class="text-input" placeholder="API 基地址，留空走同源" />
+        <button id="saveBaseUrlBtn" class="ghost-btn">保存地址</button>
+        <button id="loginBtn" class="primary-btn">管理员登录</button>
+        <button id="logoutBtn" class="ghost-btn">退出</button>
+      </div>
+    </header>
+
+    <section id="loginPanel" class="panel section-grid two-col">
+      <div class="card form-card">
+        <h2>管理员登录</h2>
+        <div class="field-row">
+          <label>用户名</label>
+          <input id="usernameInput" class="text-input" value="user1" />
+        </div>
+        <div class="field-row">
+          <label>密码</label>
+          <input id="passwordInput" type="password" class="text-input" value="user1" />
+        </div>
+        <div class="field-row">
+          <label>Token</label>
+          <textarea id="tokenInput" class="text-area" placeholder="登录后自动填充，也可手动粘贴 Bearer Token"></textarea>
+        </div>
+        <div class="button-row">
+          <button id="doLoginBtn" class="primary-btn">登录</button>
+          <button id="useTokenBtn" class="ghost-btn">使用当前 Token</button>
+        </div>
+        <div id="loginStatus" class="status-text"></div>
+      </div>
+      <div class="card tips-card">
+        <h2>说明</h2>
+        <ul>
+          <li>业务图片走后端媒体资产与 URL，不再依赖客户端内置资源。</li>
+          <li>客户端页面进入时读取数据库最新数据，后台保存后即可同步呈现。</li>
+          <li>建议首期先通过刷新与重新进入页面完成“实时”读取。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="dashboardView" class="view active-view">
+      <div class="stats-grid">
+        <div class="stat-card"><span>商品数</span><strong id="statProducts">-</strong></div>
+        <div class="stat-card"><span>宠物数</span><strong id="statPets">-</strong></div>
+        <div class="stat-card"><span>领养申请</span><strong id="statAdoptions">-</strong></div>
+        <div class="stat-card"><span>媒体资源</span><strong id="statMedia">-</strong></div>
+      </div>
+      <div class="panel hint-panel">修改成功后，Harmony 客户端重新进入页面或触发刷新即可拿到数据库最新内容。</div>
+    </section>
+
+    <section id="productsView" class="view">
+      <div class="section-grid two-col">
+        <div class="card">
+          <div class="card-head">
+            <h2>商品列表</h2>
+            <button id="refreshProductsBtn" class="ghost-btn">刷新</button>
+          </div>
+          <div id="productsTable" class="table-wrap"></div>
+        </div>
+        <div class="card form-card">
+          <h2 id="productFormTitle">新建商品</h2>
+          <input id="productIdInput" type="hidden" />
+          <div class="field-row"><label>名称</label><input id="productNameInput" class="text-input" /></div>
+          <div class="field-row"><label>描述</label><textarea id="productDescInput" class="text-area"></textarea></div>
+          <div class="field-row"><label>价格</label><input id="productPriceInput" class="text-input" /></div>
+          <div class="field-row"><label>库存</label><input id="productStockInput" class="text-input" value="10" /></div>
+          <div class="field-row"><label>卖家ID</label><input id="productSellerIdInput" class="text-input" /></div>
+          <div class="field-row"><label>分类</label>
+            <select id="productCategoryInput" class="text-input">
+              <option>FOOD</option><option>TOY</option><option>CLOTHES</option><option>ACCESSORY</option><option>MEDICINE</option><option>OTHER</option>
+            </select>
+          </div>
+          <div class="field-row"><label>图片 URL</label><input id="productImageInput" class="text-input" placeholder="https://... 或 /uploads/..." /></div>
+          <div class="button-row">
+            <button id="saveProductBtn" class="primary-btn">保存商品</button>
+            <button id="resetProductBtn" class="ghost-btn">重置</button>
+          </div>
+          <div id="productStatus" class="status-text"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="petsView" class="view">
+      <div class="section-grid two-col">
+        <div class="card">
+          <div class="card-head">
+            <h2>宠物列表</h2>
+            <button id="refreshPetsBtn" class="ghost-btn">刷新</button>
+          </div>
+          <div id="petsTable" class="table-wrap"></div>
+        </div>
+        <div class="card form-card">
+          <h2 id="petFormTitle">新建宠物</h2>
+          <input id="petIdInput" type="hidden" />
+          <div class="field-row"><label>名称</label><input id="petNameInput" class="text-input" /></div>
+          <div class="field-row"><label>物种</label><input id="petSpeciesInput" class="text-input" /></div>
+          <div class="field-row"><label>品种</label><input id="petBreedInput" class="text-input" /></div>
+          <div class="field-row"><label>年龄</label><input id="petAgeInput" class="text-input" /></div>
+          <div class="field-row"><label>主人ID</label><input id="petOwnerIdInput" class="text-input" /></div>
+          <div class="field-row"><label>领养城市</label><input id="petCityInput" class="text-input" /></div>
+          <div class="field-row"><label>领养说明</label><textarea id="petNoteInput" class="text-area"></textarea></div>
+          <div class="field-row"><label>领养状态</label>
+            <select id="petStatusInput" class="text-input">
+              <option>AVAILABLE</option><option>PAUSED</option><option>ADOPTED</option>
+            </select>
+          </div>
+          <div class="field-row"><label>图片 URL</label><input id="petImageInput" class="text-input" placeholder="https://... 或 /uploads/..." /></div>
+          <div class="field-row"><label>描述</label><textarea id="petDescInput" class="text-area"></textarea></div>
+          <div class="button-row">
+            <button id="savePetBtn" class="primary-btn">保存宠物</button>
+            <button id="resetPetBtn" class="ghost-btn">重置</button>
+          </div>
+          <div id="petStatusText" class="status-text"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="adoptionsView" class="view">
+      <div class="card">
+        <div class="card-head">
+          <h2>领养申请管理</h2>
+          <button id="refreshAdoptionsBtn" class="ghost-btn">刷新</button>
+        </div>
+        <div id="adoptionsTable" class="table-wrap"></div>
+      </div>
+    </section>
+
+    <section id="mediaView" class="view">
+      <div class="section-grid two-col">
+        <div class="card form-card">
+          <h2>上传媒体</h2>
+          <div class="field-row"><label>本地图片</label><input id="mediaFileInput" type="file" class="text-input" accept="image/*" /></div>
+          <div class="field-row"><label>远程图片 URL</label><input id="mediaUrlInput" class="text-input" placeholder="https://..." /></div>
+          <div class="button-row">
+            <button id="uploadMediaBtn" class="primary-btn">上传文件</button>
+            <button id="fetchMediaBtn" class="ghost-btn">抓取远程图</button>
+          </div>
+          <div id="mediaStatus" class="status-text"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>媒体列表</h2>
+            <button id="refreshMediaBtn" class="ghost-btn">刷新</button>
+          </div>
+          <div id="mediaTable" class="table-wrap"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="/admin/app.js"></script>
+</body>
+</html>

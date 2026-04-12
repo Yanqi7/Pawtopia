@@ -42,6 +42,7 @@ struct AdminPets {
   @State private adoptionNote: string = '';
   @State private adoptionStatus: 'AVAILABLE' | 'PAUSED' | 'ADOPTED' = 'AVAILABLE';
   @State private imageKey: string = IMAGE_KEYS[0];
+  @State private imageUrlInput: string = '';
 
   aboutToAppear(): void {
     AppRouter.bind(this);
@@ -83,6 +84,7 @@ struct AdminPets {
     this.adoptionNote = pet.adoptionNote ?? '';
     this.adoptionStatus = (pet.adoptionStatus ?? 'AVAILABLE') as 'AVAILABLE' | 'PAUSED' | 'ADOPTED';
     this.imageKey = pet.image ?? IMAGE_KEYS[0];
+    this.imageUrlInput = pet.image ?? '';
   }
 
   private async save(): Promise<void> {
@@ -100,13 +102,17 @@ struct AdminPets {
       adoptionCity: this.mode === 'ADOPT' ? this.adoptionCity.trim() : undefined,
       adoptionNote: this.mode === 'ADOPT' ? this.adoptionNote.trim() : undefined,
       adoptionStatus: this.mode === 'ADOPT' ? this.adoptionStatus : this.selected.adoptionStatus,
-      image: this.imageKey,
+      image: this.imageUrlInput.trim() || this.imageKey,
       ownerId: this.selected.ownerId
     } as Pet;
     try {
       await Api.updatePet(this.selected.id, payload);
       AppPrompt.toast('宠物信息已更新', this);
       await this.load();
+      const updatedPet = this.pets.find((pet: Pet) => pet.id === this.selected?.id);
+      if (updatedPet) {
+        this.setForm(updatedPet);
+      }
     } catch (e) {
       this.errorText = e instanceof Error ? e.message : '更新失败';
     }
@@ -129,7 +135,12 @@ struct AdminPets {
 
       Scroll() {
         Column({ space: 12 }) {
-          SectionHeader({ title: '宠物列表', subtitle: `共 ${this.pets.length} 条记录` })
+          SectionHeader({
+            title: this.mode === 'ADOPT' ? '领养宠物列表' : '宠物档案列表',
+            subtitle: this.mode === 'ADOPT'
+              ? `共 ${this.pets.length} 条记录 · 可领养 ${this.pets.filter((pet: Pet) => (pet.adoptionStatus ?? 'AVAILABLE') === 'AVAILABLE').length} 条`
+              : `共 ${this.pets.length} 条记录 · 已选中 ${this.selected?.id ? 1 : 0} 条`
+          })
 
           ForEach(this.pets, (pet: Pet) => {
             Row({ space: 12 }) {
@@ -153,10 +164,20 @@ struct AdminPets {
                 }
               }
               .layoutWeight(1)
-              Text('编辑')
-                .fontSize(12)
-                .fontColor(Theme.primary)
-                .onClick(() => this.setForm(pet))
+              Column({ space: 6 }) {
+                Text(this.selected?.id === pet.id ? '正在编辑' : '编辑资料')
+                  .fontSize(12)
+                  .fontColor(this.selected?.id === pet.id ? Color.White : Theme.primary)
+                  .fontWeight(FontWeight.Medium)
+                  .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+                  .backgroundColor(this.selected?.id === pet.id ? Theme.primary : Theme.primarySoft)
+                  .borderRadius(16)
+                Text(this.mode === 'ADOPT' ? '修改领养信息' : '修改档案')
+                  .fontSize(10)
+                  .fontColor(Theme.textMuted)
+              }
+              .alignItems(HorizontalAlign.End)
+              .onClick(() => this.setForm(pet))
             }
             .padding(12)
             .backgroundColor(Color.White)
@@ -164,7 +185,29 @@ struct AdminPets {
           }, (pet: Pet) => String(pet.id))
 
           if (this.selected) {
-            SectionHeader({ title: '编辑信息', subtitle: this.mode === 'ADOPT' ? '更新公开领养信息' : '更新档案信息' })
+            SectionHeader({
+              title: '编辑信息',
+              subtitle: `${this.selected.name} · ${this.mode === 'ADOPT' ? '更新公开领养信息' : '更新档案信息'}`,
+              actionText: '取消',
+              onAction: () => {
+                this.selected = undefined;
+                this.imageUrlInput = '';
+              }
+            })
+            Image(MediaAssets.petImage(this.imageKey, this.selected.id ?? 0, this.species))
+              .width('100%')
+              .height(220)
+              .borderRadius(20)
+              .objectFit(ImageFit.Cover)
+            Field({
+              label: '图片链接',
+              placeholder: '支持 https://... 或多个链接用逗号分隔',
+              value: this.imageUrlInput,
+              onChange: (v: string) => {
+                this.imageUrlInput = v;
+                this.imageKey = v.trim() || IMAGE_KEYS[0];
+              }
+            })
             Row({ space: 8 }) {
               ForEach(IMAGE_KEYS, (key: string) => {
                 Image(MediaAssets.petImage(key))
@@ -172,7 +215,10 @@ struct AdminPets {
                   .height(60)
                   .borderRadius(12)
                   .border({ width: this.imageKey === key ? 2 : 1, color: this.imageKey === key ? Theme.primary : Theme.border })
-                  .onClick(() => this.imageKey = key)
+                  .onClick(() => {
+                    this.imageKey = key;
+                    this.imageUrlInput = key;
+                  })
               }, (key: string) => key)
             }
 

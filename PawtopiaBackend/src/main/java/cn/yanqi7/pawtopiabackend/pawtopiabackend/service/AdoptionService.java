@@ -41,8 +41,16 @@ public class AdoptionService {
         return adoptionRequestRepository.findByPetIdOrderByCreatedAtDesc(petId);
     }
 
+    public List<AdoptionRequest> getRequestsByOwnerId(Long ownerId) {
+        return adoptionRequestRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId);
+    }
+
     public List<AdoptionRequest> getMyRequests(Long requesterId) {
         return adoptionRequestRepository.findByRequesterIdOrderByCreatedAtDesc(requesterId);
+    }
+
+    public List<AdoptionRequest> getAllRequests() {
+        return adoptionRequestRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
     }
 
     @Transactional

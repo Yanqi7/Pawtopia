@@ -1,6 +1,18 @@
 export class MediaAssets {
   static readonly postCoverKeys: string[] = ['pet_cat_real_2', 'pet_dog_real_1', 'pet_cat_real_4', 'pet_dog_real_4', 'pet_dog_real_3'];
 
+  static isRemoteUrl(value?: string): boolean {
+    const normalized = (value ?? '').trim().toLowerCase();
+    return normalized.startsWith('http://') || normalized.startsWith('https://');
+  }
+
+  static splitImageValues(value?: string): string[] {
+    return (value ?? '')
+      .split(',')
+      .map((item: string) => item.trim())
+      .filter((item: string) => item.length > 0);
+  }
+
   static heroDog(): Resource {
     return $r('app.media.pet_dog_real_2');
   }
@@ -33,32 +45,42 @@ export class MediaAssets {
     return $r('app.media.media_placeholder');
   }
 
-  static petImage(name?: string, _seed: number = 0, _species?: string): Resource {
+  static petImage(name?: string, _seed: number = 0, _species?: string): Resource | string {
     return MediaAssets.firstImage(name);
   }
 
-  static postImage(name?: string, _seed: number = 0): Resource {
+  static postImage(name?: string, _seed: number = 0): Resource | string {
     return MediaAssets.firstImage(name);
   }
 
-  static productGallery(name?: string, _seed: number = 0, _category?: string): Resource[] {
+  static productGallery(name?: string, _seed: number = 0, _category?: string): Array<Resource | string> {
     return MediaAssets.resolveImages(name);
   }
 
-  static productImage(name?: string, _seed: number = 0, _category?: string): Resource {
-    return MediaAssets.firstImage(name);
+  static productImage(name?: string, _seed: number = 0, _category?: string): Resource | string {
+    const images = MediaAssets.resolveImages(name);
+    if (images.length === 0) {
+      return MediaAssets.placeholder();
+    }
+    const index = Math.abs(_seed) % images.length;
+    return images[index];
   }
 
-  private static firstImage(name?: string): Resource {
+  private static firstImage(name?: string): Resource | string {
     const images = MediaAssets.resolveImages(name);
     return images.length > 0 ? images[0] : MediaAssets.placeholder();
   }
 
-  private static resolveImages(name?: string): Resource[] {
-    const normalized = (name ?? '').split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0);
-    const mapped: Resource[] = [];
+  private static resolveImages(name?: string): Array<Resource | string> {
+    const normalized = MediaAssets.splitImageValues(name);
+    const mapped: Array<Resource | string> = [];
     for (let i = 0; i < normalized.length; i++) {
-      const image = MediaAssets.named(normalized[i]);
+      const current = normalized[i];
+      if (MediaAssets.isRemoteUrl(current)) {
+        mapped.push(current);
+        continue;
+      }
+      const image = MediaAssets.named(current);
       if (image) {
         mapped.push(image);
       }
