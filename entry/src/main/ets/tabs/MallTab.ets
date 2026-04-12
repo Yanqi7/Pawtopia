@@ -128,7 +128,7 @@ export struct MallTab {
   build() {
     Column() {
       Stack({ alignContent: Alignment.BottomStart }) {
-        Image(MediaAssets.shopHero())
+        Image(MediaAssets.mallHero())
           .width('100%')
           .height(156)
           .objectFit(ImageFit.Cover)
